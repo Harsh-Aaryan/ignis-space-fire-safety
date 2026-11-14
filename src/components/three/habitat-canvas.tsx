@@ -20,6 +20,7 @@ import { LocalHdrEnvironment, SceneEnvironment } from "@/components/three/parts/
 import { MarsHabitat } from "@/components/three/mars-habitat";
 import { MoonHabitat } from "@/components/three/moon-habitat";
 import { useMissionStore } from "@/stores/mission-store";
+import { navigationBounds } from "@/lib/three/navigation-bounds";
 import type { EquipmentId, MissionId } from "@/types/domain";
 
 type Vec3 = [number, number, number];
@@ -447,13 +448,14 @@ function CameraRig({
       const object = interiorObjects.get(objectId ?? room.id);
       if (object && (roomId || missionId === "gateway-orbit")) {
         object.updateWorldMatrix(true, true);
-        const box = new THREE.Box3().setFromObject(object);
+        const box = navigationBounds(object);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         const extent = Math.max(size.x, size.y, size.z, 0.8);
         const dist = objectId ? Math.max(2.4, extent * 2.2) : Math.max(5.4, extent * 1.65);
         const direction = new THREE.Vector3(0.65, 0.65, 1).normalize().applyQuaternion(object.getWorldQuaternion(new THREE.Quaternion()));
         next = { pos: center.clone().addScaledVector(direction, dist).toArray() as Vec3, target: center.toArray() as Vec3 };
+        if (missionId === "gateway-orbit") next = gatewayInteriorPose(room.id, center, Boolean(objectId));
       } else if (missionId === "mars-habitat") {
         next = { pos: exploded ? [21, 18, 27] : [16, 12, 22], target: [0, exploded ? 9 : 6.4, 0] };
       } else if (missionId === "lunar-habitat") {
@@ -485,13 +487,18 @@ function CameraRig({
       const object = interiorObjects.get(pendingInterior.current);
       if (object) {
         object.updateWorldMatrix(true, true);
-        const box = new THREE.Box3().setFromObject(object);
+        const box = navigationBounds(object);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         const extent = Math.max(size.x, size.y, size.z, 0.8);
         const dist = objectId ? Math.max(2.4, extent * 2.2) : Math.max(5.4, extent * 1.65);
         const direction = new THREE.Vector3(0.65, 0.65, 1).normalize().applyQuaternion(object.getWorldQuaternion(new THREE.Quaternion()));
-        anim.current = { pos: center.clone().addScaledVector(direction, dist), target: center, rate: 6 };
+        const next = missionId === "gateway-orbit" ? gatewayInteriorPose(roomId, center, Boolean(objectId)) : null;
+        anim.current = {
+          pos: next ? new THREE.Vector3(...next.pos) : center.clone().addScaledVector(direction, dist),
+          target: next ? new THREE.Vector3(...next.target) : center,
+          rate: 6,
+        };
         pendingInterior.current = null;
       }
       invalidate();
@@ -504,7 +511,7 @@ function CameraRig({
       projected[id] = { x: point.x, y: point.y };
     });
     interiorObjects.forEach((object, id) => {
-      const point = new THREE.Box3().setFromObject(object).getCenter(new THREE.Vector3());
+      const point = navigationBounds(object).getCenter(new THREE.Vector3());
       point.project(camera); projected[id] = {x: point.x, y: point.y};
     });
     (window as Window & { __IGNIS_SCREEN?: typeof projected }).__IGNIS_SCREEN = projected;
@@ -524,6 +531,17 @@ function CameraRig({
     }
   });
   return null;
+}
+
+/** Place the camera within the revealed orbital module, clear of neighboring opaque shells. */
+function gatewayInteriorPose(roomId: string | null, center: THREE.Vector3, focusObject: boolean): { pos: Vec3; target: Vec3 } {
+  const room = roomById(roomId) ?? roomsForHabitat("gateway-orbit")[0];
+  const group = room ? interiorObjects.get(room.id) : null;
+  if (!room || !group) return { pos: center.clone().add(new THREE.Vector3(0, 1, 3)).toArray() as Vec3, target: center.toArray() as Vec3 };
+  const [w, h, d] = room.size;
+  const pos = group.localToWorld(new THREE.Vector3(-w * 0.04, h * 0.9, d * 0.46));
+  const target = focusObject ? center : group.localToWorld(new THREE.Vector3(0, h * 0.32, -d * 0.05));
+  return { pos: pos.toArray() as Vec3, target: target.toArray() as Vec3 };
 }
 
 function poseFor(

@@ -2,6 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { Component, useState, useSyncExternalStore } from "react";
+import { FireHud } from "@/components/firetwin/fire-hud";
+import { FireSimPanel } from "@/components/firetwin/fire-sim-panel";
 import { InteriorInspector } from "@/components/firetwin/interior-inspector";
 import {
   roomsForHabitat,
@@ -12,6 +14,7 @@ import {
 import { equipmentLabel } from "@/lib/labels";
 import { formatGravity, formatNumber } from "@/lib/format";
 import { oxygenPartialPressurePsi } from "@/lib/physics/atmosphere";
+import { useFireSimStore } from "@/stores/fire-sim-store";
 import { useMissionStore } from "@/stores/mission-store";
 import type { EquipmentId } from "@/types/domain";
 
@@ -42,10 +45,18 @@ export function FireTwinView() {
     selectedEquipment: selected,
     cutaway,
     exploded,
-    showFlame,
     marsDusk,
     navigationMode: mode,
   } = state;
+  const simOpen = useFireSimStore((store) => store.open);
+  const setSimOpen = useFireSimStore((store) => store.setOpen);
+  const simStatus = useFireSimStore((store) => store.status);
+  function toggleSim() {
+    const next = !simOpen;
+    setSimOpen(next);
+    // The scenario needs an interior to burn in.
+    if (next && !state.selectedRoomId) state.navigate("interior");
+  }
   const rooms = roomsForHabitat(scenario.missionId);
   const room = roomById(state.selectedRoomId);
   const object = objectById(state.selectedObjectId);
@@ -66,7 +77,7 @@ export function FireTwinView() {
     else if (selected) state.selectEquipment(selected);
   }
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-auto xl:grid xl:grid-cols-[minmax(0,1fr)_380px] xl:overflow-hidden">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-auto xl:grid xl:grid-cols-[minmax(0,1fr)_380px] xl:overflow-hidden">
       <div
         data-testid="habitat-viewport"
         className="relative min-h-[580px] w-full shrink-0 bg-black md:min-h-[620px] xl:min-h-0"
@@ -219,8 +230,11 @@ export function FireTwinView() {
                 Return to exterior
               </HudButton>
             ) : null}
-            <HudButton onClick={() => state.setShowFlame(!showFlame)}>
-              Flame illustration
+            <HudButton
+              onClick={toggleSim}
+              className={simOpen ? "border-[#C8794A] text-[#FFD9BE]" : ""}
+            >
+              {simOpen ? "Close fire scenario" : "Fire scenario"}
             </HudButton>
           </div>
           <p className="pointer-events-none font-cond text-[9px] tracking-[0.08em] text-[#B8B9AC] uppercase">
@@ -233,13 +247,32 @@ export function FireTwinView() {
             · Illustrative digital twin
           </p>
         </div>
-        {showFlame ? (
-          <div className="pointer-events-none absolute inset-0 z-20">
-            <FlameSketch microgravity={scenario.gravityG < 0.05} />
-          </div>
-        ) : null}
       </div>
-      <InteriorInspector />
+      {simOpen ? <FireHud /> : null}
+      <div className="flex min-h-0 shrink-0 flex-col border-t border-[#343A40] bg-[#1F2125] xl:overflow-hidden xl:border-t-0 xl:border-l">
+        <div role="tablist" aria-label="FireTwin panel" className="flex shrink-0 border-b border-[#343A40] bg-[#171C20]">
+          {(
+            [
+              [false, "Research"],
+              [true, "Fire scenario"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={label}
+              type="button"
+              role="tab"
+              aria-selected={simOpen === value}
+              onClick={() => (value === simOpen ? null : toggleSim())}
+              className={`relative min-h-9 flex-1 px-3 font-cond text-[11px] tracking-[0.1em] uppercase ${simOpen === value ? "bg-[#1F2125] text-[#F1E8D5]" : "text-[#8F9A9A] hover:text-white"}`}
+            >
+              {simOpen === value ? <span className="absolute inset-x-0 top-0 h-0.5 bg-primary" /> : null}
+              {label}
+              {value && simStatus === "running" ? <span className="ml-1.5 inline-block size-1.5 rounded-full bg-[#F67A6C]" aria-label="running" /> : null}
+            </button>
+          ))}
+        </div>
+        {simOpen ? <FireSimPanel /> : <InteriorInspector />}
+      </div>
     </div>
   );
 }
@@ -424,57 +457,6 @@ function Schematic({
           );
         })}
       </svg>
-    </div>
-  );
-}
-
-function FlameSketch({
-  inline = false,
-  microgravity = false,
-}: {
-  inline?: boolean;
-  microgravity?: boolean;
-}) {
-  return (
-    <div
-      className={
-        inline
-          ? "relative mt-2 w-full border border-border bg-[#1F2125] p-3 text-[11px]"
-          : "absolute right-3 bottom-24 w-56 border border-border bg-[#1F2125] p-3 text-[11px]"
-      }
-    >
-      <p className="font-medium text-[#E8C15A]">
-        Illustrative visualization — not a validated combustion simulation.
-      </p>
-      <div className="mt-3 flex items-end justify-around">
-        {microgravity ? null : (
-          <div className="flex flex-col items-center gap-1">
-            <span className="flame-earth block h-16 w-6 rounded-full bg-amber" />
-            <span>Earth teardrop</span>
-          </div>
-        )}
-        <div className="flex flex-col items-center gap-1">
-          <span className="flame-micro block size-10 rounded-full bg-primary" />
-          <span>Spherical, ~0 g</span>
-        </div>
-      </div>
-      {microgravity ? (
-        <p className="mt-2 text-muted-foreground">
-          The Earth teardrop is not drawn in this volume.
-        </p>
-      ) : null}
-      <p className="mt-2 text-muted-foreground">
-        Shape only. This sketch does not predict spread or risk for the
-        scenario.
-      </p>
-      <style>{`
-        @media (prefers-reduced-motion: no-preference) {
-          .flame-earth { animation: flicker 1.4s ease-in-out infinite; transform-origin: bottom; }
-          .flame-micro { animation: pulse 2.4s ease-in-out infinite; }
-        }
-        @keyframes flicker { 50% { transform: scaleY(0.86) scaleX(1.08); } }
-        @keyframes pulse { 50% { transform: scale(1.08); } }
-      `}</style>
     </div>
   );
 }

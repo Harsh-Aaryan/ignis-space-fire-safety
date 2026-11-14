@@ -14,11 +14,11 @@ export function Wordmark({ compact = false }: { compact?: boolean }) {
   );
 }
 
-export function PrototypeBadge() {
+export function PrototypeBadge({ researchModel = false }: { researchModel?: boolean }) {
   return (
     <div className="prototype-badge" role="note">
       <span className="prototype-badge-mark" aria-hidden="true" />
-      Prototype — Synthetic Demonstration Data
+      {researchModel ? "Prototype — Research-informed model" : "Prototype — Synthetic Demonstration Data"}
     </div>
   );
 }

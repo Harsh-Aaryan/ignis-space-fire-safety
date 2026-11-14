@@ -5,9 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Box,
   ChartLine,
-  FileSearch,
   FileText,
-  Grid3x3,
   LayoutDashboard,
   Library,
   Menu,
@@ -16,6 +14,8 @@ import { useEffect, useState } from "react";
 import { PrototypeBadge, Wordmark } from "@/components/design/marks";
 import { ConditionControls } from "@/components/dashboard/controls";
 import { HabitatSwitcher } from "@/components/layout/habitat-switcher";
+import { SectionTabs, stageForPath } from "@/components/layout/section-tabs";
+import { DataDrawer } from "@/components/research/data-drawer";
 import { objectById, roomById } from "@/data/habitat-interiors";
 import { GATEWAY_SCENE_LABEL } from "@/data/missions";
 import { Button } from "@/components/ui/button";
@@ -25,20 +25,21 @@ import { FUEL_LABEL } from "@/lib/labels";
 import { formatAir, formatGravity, formatOxygen, formatPsi } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useMissionStore } from "@/stores/mission-store";
+import { syncFireMission, useFireSimDriver } from "@/stores/fire-sim-store";
 
 const NAV = [
   { href: "/", label: "Overview", short: "Home", icon: LayoutDashboard },
-  { href: "/firetwin", label: "FireTwin", short: "Twin", icon: Box },
   { href: "/research", label: "Research", short: "Research", icon: Library },
   { href: "/predict", label: "Predict", short: "Predict", icon: ChartLine },
-  { href: "/gravity-bridge", label: "GravityBridge", short: "Gravity", icon: Grid3x3 },
-  { href: "/firelab", label: "FireLab", short: "FireLab", icon: FileSearch },
+  { href: "/firetwin", label: "FireTwin", short: "Twin", icon: Box },
   { href: "/reports", label: "Reports", short: "Reports", icon: FileText },
 ];
 
 const MOBILE = NAV.filter((item) => item.href !== "/");
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  useFireSimDriver();
+  useEffect(() => useMissionStore.subscribe(syncFireMission), []);
   const pathname = usePathname();
   const clearSelection = useMissionStore((state) => state.selectEquipment);
   const refreshSaved = useMissionStore((state) => state.refreshSaved);
@@ -76,18 +77,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             fullBleed ? "flex flex-col overflow-hidden md:p-0" : "p-4 xl:p-6",
           )}
         >
-          {!fullBleed ? <InteriorResearchContext /> : null}
+          {!fullBleed ? <><SectionTabs pathname={pathname} /><InteriorResearchContext /></> : null}
           {children}
         </main>
       </div>
       <nav className="no-print fixed inset-x-0 bottom-0 z-40 flex h-14 border-t border-[#2A2D32] bg-[#16181C] md:hidden" aria-label="Modules">
         {MOBILE.map((item) => {
-          const active = pathname.startsWith(item.href);
+          const active = navActive(pathname, item.href);
           const Icon = item.icon;
           return (
             <Link
               key={item.href}
               href={item.href}
+              aria-current={active ? "page" : undefined}
               className={cn(
                 "flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 font-cond text-[10px] tracking-[0.08em] uppercase",
                 active ? "text-foreground" : "text-muted-foreground",
@@ -137,7 +139,7 @@ function Nav({ pathname }: { pathname: string }) {
   return (
     <nav aria-label="Modules" className="flex flex-col gap-0.5 px-2">
       {NAV.map((item) => {
-        const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+        const active = navActive(pathname, item.href);
         const Icon = item.icon;
         return (
           <Link
@@ -160,8 +162,15 @@ function Nav({ pathname }: { pathname: string }) {
   );
 }
 
+function navActive(pathname: string, href: string): boolean {
+  if (href === "/") return pathname === "/";
+  if (href === "/research") return stageForPath(pathname) === "research";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 function crumb(pathname: string, missionId: string): string {
   if (pathname.startsWith("/research/")) return "Research / Dossier";
+  if (pathname.startsWith("/materials")) return "Research / Materials and measurements";
   if (pathname.startsWith("/firetwin") && missionId === "gateway-orbit") {
     return "FireTwin / Gateway-inspired  ·  Conceptual";
   }
@@ -193,7 +202,7 @@ export function TopBar({ pathname }: { pathname: string }) {
   return (
     <header className="no-print flex h-auto min-h-12 shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b border-[#2A2D32] bg-[#16181C] px-3 py-1.5 md:h-12 md:flex-nowrap md:px-5 md:py-0">
       <MobileMenu pathname={pathname} open={open} setOpen={setOpen} />
-      <p className="hidden font-cond text-[11px] tracking-[0.08em] text-muted-foreground uppercase sm:block">
+      <p className="hidden max-w-60 truncate font-cond text-[11px] tracking-[0.08em] text-muted-foreground uppercase sm:block">
         {crumb(pathname, scenario.missionId)}
         <span className="text-foreground">{tail}</span>
       </p>
@@ -219,13 +228,14 @@ export function TopBar({ pathname }: { pathname: string }) {
         </span>
       </p>
       <div className="ml-auto flex items-center gap-2">
+        <DataDrawer />
         <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={() => save(`${scenario.name} scenario`)}>
           Save
         </Button>
         <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={reset}>
           Reset
         </Button>
-        <PrototypeBadge />
+        <PrototypeBadge researchModel={pathname === "/firetwin" || pathname === "/predict" || pathname === "/materials"} />
       </div>
     </header>
   );

@@ -5,6 +5,7 @@ import { StatusChip } from "@/components/design/marks";
 import { formatNumber } from "@/lib/format";
 import { useAnalysis } from "@/hooks/use-analysis";
 import { useMissionStore } from "@/stores/mission-store";
+import { ScenarioForecast } from "@/components/predict/scenario-forecast";
 
 export function PredictView() {
   const analysis = useAnalysis();
@@ -16,9 +17,13 @@ export function PredictView() {
       <header>
         <h1 className="font-cond text-[22px] font-semibold tracking-[0.04em]">Predictive analytics</h1>
         <p className="max-w-3xl text-sm text-muted-foreground">
-          Two separate results for {scenario.name}. The verified index is not mixed into the synthetic fit.
+          Research-informed fire scenarios for {scenario.name}, with the earlier catalog analysis available below.
         </p>
       </header>
+      <ScenarioForecast />
+      <details className="rounded border border-border p-4">
+      <summary className="cursor-pointer text-sm">Legacy catalog analysis and synthetic statistical baseline</summary>
+      <div className="mt-4 space-y-4">
       <section className="rounded border border-border bg-card p-4">
         <div className="mb-2 flex flex-wrap gap-2">
           <StatusChip level="info">Verified</StatusChip>
@@ -91,6 +96,8 @@ export function PredictView() {
           Back to FireTwin
         </Link>
       </section>
+      </div>
+      </details>
     </div>
   );
 }

@@ -12,6 +12,8 @@ import {
   type InteriorEquipment,
   type Vec3,
 } from "@/data/habitat-interiors";
+import { FireEffects } from "@/components/three/fire-effects";
+import { useFireSimStore } from "@/stores/fire-sim-store";
 import { useMissionStore } from "@/stores/mission-store";
 import type { MissionId } from "@/types/domain";
 
@@ -498,6 +500,7 @@ export function HabitatRoom({
   const hideFront = useMissionStore((s) => s.hideFrontWalls);
   const hideRoof = useMissionStore((s) => s.hideRoof);
   const select = useMissionStore((s) => s.selectRoom);
+  const fireHere = useFireSimStore((s) => s.activeRoomId === room.id);
   const invalidate = useThree((s) => s.invalidate);
   const reduce = useReducedMotion();
   const [w, h, d] = room.size;
@@ -605,6 +608,7 @@ export function HabitatRoom({
       {room.equipment.map((object) => (
         <Equipment key={object.id} object={object} />
       ))}
+      {fireHere ? <FireEffects room={room} /> : null}
       {room.round ? (
         <group position={[-w * 0.35, 0, d * 0.17]}>
           {[-0.18, 0.18].map((x) => (

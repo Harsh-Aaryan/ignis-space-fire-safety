@@ -8,7 +8,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "IGNIS — Evidence-grounded space fire safety",
   description:
-    "Phase 1 prototype for NASA Space Apps Challenge 2026, Flame in Freefall. Synthetic demonstration data only.",
+    "NASA Space Apps Challenge 2026: cited combustion research, material properties, and an interactive habitat fire model. Synthetic catalog rows and model assumptions are labeled.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -108,7 +108,7 @@ export function InteriorInspector() {
   return (
     <aside
       aria-label="Research inspector"
-      className="shrink-0 border-t border-[#343A40] bg-[#1F2125] xl:min-h-0 xl:overflow-y-auto xl:border-t-0 xl:border-l"
+      className="min-h-0 shrink-0 bg-[#1F2125] xl:flex-1 xl:overflow-y-auto"
     >
       <header className="z-10 border-b border-[#343A40] bg-[#1F2125] px-4 py-3 xl:sticky xl:top-0">
         <p className="font-cond text-[10px] tracking-[0.16em] text-[#B89F7A] uppercase">
