@@ -37,6 +37,9 @@ const MAX_HISTORY = 480;
 interface FireSimStore {
   /** The fire scenario panel is showing in FireTwin. */
   open: boolean;
+  enhanceVisibility: boolean;
+  showAirflow: boolean;
+  setVisuals: (patch: Partial<{ enhanceVisibility: boolean; showAirflow: boolean }>) => void;
   config: FireConfig;
   status: FireStatus;
   speed: FireSpeed;
@@ -69,27 +72,17 @@ export const DEFAULT_FIRE_CONFIG: FireConfig = {
 };
 
 function copyState(state: FireState): FireState {
-  return {
-    ...state,
-    room: { ...state.room },
-    rest: { ...state.rest },
-    lag: { ...state.lag },
-    initial: { ...state.initial },
-    events: state.events.map((event) => ({ ...event })),
-    sensors: Object.fromEntries(
-      Object.entries(state.sensors).map(([id, cell]) => [id, { ...cell }]),
-    ) as FireState["sensors"],
-    flame: { ...state.flame },
-    agent: { ...state.agent },
-    hazardFlags: { ...state.hazardFlags },
-  };
+  return structuredClone(state);
 }
 
 export const useFireSimStore = create<FireSimStore>()((set, get) => ({
   open: false,
+  enhanceVisibility: false,
+  showAirflow: false,
+  setVisuals: (patch) => set(patch),
   config: DEFAULT_FIRE_CONFIG,
   status: "idle",
-  speed: 10,
+  speed: 1,
   activeRoomId: null,
   activeObjectId: null,
   snapshot: null,
@@ -101,7 +94,11 @@ export const useFireSimStore = create<FireSimStore>()((set, get) => ({
     const current = get().config.sensors;
     const sensors = current.includes(id) ? current.filter((item) => item !== id) : [...current, id];
     set({ config: { ...get().config, sensors } });
-    if (fireRuntime.input) fireRuntime.input.sensors = sensors;
+    if (fireRuntime.input) {
+      fireRuntime.input.sensors = sensors;
+      if (fireRuntime.state) fireRuntime.state.events.push({ t: fireRuntime.state.t, kind: "action", label: `${id} detector ${sensors.includes(id) ? "enabled" : "disabled"}.` });
+      get().publish();
+    }
   },
   start: (input, roomId, objectId) => {
     fireRuntime.input = { ...input, fuel: { ...input.fuel }, sensors: [...input.sensors] };

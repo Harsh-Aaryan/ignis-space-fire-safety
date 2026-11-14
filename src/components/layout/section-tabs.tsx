@@ -17,7 +17,7 @@ export const STAGES = [
       { href: "/research", label: "NASA investigations", hint: "Search and rank the studies" },
       { href: "/materials", label: "Materials and measurements", hint: "Properties, limits and extracted NASA data" },
       { href: "/gravity-bridge", label: "Gravity coverage", hint: "Which gravity regimes the evidence reaches" },
-      { href: "/firelab", label: "Gaps and briefing", hint: "Open questions and the briefing clerk" },
+      { href: "/firelab", label: "Coverage gaps", hint: "Open questions and the briefing clerk" },
     ],
   },
   {
@@ -60,32 +60,9 @@ export function SectionTabs({ pathname }: { pathname: string }) {
   const stageId = stageForPath(pathname);
   if (!stageId) return null;
   const stage = STAGES.find((item) => item.id === stageId)!;
-  const index = STAGES.findIndex((item) => item.id === stageId);
+
   return (
     <div className="no-print mb-4">
-      <ol className="flex flex-wrap items-center gap-x-1 gap-y-1 text-[11px]" aria-label="Workflow">
-        {STAGES.map((item, position) => (
-          <li key={item.id} className="flex items-center gap-1">
-            <Link
-              href={item.href}
-              aria-current={item.id === stageId ? "step" : undefined}
-              className={cn(
-                "flex items-baseline gap-1.5 border px-2 py-1 font-cond tracking-[0.08em] uppercase",
-                item.id === stageId
-                  ? "border-[#8D775F] bg-[#2A241C] text-[#F1E8D5]"
-                  : position < index
-                    ? "border-[#3A3E44] text-[#C9C5BD] hover:bg-[#292C30]"
-                    : "border-[#2A2D32] text-muted-foreground hover:bg-[#292C30]",
-              )}
-            >
-              <span className="numeric text-[10px] text-[#B89F7A]">{position + 1}</span>
-              {item.label}
-              <span className="hidden text-[10px] tracking-normal text-muted-foreground normal-case lg:inline">{item.blurb}</span>
-            </Link>
-            {position < STAGES.length - 1 ? <span aria-hidden="true" className="text-[#5A5F66]">→</span> : null}
-          </li>
-        ))}
-      </ol>
       {stage.tabs.length ? (
         <nav aria-label={`${stage.label} views`} className="mt-3 flex overflow-x-auto border-b border-[#3A3E44]">
           {stage.tabs.map((tab) => {

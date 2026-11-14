@@ -1,59 +1,80 @@
-# Fire simulation and NASA data validation — 2026-11-14
+# IGNIS model v2: verification and scientific limits
 
-This continues the existing uncommitted fire-simulation implementation and the Gateway camera investigation described in the handoff. Existing habitat geometry, model assets, lighting presets and prepared material data were retained.
+Updated 2026-11-14. Implementation follows [SCIENCE-UX-PLAN.md](SCIENCE-UX-PLAN.md). Model version: **2.0.0**.
 
-## Architecture reviewed
+## What changed
 
-The app uses Next.js 16.4.6, React, Zustand and React Three Fiber. `mission-store` owns cabin conditions and equipment selection. `src/lib/fire/model.ts` implements the numerical ignition → heat release → gas/temperature → transport → detection/response chain. `scenario.ts` maps conceptual room/equipment geometry into model inputs. `fire-sim-store` owns the fixed-step runtime and published telemetry. `FireEffects` adds meshes and particles to the existing rooms.
+The gas network now exchanges energy with species. Nominal PMMA, cellulose and polyethylene reaction budgets conserve carbon, hydrogen and oxygen. Water vapor, transported unburned fuel vapor, condensed pre-fire aerosols, deposition and remaining fuel have separate inventories. Local oxygen delivery constrains combustion. Chemical HRR is separate from ignition-source heating.
 
-The original synthetic evidence repository and metadata-only NTRS index remain separate from extracted publication values, original PSI tables, observed sensor readings, and model output. Predict and FireTwin now use the same engine and setup. The AppShell keeps the runtime mounted across route changes and synchronizes cabin edits.
+Fuel heating uses implicit one-dimensional conduction for thick solids and a lumped layer for thin/edge cases. Radiation, convection, source shutoff and wall heating retain temperature history. Electrical overload power uses I²R for the assumed circuit. Arc and battery inputs remain prescribed illustrative sources, with finite duration/energy.
 
-## Functional corrections
+Finite CO₂ and chemical-agent doses enter the gas inventories. Water discharge is split into deposited and evaporated mass; captured evaporation is bounded by accessible surface heat and pressure-dependent boiling temperature. Direct calibrated flame/spray transfer is not resolved. Fixed one-second mist extinction and an unlimited local vapor reservoir are no longer imposed.
 
-- Oxygen-limited burning cannot release more chemical energy than the oxygen inventory supports, including during delayed extinction.
-- CO₂ and chemical-agent discharge account for time steps crossing discharge-stage boundaries. A repeated CO₂ action does not create another bottle.
-- Batch scenarios execute response actions at their requested times and end at the requested horizon; invalid time steps are rejected.
-- Telemetry snapshots no longer share mutable zone, lag or event objects with the running model.
-- Material/source choices survive the Research → Predict → FireTwin handoff. Habitat or initial atmosphere changes reset stale runs; airflow changes update the live fan target.
-- Fire-particle buffers are excluded from navigation bounds. Gateway camera positions stay within the revealed module, with a separate room framing target to include foreground equipment.
-- The mobile HUD is in the scrolling flow; desktop telemetry remains over the scene. Fire colors/light were adjusted only in the effect layer.
-- Research groups material data, gravity coverage and research gaps. The materials/citations drawer is reachable from every page. Older route URLs remain available.
+Flames use a ray-marched shader envelope driven by modeled extent, flow and soot tendency. The default scale is physical; enlargement is an explicit option. Smoke uses solver transport-step history and particle diffusivity; tracer opacity uses an assumed effective mass-extinction coefficient. These are illustrative transport visuals, not a calibrated optical instrument or resolved HVAC CFD. Individual modeled detector locations have their own signals and alarm states.
 
-## Data retrieved and preserved
-
-Original public NASA PSI experimental CSV files and complete metadata were downloaded for PSI-25, PSI-26, PSI-69, PSI-98, PSI-99, PSI-100, PSI-101 and PSI-102. All eight records declare CC0-1.0. The [manifest](public/data/nasa-psi/manifest.json) retains source URLs, DOIs, record/file versions and SHA-256 checksums. Existing source files and material coefficients were not replaced. CSV ranges, empty values, negative readings, notes and uncalibrated display settings are preserved as strings.
-
-The original 2,775,737-byte Saffire-I telemetry workbook was also retrieved. Its four explicitly labeled sensor channels were extracted without interpolation, smoothing, clipping, unit conversion or ignition-time alignment: 322 temperature points, 332 pressure points, 289 obscuration-voltage points and 272 scattering-voltage points. Every point retains its source sheet, column and row. The viewer uses the workbook's relative-time coordinate. Smoke voltages are not mass concentrations, calibrated alarm times, HRR or oxygen histories.
-
-The NASA-STD-6001 source was updated to the [active B with Change 3](https://standards.nasa.gov/standard/NASA/NASA-STD-6001). Saffire publication tables were checked against [ICES-2024-365](https://ntrs.nasa.gov/citations/20240002981). The partial-gravity source link was corrected to NTRS 20260001966. ACME/s-Flame is identified as qualitative gaseous-flame context, rather than solid-material validation data.
+The navigation has four primary destinations: Home, Fire simulation, NASA research and Results. Set up, Run, Respond and Review share the forecast editor and scenario state. Ask IGNIS is available globally and can explain a captured scenario with real citations or compute a copied fan-shutdown comparison. It is a structured local scenario assistant; a live generative provider is not connected.
 
 ## Verification
 
 | Check | Result |
 | --- | --- |
-| `npm test -- --reporter=dot` | 73 tests passed in 11 files. Includes the existing diagnostic probe. |
-| `npm run build` | Passed, including TypeScript and generation of all application routes. |
-| `python scripts/prepare-saffire-telemetry.py --check` | Extract matches the original workbook exactly. |
-| NASA source integrity | Original metadata, eight CSV files and the telemetry workbook match their recorded checksums. |
-| `git diff --check` | Passed. |
-| Original Moon/Mars/Gateway habitat modules and `public/models` | No changes. |
-| Full production Playwright suite | 12 passed, 2 optional capture scripts skipped, 0 failed (8.6 minutes). |
+| Unit suite | 77 passed in 11 files, including the existing diagnostic probe. |
+| Production build | Passed compilation, TypeScript and generation of all application routes after the final correction. |
+| Full production browser suite, first pass | 14 passed, 2 optional captures skipped, no failures. Includes original Moon/Mars/Gateway navigation and new workflow/assistant cases. |
+| Final correction browser suite | 14 passed, 2 optional captures skipped, 0 failed, 0 flaky (7.6 minutes). |
+| Saffire-I extraction | Matches the original workbook exactly. |
+| NASA file integrity | Original metadata, eight experimental CSVs and workbook retain their recorded SHA-256 hashes. |
+| Original scenes/assets | Moon, Mars and Gateway habitat modules and all public assets are unchanged. |
+| Whitespace check | `git diff --check` passed. |
 
-The new browser cases exercise ignition, telemetry, pause, manual suppression and reset in all three habitats; material/setup handoff; grouped routes; no-WebGL mobile controls; and original NASA CSV browsing, filtering, downloading and observed-voltage viewing. Existing interior raycast, cutaway, floor, exterior, research-context and route tests are retained. The two `zz-*` scripts are optional captures requiring `SHOT_DIR`.
+The browser tests cover ignition, pause, suppression, reset, camera framing and raycasts in all habitats; the Research → comparison → simulation handoff; source tables/downloads; mobile no-WebGL controls; assistant citations, copied comparisons and keyboard behavior; run export; original cutaway, deck, exterior and dossier routes. The optional `zz-*` capture scripts require `SHOT_DIR` and remain skipped by default.
 
-The full machine-readable browser report is saved locally at `.qa-baseline/final-playwright.json`; final screenshots are copied to `.qa-baseline/final-browser/`. These QA artifacts are ignored by Git. A viewport screenshot is used for the fixed app shell so the capture follows the visible scrolling panel.
+Final browser JSON is `.qa-baseline/v2-final-playwright.json`; screenshots are archived in `.qa-baseline/v2-final-browser/`. These machine-specific QA artifacts are ignored by Git. The first complete run is archived in `.qa-baseline/v2-first-pass/`.
 
-## Scientific validation limits
+## Numerical audit
 
-Passing functional tests does not establish predictive accuracy. The Saffire cases used to select coefficients are calibration cases. The interface exposes their residuals. The following comparison runs constant initial flow for the reported duration, without reconstructing the changing flight fan protocol; each cell is published / modeled:
+Run `node scripts/audit-fire-model.cjs` to regenerate `.qa-baseline/v2-physics-audit.json`. It reads the current source without fitting coefficients or modifying data.
 
-| Test | HRR basis | HRR (W) | Total heat (kJ) | CO₂ rise (ppm) | CO rise (ppm) |
+- The isolated two-zone energy-exchange example has a **0 J residual**. Tests also check larger transport steps and unequal temperatures.
+- PMMA reaction products now contain the nominal fuel carbon inventory. CO₂ is reduced after CO/soot partitioning; the earlier 0.657 kg carbon from 0.600 kg fuel carbon is removed.
+- Global oxygen loss matches reaction consumption. Total pyrolysed fuel is accounted for by burned material, transported vapor and retained/removed condensed aerosols.
+- For the 600 s lunar PMMA audit case, 0.25 s and 0.125 s public steps both give 528.640 kJ because the internal step is bounded at 0.125 s. A 0.0625 s step gives 528.390 kJ: **about 0.047% difference**. Ignition is 8.5 s in both; alarm time differs by 0.0625 s.
+- Finite dose tests check discharge boundaries and repeated actions. Mist tests verify evaporated + deposited water equals released water and the accessible fuel surface does not overcool below incoming water temperature in the tested case.
+- Numerical checks do not establish accuracy of spread, yields, detector response, whole-cabin temperature or suppression time in flight.
+
+Measured throughput for the 600 s case is recorded in the JSON report; timing varies with JIT, hardware and simultaneous browser work. It is not a browser/GPU performance guarantee. Browser QA uses installed Edge with software WebGL; native mobile-device frame rates have not been established.
+
+`node scripts/profile-fire-scene.cjs` measured **0.53 fps** over a 5.61 s / three-frame sample at 1600×1000 in forced SwiftShader software rendering during 10× playback. This software-rendered configuration does **not** meet the proposed frame-rate target. The report is `.qa-baseline/v2-render-performance.json`; the captured scene is `.qa-baseline/v2-profiled-scene.png`. No native GPU/mobile performance claim is made, and original render geometry/presets were retained. Test on the intended GPU before a live demonstration; this short sample cannot establish general-device performance.
+
+## Publication comparisons
+
+These run the reported duration with constant initial flow, without reconstructing flight fan changes or ignition timing. They compare model output with publication summaries; they are **not independent validation**. Values are published / modeled, rounded:
+
+| Test | HRR basis | HRR (W) | Heat (kJ) | CO₂ rise (ppm) | CO rise (ppm) |
 | --- | --- | --- | --- | --- | --- |
-| IV-1 | Mean | 3150 / 2034 | 409 / 264 | 1390 / 906 | 80 / 36 |
-| VI-2 | Peak | 3217 / 3213 | 580 / 262 | 2800 / 1778 | 120 / 71 |
-| VI-3 | Peak | 3080 / 3067 | 1280 / 2002 | 8539 / 10705 | 308 / 428 |
-| VI-4 | Peak | 1507 / 1407 | 830 / 1499 | 8117 / 7926 | 320 / 317 |
+| IV-1 | Mean | 3150 / 707 | 409 / 92 | 1390 / 296 | 80 / 1 |
+| VI-2 | Peak | 3217 / 1108 | 580 / 100 | 2800 / 647 | 120 / 3 |
+| VI-3 | Peak | 3080 / 1496 | 1280 / 796 | 8539 / 4029 | 308 / 30 |
+| VI-4 | Peak | 1507 / 922 | 830 / 758 | 8117 / 3802 | 320 / 28 |
 
-The paper reports different calorimetry methods for some thin-fuel values; VI-2 also lists 409 kJ by fuel consumption. Its reported peak, duration and oxygen-calorimetry total do not form a consistent constant-HRR history. Published values are retained, not silently reconciled.
+**These discrepancies are substantial.** Conserving inventory and removing transferred assumptions has not produced a scientifically validated predictor. Model v2 is not refitted to make these summary rows pass. The interface displays the comparison residuals. Matching a peak alone would not establish agreement with the complete fire history.
 
-Partial-gravity results remain model extrapolations. Complete HRR/O₂ histories with timing/calibration, detector calibration and ground truth, habitat thermal/HVAC parameters, and matching partial-gravity measurements are still needed for independent validation. The UI identifies assumptions and keeps observed telemetry distinct from predicted telemetry. Instantaneous gas references are not calculated one-hour or 24-hour exposure averages.
+Saffire VI-2 reports different calorimetry methods, including 580 kJ by oxygen calorimetry and 409 kJ by fuel consumption. Published quantities remain distinct; inconsistencies are not silently reconciled. Full synchronized HRR/O₂/CO/CO₂ histories, fan/igniter schedules, calibration and uncertainty are still needed before rigorous fitting and held-out evaluation.
+
+## Scope of scientific support
+
+All 12 prepared material profiles are retained. Flaming reaction budgets are enabled for PMMA, SIBAL, paper and LDPE. The other eight profiles support exploratory heating/pyrolysis/aerosol behavior while their flaming chemistry is withheld. Complex fluorinated, silicon- and nitrogen-containing product chemistry, acid gases, deflagration and battery cell kinetics are not solved.
+
+Handbook-attributed values without exact verified tables stay labeled as assumed. Parameter exports include units, evidence class, source context, reference pressure, model version and uncertainty notes. The original source measurements and prepared material values are not rewritten to force agreement with model output. Some active coefficients remain empirical or exploratory, including spread, feedback efficiency, effective gasification heat, pre-fire aerosol generation, representative vapor molecular mass, wall properties, exchange geometry, detector response and agent capture.
+
+Buoyant correlations carry gravity and mixture conditions, but their partial-gravity application remains an extrapolation. A nominal lunar or Martian case is not proof that the tested spacecraft geometry behaves the same way. BASS rod/film results, Saffire slab/fabric results and partial-gravity wire results describe distinct configurations. No universal “fastest on the Moon,” blue-at-zero-g, or fan-off extinction rule is claimed.
+
+The three-volume network and detector delay/sensitivity relations approximate spatial transport; they do not solve a three-dimensional velocity field or establish a real detector's response time. Emissivity, opacity and visual flame color are not spectroscopic measurements. Solid-front/spread approximations still need independent experimental evaluation. Gas-network conservation tests do not establish full reacting-flow accuracy.
+
+## Preserved observed data and checked references
+
+The unmodified PSI experimental CSVs/metadata remain available for PSI-25, PSI-26, PSI-69, PSI-98, PSI-99, PSI-100, PSI-101 and PSI-102, with DOI, record/file versions, CC0 license declarations and SHA-256 checksums. The Saffire-I workbook and 1,215 extracted temperature/pressure/detector-voltage readings remain unchanged. Voltage is not converted into smoke concentration; workbook-relative time is not assigned an ignition origin.
+
+The plan records primary-source checks for [Saffire](https://ntrs.nasa.gov/citations/20240002981), [BASS-II](https://ntrs.nasa.gov/citations/20160000593), [SAME-2](https://ntrs.nasa.gov/citations/20130000422), [partial-gravity wires](https://discovery.ucl.ac.uk/id/eprint/10154634/), [NASA-STD-6001B Change 3](https://standards.nasa.gov/standard/NASA/NASA-STD-6001), and ISS extinguisher studies. The source registry now also includes the [NIST control-volume reference](https://nvlpubs.nist.gov/nistpubs/TechnicalNotes/NIST.TN.1889v1.pdf), [particle transport reference](https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=861149), [NASA-STD-3001 Volume 2 Revision F](https://standards.nasa.gov/standard/NASA/NASA-STD-3001_VOL_2) and JSC 20584 Revision D.
+
+The 3 mmHg CO₂ reference concerns nominal one-hour average **total** partial pressure. Instantaneous fire-generated rise is shown separately. The app does not declare emergency exposure violations from that reference or invent missing exposure history.

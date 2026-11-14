@@ -105,6 +105,15 @@ export interface FireConfig {
   autoResponse: boolean;
   crewAgent: SuppressionId | null;
   crewResponseS: number;
+  flowOrientation?: "concurrent" | "opposed" | "crossflow";
+}
+
+/** Conceptual supply-to-return axis, shared by detector paths and tracers. */
+export function roomFlowDirection(room: HabitatRoomConfig): [number, number, number] {
+  const z = room.size[2] >= room.size[0];
+  const duct = room.equipment.find(e => e.type === "duct");
+  const sign = (duct?.position[z ? 2 : 0] ?? -1) <= 0 ? 1 : -1;
+  return z ? [0, 0, sign] : [sign, 0, 0];
 }
 
 export function fuelPackageFor(object: InteriorEquipment): FuelPackage {
@@ -125,6 +134,15 @@ export function buildFireInput(
   const detector = nearestDetector(room, point);
   return {
     gravityG: scenario.gravityG,
+    flowOrientation: config.flowOrientation ?? "concurrent",
+    baselineCo2Ppm: 400,
+    spatial: {
+      origin: point, flow: roomFlowDirection(room), size: room.size,
+      detectors: room.equipment.filter(e => e.type === "detector").map(e => ({ id: e.id, position: e.position,
+        distanceM: Math.max(.4, Math.hypot(...e.position.map((v, i) => v - point[i]))),
+        downstream: e.position.reduce((sum, v, i) => sum + (v - point[i]) * roomFlowDirection(room)[i], 0) >= 0 })),
+      obstacles: room.equipment.filter(e => e.id !== object.id && ["rack", "cabinet", "bed"].includes(e.type)).map(e => ({ center: [e.position[0], e.position[1] + EQUIPMENT_HEIGHT[e.type] * e.scale / 2, e.position[2]], half: [.3 * e.scale, EQUIPMENT_HEIGHT[e.type] * e.scale / 2, .25 * e.scale] })),
+    },
     oxygenPct: scenario.oxygenPct,
     pressureKpa: scenario.pressurePsi * KPA_PER_PSI,
     ambientC: 22,

@@ -9,6 +9,7 @@
  */
 
 export const RETRIEVED_AT = "2026-11-14";
+export const FIRE_MODEL_VERSION = "2.0.0";
 
 export type SourceKind = "nasa" | "peer-reviewed" | "handbook" | "assumption";
 
@@ -26,6 +27,10 @@ export interface FireSource {
 }
 
 export const FIRE_SOURCES: FireSource[] = [
+  { id: "nist-cfast", short: "NIST CFAST equations", kind: "handbook", title: "CFAST Version 7 Volume 1: Technical Reference Guide", authors: "Peacock, McGrattan, Forney, Reneke", year: 2015, venue: "NIST TN 1889v1, chapters 2–5", url: "https://nvlpubs.nist.gov/nistpubs/TechnicalNotes/NIST.TN.1889v1.pdf", extracted: ["Conservation of mass/energy, ideal-gas control volumes, mass and enthalpy exchange.", "Buoyant plume correlations have a terrestrial validation domain; partial-gravity application is an extrapolation."] },
+  { id: "nist-smoke", short: "NIST smoke transport", kind: "peer-reviewed", title: "Generation and Transport of Smoke Components", authors: "Butler, Mulholland", year: 2004, venue: "Fire Technology 40, 149–176, equations 5–7", url: "https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=861149", extracted: ["Stokes–Einstein particle diffusion with Cunningham slip correction; settling differs from gas diffusion."] },
+  { id: "nasa-std-3001", short: "NASA-STD-3001 Vol 2 F", kind: "nasa", title: "NASA Spaceflight Human-System Standard Volume 2", authors: "NASA OCHMO", year: 2026, venue: "Revision F, V2 6004", url: "https://standards.nasa.gov/standard/NASA/NASA-STD-3001_VOL_2", extracted: ["Nominal average one-hour TOTAL CO₂ partial pressure ≤3 mmHg; not an instantaneous fire emergency threshold."] },
+  { id: "jsc-smac", short: "JSC 20584 Rev D", kind: "nasa", title: "Spacecraft Maximum Allowable Concentrations for Airborne Contaminants", authors: "NASA Johnson Space Center", year: 2026, venue: "Revision D, February 2026", url: "https://www.nasa.gov/wp-content/uploads/2026/02/jsc-20584-smacs-rev-d.pdf", extracted: ["CO references depend on exposure duration and atmosphere applicability; an instantaneous reading does not establish an exposure limit violation."] },
   {
     id: "saffire-vi",
     short: "Saffire VI (ICES-2024-365)",
@@ -279,8 +284,14 @@ export interface Cited<T = number> {
   value: T;
   source: string;
   note?: string;
+  evidence?: "measured" | "derived" | "calibrated" | "assumed";
+  locator?: string;
+  uncertainty?: string;
 }
 
 export function cite<T>(value: T, source: string, note?: string): Cited<T> {
-  return note ? { value, source, note } : { value, source };
+  const evidence = source === "model" || source === "sfpe" ? "assumed" : /fitted|scaled|sets |chosen/i.test(note ?? "") ? "calibrated" : /stoich| at .*kg|from the|per burning/i.test(note ?? "") ? "derived" : "measured";
+  return { value, source, ...(note ? { note } : {}), evidence,
+    uncertainty: "Not quantified for this application",
+    locator: source === "sfpe" ? "Exact handbook table not verified; retained exploratory value" : note ?? "See source registry; specimen match required" };
 }

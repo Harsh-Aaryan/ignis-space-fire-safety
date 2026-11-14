@@ -15,6 +15,7 @@ export interface IgnitionSource {
   electrical: boolean;
   /** Heat the source itself releases while active, W. */
   ownHeatW: number;
+  electricalModel?: { currentA: number; resistanceOhm: number };
   /** Applied to a thin or tapered edge, the way NASA rigs light thick samples. */
   edge?: boolean;
   sources: string[];
@@ -31,13 +32,14 @@ export const IGNITION_SOURCES: IgnitionSource[] = [
     areaM2: 0.0015,
     electrical: true,
     ownHeatW: 60,
+    electricalModel: { currentA: 20, resistanceOhm: 0.15 },
     sources: ["konno-2023", "nasa-std-6001b", "iss-fds-2001"],
   },
   {
     id: "short-circuit",
     name: "Short-circuit arc",
     description:
-      "A brief, very intense arc. It lights thin fuels and wire insulation at once but is over before a thick solid heats through.",
+      "A brief, very intense arc. Whether it ignites a fuel depends on deposited energy, duration, geometry and heat losses.",
     heatFluxKwM2: cite(150, "model", "Arc flux is far above any critical heat flux; duration is what limits it."),
     durationS: cite(1.5, "model"),
     areaM2: 0.0004,
@@ -112,7 +114,7 @@ export const FIRE_SENSORS: FireSensor[] = [
     name: "Photoelectric smoke detector",
     principle:
       "Laser light scattered by particles in the ventilation return. Strong on large particles, weak below about 0.3 µm.",
-    threshold: cite(1.0, "saffire-vi", "The far-field alarm level Saffire VI treats as relatively tight."),
+    threshold: cite(1.0, "model", "Illustrative threshold selected in the Saffire VI discussion; not a measured photoelectric transfer function."),
     unit: "mg/m³ equivalent",
     responseS: 5,
     heritage: "ISS U.S. segment, mounted on the ventilation filter intake ducts.",
@@ -199,7 +201,7 @@ export const SUPPRESSION_ACTIONS: SuppressionAction[] = [
     id: "vent-off",
     name: "Stop ventilation and isolate",
     mechanism:
-      "Shuts cabin fans and intermodule valves. With no gravity the flame loses its oxygen supply and quenches. With gravity, buoyancy keeps feeding it.",
+      "Shuts cabin fans and intermodule valves. Reduces forced oxygen transport. Diffusion, thermal expansion and hot fuel remain; shutdown does not guarantee extinction. In partial gravity, buoyancy can continue.",
     agentKg: null,
     dischargeS: null,
     caution: "Smoke stops reaching the detectors, and thick fuels can keep burning for minutes.",
@@ -244,11 +246,11 @@ export function suppressionById(id: SuppressionId): SuppressionAction {
 
 /** Crew exposure limits shown in the telemetry. */
 export const HAZARD_LIMITS = {
-  co1hPpm: cite(425, "saffire-vi", "1-hour SMAC, JSC 20584."),
-  co24hPpm: cite(100, "saffire-vi", "24-hour SMAC, JSC 20584."),
-  co2MmHg: cite(3, "saffire-vi", "1-hour average limit, NASA-STD-3001."),
+  co1hPpm: cite(425, "jsc-smac", "Duration-specific CO reference; atmosphere applicability must be checked."),
+  co24hPpm: cite(100, "jsc-smac", "24-hour CO reference, not an instantaneous alarm threshold."),
+  co2MmHg: cite(3, "nasa-std-3001", "Nominal one-hour average TOTAL partial pressure, not fire-generated rise or an emergency threshold."),
   smokeAlarmMgM3: cite(1, "saffire-vi"),
-  /** Below this oxygen partial pressure cognition degrades; a model flag, not a NASA limit. */
+  /** Exploratory low-oxygen reference, not an exposure or medical assessment. */
   o2LowKpa: cite(16, "model"),
 } as const;
 

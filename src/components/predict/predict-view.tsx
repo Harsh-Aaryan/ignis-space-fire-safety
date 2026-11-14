@@ -15,7 +15,7 @@ export function PredictView() {
   return (
     <div className="flex flex-col gap-4">
       <header>
-        <h1 className="font-cond text-[22px] font-semibold tracking-[0.04em]">Predictive analytics</h1>
+        <h1 className="font-cond text-[22px] font-semibold tracking-[0.04em]">Compare conditions</h1>
         <p className="max-w-3xl text-sm text-muted-foreground">
           Research-informed fire scenarios for {scenario.name}, with the earlier catalog analysis available below.
         </p>

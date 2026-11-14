@@ -8,6 +8,9 @@ import { PsiDatasets } from "@/components/research/psi-datasets";
 import { FIRE_MATERIALS, materialById } from "@/data/fire/materials";
 import { SAFFIRE_BENCHMARKS, SAME2_TABLE, WSTF_LIMITS } from "@/data/fire/options";
 import { FIRE_SOURCES, RETRIEVED_AT } from "@/data/fire/sources";
+import { materialParameterRecords } from "@/data/fire/parameters";
+import { reactionYields } from "@/lib/fire/chemistry";
+import { downloadText } from "@/lib/export-csv";
 import { useFireSimStore } from "@/stores/fire-sim-store";
 
 const field = "rounded border border-border bg-background px-3 py-2 text-sm";
@@ -40,6 +43,7 @@ export function MaterialsView() {
           The extracted tables below are independent of the synthetic demonstration catalog. Sources checked {RETRIEVED_AT}.
         </p>
       </header>
+      <div className="rounded border border-border bg-card p-4 text-sm leading-6"><strong>Evidence and model inputs</strong><p className="mt-1 text-muted-foreground">Original NASA observations are preserved below. Handbook entries without a precise verified table remain exploratory assumptions. Model v2 conserves nominal polymer elements; its CO₂ and water yields are calculated from that reaction budget. Partial-gravity spread and habitat transport remain extrapolations.</p></div>
       <PsiDatasets />
       <section className="rounded border border-border bg-card p-4" aria-label="Material properties">
         <div className="flex flex-wrap items-end justify-between gap-3">
@@ -53,9 +57,10 @@ export function MaterialsView() {
             const sim = useFireSimStore.getState();
             sim.reset();
             sim.patchConfig({ materialId: material.id });
-          }}>Use this material in Predict</Link>
+          }}>Compare this material</Link>
         </div>
         <p className="mt-3 text-sm">{material.use}</p>
+        <button type="button" className="mt-3 rounded border border-border px-3 py-2 text-sm" onClick={()=>downloadText(`ignis-${material.id}-parameters.json`,JSON.stringify({parameters:materialParameterRecords(material),activeReactionYields:reactionYields(material,21)},null,2),"application/json")}>Export parameter provenance</button>
         <p className="mt-2 text-sm text-muted-foreground">{material.nasaFinding}</p>
         <p className="mt-2 flex flex-wrap gap-2">{material.nasaSources.map((id) => <Cite key={id} id={id} />)}</p>
         <div className="mt-4 overflow-x-auto">
@@ -71,7 +76,7 @@ export function MaterialsView() {
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
           Oxygen limits are configuration-specific test results, not universal ignition thresholds.
-          The model applies a flow correlation and an assumed pressure correction to other conditions.
+          Each reference pressure is retained. A common White Sands pressure slope is no longer applied to every fuel. Reported yields above remain source inputs; the active reaction budget adjusts CO₂ to conserve carbon.
         </p>
       </section>
       <section className="rounded border border-border bg-card p-4">

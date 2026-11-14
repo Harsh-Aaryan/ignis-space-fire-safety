@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { Cite } from "@/components/fire/cite";
+import { AskIgnisButton } from "@/components/ai/scenario-assistant";
 import { useState } from "react";
 import { OxygenAirflowChart, RelevanceChart } from "@/components/charts/evidence-charts";
 import { Callout, EmptyState } from "@/components/dashboard/controls";
@@ -50,6 +52,18 @@ export function ResearchExplorer() {
 
   return (
     <div className="flex flex-col gap-4">
+      <section className="rounded border border-border bg-card p-5" aria-label="NASA fire safety evidence">
+        <div className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-xl font-medium">NASA fire safety evidence</h1><p className="mt-2 text-sm text-muted-foreground">Follow the evidence from the material to the modeled fire and its response.</p></div><AskIgnisButton prompt="Which NASA experiment supports this?" /></div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">{[
+          ["saffire-vi","Cabin-scale burning","Saffire links heat release with oxygen consumption, cabin gases and temperature. Its geometry and fan histories matter."],
+          ["bass-ii","Spread & extinction","BASS tests show how fuel shape, oxygen and low-speed airflow change flame spread and quenching."],
+          ["same-2","Smoke & detection","SAME characterizes particles from heated materials. Small aerosols can produce weak light-scattering signals."],
+          ["fwm-pfe","Fire response","ISS studies describe power/ventilation isolation and extinguisher test configurations; hardware response needs its own calibration."],
+        ].map(([id,title,text])=><article key={id} className="rounded border border-border p-3"><h2 className="text-base font-medium">{title}</h2><p className="my-2 text-sm leading-6 text-muted-foreground">{text}</p><Cite id={id}/></article>)}</div>
+        <Link href="/materials" className="mt-4 inline-flex rounded border border-primary px-3 py-2 text-sm text-ember-text">Open materials, original tables & observed telemetry →</Link>
+      </section>
+      <details className="rounded border border-border p-4"><summary className="cursor-pointer text-sm">Advanced catalog rankings and research filters</summary>
+      <div className="mt-4 space-y-4">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-cond text-[22px] font-semibold tracking-[0.04em]">Research Explorer</h1>
@@ -221,6 +235,7 @@ export function ResearchExplorer() {
           <ComparisonTable rows={compared} />
         )}
       </section>
+      </div></details>
     </div>
   );
 }

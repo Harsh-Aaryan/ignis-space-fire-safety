@@ -19,7 +19,7 @@ const KIND_LABEL = {
 export function Cite({ id, compact = false }: { id: string; compact?: boolean }) {
   const source = sourceById(id);
   const label = compact ? KIND_LABEL[source.kind] : source.short;
-  const className = `inline-flex items-center border px-1 py-px align-baseline font-cond text-[9px] leading-3 tracking-[0.06em] uppercase hover:bg-[#30373C] ${TONE[source.kind]}`;
+  const className = `inline-flex items-center border px-1 py-px align-baseline font-cond text-[11px] leading-3 tracking-[0.06em] uppercase hover:bg-[#30373C] ${TONE[source.kind]}`;
   if (source.url) {
     return (
       <a href={source.url} target="_blank" rel="noreferrer" title={`${source.title} (${source.year ?? "n.d."})`} className={className}>
@@ -46,12 +46,12 @@ export function CitedValue({
 }) {
   const value = cited.value;
   return (
-    <span className="inline-flex flex-wrap items-baseline justify-end gap-1.5" title={cited.note}>
+    <span className="inline-flex flex-wrap items-baseline justify-end gap-1.5" title={`${cited.note ?? ""} ? ${cited.locator ?? ""} ? ${cited.uncertainty ?? ""}`}>
       <span className="numeric">
         {value === null ? "—" : digits === undefined ? value : value.toFixed(digits)}
         {unit ? ` ${unit}` : ""}
       </span>
-      <Cite id={cited.source} compact />
+      <span className="text-[11px] text-muted-foreground">{cited.evidence ?? "unclassified"}</span><Cite id={cited.source} compact />
     </span>
   );
 }

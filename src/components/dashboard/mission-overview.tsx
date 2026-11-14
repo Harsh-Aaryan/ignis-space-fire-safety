@@ -1,6 +1,8 @@
 "use client";
 
 import Image from "next/image";
+import { useFireSimStore } from "@/stores/fire-sim-store";
+import { AskIgnisButton } from "@/components/ai/scenario-assistant";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, ArrowUpRight, ChevronDown } from "lucide-react";
@@ -73,6 +75,7 @@ export function MissionOverview() {
 
   return (
     <div className="ignis-overview">
+      <section className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded border border-border bg-card p-5" aria-label="Start here"><div><p className="text-xs text-ember-text">EXPLORE FIRE IN FREEFALL</p><h1 className="mt-1 text-xl font-medium">Choose a habitat. See how a fire behaves.</h1><p className="mt-2 text-sm text-muted-foreground">Set up a scenario, watch the physics, try a response and follow the NASA evidence.</p></div><div className="flex flex-wrap gap-3"><Link href="/firetwin" onClick={()=>useFireSimStore.getState().setOpen(true)} className="inline-flex min-h-10 items-center rounded bg-primary px-4 text-sm font-medium text-primary-foreground">Start a fire scenario →</Link><AskIgnisButton /></div></section>
       <header className="ignis-overview-hero">
         <figure className="ignis-overview-habitatFigure">
           <div id="habitat-preview" data-habitat={preview.image} className="ignis-overview-previewImage">

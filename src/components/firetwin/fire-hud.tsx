@@ -1,6 +1,5 @@
 "use client";
 
-import { HAZARD_LIMITS } from "@/data/fire/options";
 import { roomById } from "@/data/habitat-interiors";
 import { formatGravity } from "@/lib/format";
 import { ventilationCfm } from "@/lib/fire/scenario";
@@ -10,6 +9,7 @@ import { useMissionStore } from "@/stores/mission-store";
 
 const PHASE_LABEL: Record<FireState["phase"], string> = {
   heating: "Heating",
+  pyrolysis: "Pyrolysis",
   smoldering: "Smouldering",
   flaming: "Flaming",
   extinguished: "Flame out",
@@ -19,6 +19,7 @@ const PHASE_LABEL: Record<FireState["phase"], string> = {
 
 const PHASE_TONE: Record<FireState["phase"], string> = {
   heating: "text-[#E8C15A]",
+  pyrolysis: "text-[#E8C15A]",
   smoldering: "text-[#E8C15A]",
   flaming: "text-[#F67A6C]",
   extinguished: "text-[#3DCC8D]",
@@ -51,12 +52,12 @@ function Readout({
 }) {
   return (
     <div className="min-w-0 border-t border-[#343A40] px-2 py-1.5">
-      <dt className="font-cond text-[9px] tracking-[0.1em] text-[#8F9A9A] uppercase">{label}</dt>
-      <dd className={`numeric truncate text-[15px] leading-5 ${tone || "text-[#F1E8D5]"}`}>
+      <dt className="font-cond text-[11px] tracking-[0.1em] text-[#8F9A9A] uppercase">{label}</dt>
+      <dd className={`numeric truncate text-[17px] leading-5 ${tone || "text-[#F1E8D5]"}`}>
         {value}
-        {unit ? <span className="ml-1 font-cond text-[10px] text-[#8F9A9A]">{unit}</span> : null}
+        {unit ? <span className="ml-1 font-cond text-[12px] text-[#8F9A9A]">{unit}</span> : null}
       </dd>
-      {note ? <p className="truncate text-[9px] leading-3 text-[#8F9A9A]">{note}</p> : null}
+      {note ? <p className="truncate text-[11px] leading-3 text-[#8F9A9A]">{note}</p> : null}
     </div>
   );
 }
@@ -86,7 +87,7 @@ function Trace({ history }: { history: FireSample[] }) {
         <path d={path((point) => point.hrrW / peak)} fill="none" stroke="#E07A3D" strokeWidth="1.4" />
         <path d={path((point) => (point.o2Pct - o2Low) / (o2High - o2Low))} fill="none" stroke="#6BA3C7" strokeWidth="1.2" strokeDasharray="3 2" />
       </svg>
-      <figcaption className="flex justify-between font-cond text-[9px] tracking-[0.06em] text-[#8F9A9A] uppercase">
+      <figcaption className="flex justify-between font-cond text-[11px] tracking-[0.06em] text-[#8F9A9A] uppercase">
         <span className="text-[#E9A679]">Heat release, peak {formatPower(peak)}</span>
         <span className="text-[#9CC3DD]">O₂ {o2Low.toFixed(1)}–{o2High.toFixed(1)} %</span>
       </figcaption>
@@ -108,21 +109,18 @@ export function FireHud() {
 
   const co = snapshot?.coPpm ?? 0;
   const co2 = snapshot?.co2RiseMmHg ?? 0;
-  const coTone = co >= HAZARD_LIMITS.co1hPpm.value ? "text-[#F67A6C]" : co >= HAZARD_LIMITS.co24hPpm.value ? "text-[#E8C15A]" : "";
-  const co2Tone = co2 >= HAZARD_LIMITS.co2MmHg.value ? "text-[#F67A6C]" : "";
-  const margin = snapshot ? snapshot.localO2Pct - snapshot.locPct : null;
 
   return (
     <section
       aria-label="Fire scenario telemetry"
       data-testid="fire-hud"
-      className="pointer-events-none relative z-20 mx-3 mb-3 shrink-0 border border-[#465057] bg-[#171C20]/92 md:absolute md:top-[150px] md:right-3 md:mx-0 md:mb-0 md:w-[260px] xl:right-[392px]"
+      className="pointer-events-none relative z-20 mx-3 mb-3 shrink-0 border border-[#465057] bg-[#171C20]/92 md:absolute md:top-[160px] md:right-3 md:mx-0 md:mb-0 md:w-[260px] xl:right-[392px]"
     >
       <header className="flex items-center justify-between gap-2 px-2 py-1.5">
-        <p className="font-cond text-[10px] tracking-[0.14em] text-[#B89F7A] uppercase">Live telemetry</p>
+        <p className="font-cond text-[12px] tracking-[0.14em] text-[#B89F7A] uppercase">Live telemetry</p>
         <p className="numeric text-[12px] text-[#F1E8D5]">
           T+{clock(snapshot?.t ?? 0)}
-          <span className="ml-1.5 font-cond text-[9px] text-[#8F9A9A] uppercase">
+          <span className="ml-1.5 font-cond text-[11px] text-[#8F9A9A] uppercase">
             {status === "running" ? `${speed}×` : status}
           </span>
         </p>
@@ -132,12 +130,12 @@ export function FireHud() {
         {snapshot?.extinctionCause ? <span className="ml-1 text-[#A39E96] normal-case tracking-normal">· {snapshot.extinctionCause}</span> : null}
       </p>
       <dl className="grid grid-cols-3 md:grid-cols-2">
-        <Readout label="Heat release" value={snapshot ? formatPower(snapshot.hrrW) : "0 W"} note={snapshot ? `peak ${formatPower(snapshot.peakHrrW)}` : undefined} />
+        <Readout label="Fire power (HRR)" value={snapshot ? formatPower(snapshot.hrrW) : "0 W"} note={snapshot ? `peak ${formatPower(snapshot.peakHrrW)}` : undefined} />
         <Readout
           label="Oxygen"
           value={(snapshot?.o2Pct ?? scenario.oxygenPct).toFixed(2)}
           unit="%"
-          note={margin === null ? undefined : `${margin >= 0 ? "+" : ""}${margin.toFixed(1)} vs ${snapshot!.locPct.toFixed(1)} % limit`}
+          note={snapshot ? `near fuel ${snapshot.localO2Pct.toFixed(1)}%` : undefined}
         />
         <Readout
           label="Cabin temp"
@@ -152,8 +150,8 @@ export function FireHud() {
           unit="CFM"
           note={`${(speedMs * 100).toFixed(1)} cm/s`}
         />
-        <Readout label="CO" value={co.toFixed(0)} unit="ppm" tone={coTone} note={`1 h limit ${HAZARD_LIMITS.co1hPpm.value}`} />
-        <Readout label="CO₂ rise" value={co2.toFixed(2)} unit="mmHg" tone={co2Tone} note={`1 h limit ${HAZARD_LIMITS.co2MmHg.value}`} />
+        <Readout label="CO" value={co.toFixed(0)} unit="ppm"  note="Instantaneous; exposure average unavailable" />
+        <Readout label="CO₂ rise" value={co2.toFixed(2)} unit="mmHg"  note={snapshot ? `total ${snapshot.co2TotalMmHg.toFixed(2)} mmHg` : "400 ppm assumed baseline"} />
         <Readout
           label="Smoke"
           value={(snapshot?.smokeMgM3 ?? 0).toFixed(1)}
@@ -162,7 +160,7 @@ export function FireHud() {
         />
       </dl>
       <Trace history={history} />
-      <p className="border-t border-[#343A40] px-2 py-1 text-[9px] text-[#8F9A9A]">Instantaneous gases; exposure averages are not calculated.</p>
+      <p className="border-t border-[#343A40] px-2 py-1 text-[11px] text-[#8F9A9A]">Instantaneous gases; exposure averages are not calculated.</p>
     </section>
   );
 }

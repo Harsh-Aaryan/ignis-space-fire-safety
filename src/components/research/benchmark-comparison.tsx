@@ -10,7 +10,7 @@ export function BenchmarkComparison() {
     <summary className="cursor-pointer text-sm">Compare the model with these published summaries</summary>
     <p className="mt-3 text-xs text-muted-foreground">
       Each cell shows published / modeled values. The model runs for the reported duration with constant initial flow.
-      These are calibration cases, not independent validation. Disagreement in total heat and gas yields is retained;
+      These are comparison cases, not independent validation. Disagreement in total heat and gas yields is retained;
       matching a peak does not validate the full fire history or detector response.
     </p>
     <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-xs" aria-label="Saffire model comparison">
@@ -21,7 +21,7 @@ export function BenchmarkComparison() {
       </tr>)}</tbody>
     </table></div>
     <button type="button" className="mt-3 border border-border px-3 py-2 text-xs" onClick={() => downloadText("ignis-saffire-comparison.json", JSON.stringify({
-      scope: "Calibration summary comparison; not independent validation or a reconstructed flight protocol",
+      scope: "Model v2 summary comparison; not independent validation or a reconstructed flight protocol",
       source: "https://ntrs.nasa.gov/citations/20240002981",
       rows,
     }, null, 2), "application/json")}>Export comparison (JSON)</button>

@@ -30,8 +30,11 @@ for (const habitat of habitats) {
     await page.getByRole("tab", { name: "Fire scenario", exact: true }).click();
     await page.getByLabel("Fire origin", { exact: true }).selectOption(habitat.object);
     await expect.poll(() => projected(page, habitat.object), { timeout: 60000 }).toBeTruthy();
+    await page.getByRole("button", { name: /3.*Respond/ }).click();
+    await page.getByLabel("Ventilation speed", { exact: true }).fill("0.2");
+    await page.getByRole("button", { name: /1.*Set up/ }).click();
     await page.getByRole("button", { name: "60×", exact: true }).click();
-    await page.getByRole("button", { name: "Start fire scenario", exact: true }).click();
+    await page.getByRole("button", { name: "Start scenario", exact: true }).click();
     await expect(page.getByTestId("fire-status")).toContainText("flaming", { timeout: 60000 });
     await page.getByRole("button", { name: "Pause", exact: true }).click();
     await expect(page.getByTestId("fire-hud")).toContainText("paused");
@@ -46,6 +49,7 @@ for (const habitat of habitats) {
     expect(Math.abs(point!.x)).toBeLessThan(1);
     expect(Math.abs(point!.y)).toBeLessThan(1);
 
+    await page.getByRole("button", { name: /3.*Respond/ }).click();
     await page.getByRole("button", { name: "Remove power", exact: true }).click();
     await page.getByRole("button", { name: habitat.agent, exact: true }).click();
     await page.getByRole("button", { name: "Resume", exact: true }).click();
@@ -58,7 +62,7 @@ for (const habitat of habitats) {
     await page.screenshot({ path: info.outputPath(`${habitat.id}-suppressed.png`) });
     await page.getByLabel("Fire scenario", { exact: true }).getByRole("button", { name: "Reset", exact: true }).click();
     await expect(page.getByTestId("fire-status")).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Start fire scenario", exact: true })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Start scenario", exact: true })).toBeEnabled();
     await page.getByRole("button", { name: "Return to exterior", exact: true }).click();
     await expect(page.getByRole("button", { name: "Orbit view", exact: true })).toHaveAttribute("aria-pressed", "true");
     expect(errors).toEqual([]);
@@ -71,14 +75,15 @@ test("NASA material selection reaches the same forecast and FireTwin setup", asy
   await page.getByLabel("Research material", { exact: true }).selectOption("sibal");
   await expect(page.getByRole("table", { name: "Extracted Saffire measurements" })).toContainText("VI-3");
   await expect(page.getByRole("table", { name: "White Sands test results" })).toContainText("Kapton");
-  await page.getByRole("link", { name: "Use this material in Predict", exact: true }).click();
+  await page.getByRole("link", { name: "Compare this material", exact: true }).click();
   await expect(page.getByLabel("Prediction material", { exact: true })).toHaveValue("sibal");
   await page.getByLabel("Forecast origin", { exact: true }).selectOption("lunar-habitat-lab-bench-0");
   await expect(page.getByLabel("Prediction material", { exact: true })).toHaveValue("sibal");
   await page.getByLabel("Prediction ignition source", { exact: true }).selectOption("hot-wire");
   await expect(page.getByRole("table", { name: "Gravity regime comparison" })).toContainText("Mars / 0.38 g");
   await page.screenshot({ path: info.outputPath("shared-forecast.png") });
-  await page.getByRole("link", { name: "Open this scenario in FireTwin", exact: true }).click();
+  await page.getByRole("link", { name: "Open in 3D simulation", exact: true }).click();
+  await expect(page).toHaveURL(/firetwin$/);
   await expect(page.getByRole("tab", { name: "Fire scenario", exact: true })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByLabel("Material", { exact: true })).toHaveValue("sibal");
   await expect(page.getByLabel("Ignition source", { exact: true })).toHaveValue("hot-wire");
@@ -102,7 +107,7 @@ test("narrow-screen fire controls and telemetry work without WebGL", async ({ pa
   await page.getByRole("tab", { name: "Fire scenario", exact: true }).click();
   await page.getByLabel("Fire origin", { exact: true }).selectOption("lunar-habitat-lab-bench-0");
   await page.getByRole("button", { name: "60×", exact: true }).click();
-  await page.getByRole("button", { name: "Start fire scenario", exact: true }).click();
+  await page.getByRole("button", { name: "Start scenario", exact: true }).click();
   await expect(page.getByTestId("fire-status")).toContainText("flaming");
   await page.getByRole("button", { name: "Pause", exact: true }).click();
   await expect(page.getByTestId("fire-hud")).toContainText("paused");
@@ -116,11 +121,11 @@ test("research subviews stay grouped and every data route responds", async ({ pa
   }
   await page.goto("/materials", { waitUntil: "domcontentloaded" });
   const navigation = page.getByRole("navigation", { name: "Modules", exact: true }).first();
-  await expect(navigation.getByRole("link")).toHaveCount(5);
-  await expect(navigation.getByRole("link", { name: "Research", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(navigation.getByRole("link")).toHaveCount(4);
+  await expect(navigation.getByRole("link", { name: "NASA research", exact: true })).toHaveAttribute("aria-current", "page");
   await page.getByRole("navigation", { name: "Research views", exact: true }).getByRole("link", { name: "Gravity coverage", exact: true }).click();
   await expect(page).toHaveURL(/gravity-bridge$/);
-  await expect(navigation.getByRole("link", { name: "Research", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(navigation.getByRole("link", { name: "NASA research", exact: true })).toHaveAttribute("aria-current", "page");
 });
 
 test("original NASA experiment tables load, filter and download on a narrow screen", async ({ page, request }, info) => {

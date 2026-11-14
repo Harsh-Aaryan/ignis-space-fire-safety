@@ -4,13 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Box,
-  ChartLine,
   FileText,
   LayoutDashboard,
   Library,
   Menu,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { AskIgnisButton, ScenarioAssistant } from "@/components/ai/scenario-assistant";
 import { PrototypeBadge, Wordmark } from "@/components/design/marks";
 import { ConditionControls } from "@/components/dashboard/controls";
 import { HabitatSwitcher } from "@/components/layout/habitat-switcher";
@@ -25,17 +25,15 @@ import { FUEL_LABEL } from "@/lib/labels";
 import { formatAir, formatGravity, formatOxygen, formatPsi } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useMissionStore } from "@/stores/mission-store";
-import { syncFireMission, useFireSimDriver } from "@/stores/fire-sim-store";
+import { syncFireMission, useFireSimDriver, useFireSimStore } from "@/stores/fire-sim-store";
 
 const NAV = [
-  { href: "/", label: "Overview", short: "Home", icon: LayoutDashboard },
-  { href: "/research", label: "Research", short: "Research", icon: Library },
-  { href: "/predict", label: "Predict", short: "Predict", icon: ChartLine },
-  { href: "/firetwin", label: "FireTwin", short: "Twin", icon: Box },
-  { href: "/reports", label: "Reports", short: "Reports", icon: FileText },
+  { href: "/", label: "Home", short: "Home", icon: LayoutDashboard },
+  { href: "/firetwin", label: "Fire simulation", short: "Simulate", icon: Box },
+  { href: "/research", label: "NASA research", short: "Research", icon: Library },
+  { href: "/reports", label: "Results", short: "Results", icon: FileText },
 ];
-
-const MOBILE = NAV.filter((item) => item.href !== "/");
+const MOBILE = NAV;
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   useFireSimDriver();
@@ -81,6 +79,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
+      <ScenarioAssistant />
       <nav className="no-print fixed inset-x-0 bottom-0 z-40 flex h-14 border-t border-[#2A2D32] bg-[#16181C] md:hidden" aria-label="Modules">
         {MOBILE.map((item) => {
           const active = navActive(pathname, item.href);
@@ -89,6 +88,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => { if (item.href === "/firetwin") useFireSimStore.getState().setOpen(true); }}
               aria-current={active ? "page" : undefined}
               className={cn(
                 "flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 font-cond text-[10px] tracking-[0.08em] uppercase",
@@ -164,6 +164,7 @@ function Nav({ pathname }: { pathname: string }) {
 
 function navActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
+  if (href === "/firetwin" && pathname === "/predict") return true;
   if (href === "/research") return stageForPath(pathname) === "research";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -192,8 +193,6 @@ function crumb(pathname: string, missionId: string): string {
 export function TopBar({ pathname }: { pathname: string }) {
   const scenario = useMissionStore((state) => state.scenario);
   const equipment = useMissionStore((state) => state.selectedEquipment);
-  const reset = useMissionStore((state) => state.resetScenario);
-  const save = useMissionStore((state) => state.saveScenario);
   const [open, setOpen] = useState(false);
   const tail =
     pathname.startsWith("/firetwin") && equipment
@@ -228,14 +227,9 @@ export function TopBar({ pathname }: { pathname: string }) {
         </span>
       </p>
       <div className="ml-auto flex items-center gap-2">
+        <AskIgnisButton />
         <DataDrawer />
-        <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={() => save(`${scenario.name} scenario`)}>
-          Save
-        </Button>
-        <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={reset}>
-          Reset
-        </Button>
-        <PrototypeBadge researchModel={pathname === "/firetwin" || pathname === "/predict" || pathname === "/materials"} />
+        <span className="hidden 2xl:inline"><PrototypeBadge researchModel={pathname === "/firetwin" || pathname === "/predict" || pathname === "/materials"} /></span>
       </div>
     </header>
   );

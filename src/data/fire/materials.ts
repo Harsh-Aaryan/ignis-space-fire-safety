@@ -121,7 +121,7 @@ export const FIRE_MATERIALS: FireMaterial[] = [
     smokeCountMeanUm: cite([0.128, 0.276], "same-2", "Lamp wick (cellulose)."),
     smokeMassMeanUm: cite([0.258, 0.398], "same-2", "Lamp wick (cellulose)."),
     refMassFluxGm2s: cite(2.4, "model", "Sets the burnout time behind the spreading front."),
-    refSpreadMmS: cite(SIBAL_SPREAD, "saffire-vi", "IV-1: 50 cm burned in 130 s at 22 % O₂, 100 kPa, 20 cm/s."),
+    refSpreadMmS: cite(SIBAL_SPREAD, "saffire-vi", "Derived 50 cm / 130 s travel estimate at 22 percent O2, 100 kPa, 20 cm/s; not a measured front-position history."),
     drips: false,
     nasaFinding:
       "Reached a steady spread rate and a limiting flame size in every Saffire flight. Quenched in BASS-II when flow fell from 5 to 2.2 cm/s at 18.7 % O₂.",
@@ -205,7 +205,7 @@ export const FIRE_MATERIALS: FireMaterial[] = [
     refSpreadMmS: spreadFromAreal(0.55),
     drips: false,
     nasaFinding:
-      "Will not sustain a flame in any habitat atmosphere, but an overheated wire still makes fine smoke. Like Kapton, that smoke is small and hard to detect by light scattering.",
+      "The cited PTFE specimen had a high 1 g oxygen limit. This does not establish nonflammability in every atmosphere. Overheated PTFE made fine aerosols in SAME-2; fluorinated combustion chemistry is not modeled.",
     nasaSources: ["same-2", "hirsch-2011"],
   },
   {
@@ -221,7 +221,7 @@ export const FIRE_MATERIALS: FireMaterial[] = [
     arealFuelKgM2: cite(0.138, "konno-2023", "0.15 mm insulation (0.5 mm core, 0.8 mm outer) at 920 kg/m³."),
     specificHeatKJkgK: 2.3,
     loc1gPct: cite(18.0, "konno-2023", "Limits sat between 16 and 21 % O₂ depending on core and flow."),
-    lowFlowMarginPct: cite(1.5, "konno-2023", "NiCr-core limit falls as gravity falls; copper-core is nearly flat."),
+    lowFlowMarginPct: cite(1.5, "model", "Assumed magnitude; Konno supports core-dependent trends, not this extracted numerical margin."),
     co2Yield: cite(2.76, "sfpe"),
     coYield1g: cite(0.024, "sfpe"),
     sootYield: cite(0.06, "sfpe"),
@@ -394,7 +394,7 @@ export const FIRE_MATERIALS: FireMaterial[] = [
     refSpreadMmS: spreadFromAreal(0.9),
     drips: true,
     nasaFinding:
-      "Passes Test 1 in air but sits close to the 24 % oxygen typical of the ISS, and well inside a 30–34 % exploration atmosphere.",
+      "White Sands reported configuration-dependent nylon oxygen limits. A grade, width or atmosphere change requires a new applicability assessment.",
     nasaSources: ["hirsch-2011", "iss-fds-2001"],
   },
 ];

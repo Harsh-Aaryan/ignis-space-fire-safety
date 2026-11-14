@@ -1,5 +1,6 @@
 "use client";
 
+import { RunReview } from "@/components/fire/run-review";
 import { useState } from "react";
 import { CoverageChart, RelevanceChart } from "@/components/charts/evidence-charts";
 import { Button } from "@/components/ui/button";
@@ -33,9 +34,9 @@ export function ReportView() {
     <div className="flex flex-col gap-4">
       <header className="no-print flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-cond text-[22px] font-semibold tracking-[0.04em]">Mission report</h1>
+          <h1 className="font-cond text-[22px] font-semibold tracking-[0.04em]">Results & saved scenarios</h1>
           <p className="text-sm text-muted-foreground">
-            Same scenario as the rest of IGNIS. Exports are marked synthetic demonstration data.
+            Review the fire run, export its model inputs and save your cabin setup. Catalog exports are labeled separately.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -55,6 +56,8 @@ export function ReportView() {
           </Button>
         </div>
       </header>
+      <div className="rounded border border-border bg-card p-4"><h2 className="mb-4 text-lg font-medium">Latest fire run</h2><RunReview /></div>
+      <details><summary className="cursor-pointer text-sm text-muted-foreground">Research catalog report (demonstration records)</summary>
       <article className="report-sheet rounded-xl border border-border bg-card p-5">
         <p className="text-[11px] tracking-wide text-amber uppercase">
           {dataMode === "verified" ? "Prototype — verified NASA records, limited subset" : "Prototype — synthetic demonstration data"}
@@ -122,7 +125,7 @@ export function ReportView() {
           Rankings, coverage, and priorities are heuristics over that catalog. They are not hazard
           probabilities and they do not certify a habitat, rover, or detector.
         </p>
-      </article>
+      </article></details>
       <section className="no-print rounded-xl border border-border bg-secondary p-4">
         <h2 className="text-lg font-medium">Save and load scenarios</h2>
         <p className="mt-1 text-sm text-muted-foreground">

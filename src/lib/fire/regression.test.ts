@@ -13,8 +13,10 @@ describe("fire numerical and conservation regressions", () => {
     state.phase = "flaming";
     state.pyroLengthM = setup.fuel.lengthM;
     state.pyroWidthM = setup.fuel.widthM;
-    state.room.o2 = 1e-5;
-    const availableJ = state.room.o2 * 0.032 * 13.1e6;
+    state.room.o2 = 0;
+    state.rest.o2 = 0;
+    state.local.o2 = 1e-5;
+    const availableJ = state.local.o2 * 0.032 * 13.1e6;
     for (let i = 0; i < 20; i++) stepFire(state, setup, 0.25);
     expect(state.totalHeatJ).toBeLessThanOrEqual(availableJ + 1e-9);
     expect(state.fuelBurnedKg * setup.material.heatOfCombustionMJkg.value * 1e6).toBeCloseTo(state.totalHeatJ, 8);

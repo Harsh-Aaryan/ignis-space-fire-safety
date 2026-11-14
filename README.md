@@ -4,6 +4,22 @@ The generated demonstration catalog, rankings, and recommendations remain synthe
 
 # IGNIS
 
+## Fire model v2 and guided workflow
+
+Navigation is **Home · Fire simulation · NASA research · Results**. Fire simulation uses **Set up → Run → Respond → Review**; comparison remains at `/predict`. The original Moon, Mars and Gateway geometry and public assets are retained.
+
+- `thermal.ts` implements implicit one-dimensional solid conduction, with thin-layer heating for films/ignition edges. Surface convection and radiation retain thermal history.
+- `chemistry.ts` balances carbon, hydrogen and oxygen for nominal PMMA, cellulose and polyethylene. CO₂ is adjusted after CO and soot partitioning. Water and unburned vapor are tracked.
+- `transport.ts` exchanges species and energy in a finite-volume source/room/connected-habitat network. Gas pressure follows the ideal-gas inventory. Recirculation introduces no fresh oxygen. Particle diffusion uses Stokes–Einstein with slip correction.
+- Finite CO₂, water and Halon doses enter the same network. Water evaporation is bounded by captured water and accessible surface heat. Spray capture and chemical inhibition remain assumptions.
+- The shader flame envelope uses modeled extent, airflow and soot tendency. Smoke follows a bounded history of solver transport steps. Physical display scale is the default; **Enhance visibility** explicitly enlarges the envelope. Original room lighting is retained.
+- **Ask IGNIS** is a global scenario assistant using structured explanations, the live snapshot and actual source citations. It can run a copied ventilation comparison. A generative AI provider is not connected. The older synthetic briefing remains an explicitly labeled research demonstration.
+- Results exports include model version, exact inputs, evidence status, telemetry, agent inventories and events. Materials exports include parameter units, provenance, reference pressure and uncertainty notes.
+
+Quantitative flaming chemistry is currently limited to the four PMMA/cellulose/polyethylene profiles (`pmma`, `sibal`, `paper`, `ldpe-wire`). The other eight profiles remain available for exploratory heating/pyrolysis and aerosol detection; their flaming chemistry is withheld. Handbook values without verified property-level tables stay labeled as assumed. Model v2 has substantial Saffire comparison residuals and has not established predictive accuracy. See [VALIDATION.md](VALIDATION.md) and the [implementation plan](SCIENCE-UX-PLAN.md).
+
+Reproduce the numerical report with `node scripts/audit-fire-model.cjs`. It writes `.qa-baseline/v2-physics-audit.json` without fitting any coefficients or changing source data.
+
 Intelligent Grounded Navigation of Investigation Science.
 
 Prototype for the NASA Space Apps Challenge 2026 challenge [Flame in Freefall](https://www.spaceappschallenge.org/2026/challenges/flame-in-freefall/).
@@ -16,7 +32,7 @@ IGNIS connects combustion evidence to a reduced-order fire model and the existin
 
 ## What you can do
 
-One cabin scenario connects the workflow: **Research → Predict → FireTwin → Reports**. Overview remains the entry point; the older research routes remain accessible as Research subviews.
+One cabin scenario connects **Set up → Run → Respond → Review**. Research is accessible throughout; older route URLs remain available.
 
 1. **Mission Overview** — Moon, Mars, or the Gateway-inspired lunar-orbit habitat. Oxygen, total cabin pressure, airflow, and material carry across a switch. Gravity follows the habitat: Moon 0.165 g, Mars 0.38 g, Gateway and ISS ~0 g, Earth 1 g. pO₂ is oxygen fraction times total cabin pressure. ISS and Earth are comparison regimes, not extra FireTwin scenes.
 2. **Research** — investigate the indexed studies and demonstration catalog. Materials and measurements, Gravity coverage (`/gravity-bridge`), and Gaps and briefing (`/firelab`) are subviews. The Materials page exposes property provenance and extracted tables, with a comparison of Saffire summaries against the model. Matching a calibrated peak does not establish agreement in total heat or detector response.
@@ -99,7 +115,7 @@ src/design/palette.ts
 
 UI code calls `getServices()` and `analyzeMission()`. It does not import fixture rows directly. `EvidenceRepository`, `ResearchAssistant`, and `ScenarioRepository` are the swap points for later NASA PSI records, a database, and a retrieval-augmented model.
 
-The fire engine is separate from the synthetic evidence repository. `buildFireInput()` maps the selected equipment and shared cabin conditions into physical units. The AppShell owns the simulation clock and synchronizes edits from every page: changing habitat, initial oxygen, pressure or gravity resets the run; changing airflow changes the fan target. Closing the inspector or visiting another app route keeps the clock mounted. Changing the simulation speed changes time advancement without changing the integration step (0.25 s).
+The fire engine is separate from the synthetic evidence repository. `buildFireInput()` maps the selected equipment and shared cabin conditions into physical units. The AppShell owns the simulation clock and synchronizes edits from every page: changing habitat, initial oxygen, pressure or gravity resets the run; changing airflow changes the fan target. Closing the inspector or visiting another app route keeps the clock mounted. The runtime requests 0.25 s steps; the numerical core bounds its coupling substeps to 0.125 s. Playback speed changes time advancement rather than the solver step.
 
 Camera bounds exclude the visual effects subtree, so uninitialized or expired smoke particles cannot move room framing. Gateway interior camera placement is constrained to the selected module. The exterior model files and habitat geometry are unchanged.
 
@@ -109,7 +125,7 @@ Saved scenarios use `localStorage`. The live scenario, weights, filters, activit
 
 `npm test` covers relevance scoring, missing-value handling, weight renormalization, catalog integrity (no DOIs, fictional run ids, no lunar or Martian rows), coverage, heatmap counts, gap discovery, recommendation ranking, and the demo assistant.
 
-It also covers fire calibration sanity checks, ignition and extinction behavior, oxygen/energy limits, complete extinguisher doses, exact action timing, telemetry snapshot independence, shared scenario synchronization, and stable navigation bounds with particle effects. Vitest uses worker threads for compatibility with the restricted Windows environment.
+It also covers gas-network energy conservation, elemental/product balances, retained vapor mass, ignition and cooling, timestep convergence, finite agent doses, exact action timing, telemetry snapshot independence, scenario synchronization and stable camera bounds. Comparisons with Saffire are reported separately from verification tests. Vitest uses worker threads for compatibility with the restricted Windows environment.
 
 With a production server running, use `npm run test:e2e`. Playwright defaults to installed Microsoft Edge and software WebGL; set `IGNIS_TEST_URL` or `PLAYWRIGHT_CHANNEL` to override. `tests/fire-scenario.spec.ts` tests ignition, pause, suppression and reset in all three habitats, the material-to-forecast-to-FireTwin handoff, grouped navigation, and narrow-screen simulation without WebGL. Existing interior navigation tests remain in `tests/firetwin.spec.ts`. The `zz-*` screenshot scripts are optional and run when `SHOT_DIR` is supplied. Screenshots and traces are written under ignored `test-results/`.
 
