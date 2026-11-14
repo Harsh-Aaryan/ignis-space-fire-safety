@@ -1,0 +1,524 @@
+{
+  "retrievedAt": "2026-11-12",
+  "retrievalApi": "https://ntrs.nasa.gov/api/citations/{id}",
+  "searchApi": "https://ntrs.nasa.gov/api/citations/search",
+  "portal": "https://ntrs.nasa.gov/",
+  "psiPortalNotedNotIngested": "https://science.nasa.gov/physical-sciences-informatics-psi/",
+  "psiNote": "The PSI site was reached on 2026-11-12 (psi.nasa.gov redirects to science.nasa.gov/physical-sciences-informatics-psi). No PSI dataset files or investigation tables were downloaded in this pass.",
+  "marsReference": {
+    "label": "Exterior Martian atmosphere context, not a cabin or experiment measurement",
+    "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html",
+    "retrievedAt": "2026-11-12",
+    "surfacePressure": "6.36 mb at mean radius (fact sheet text; variable 4.0 to 8.7 mb)",
+    "usedFor": "Distinguish exterior Mars atmosphere from the pressurized habitat interior. Not indexed as an experimental run."
+  },
+  "records": [
+    {
+      "id": "20170000230",
+      "source": "ntrs",
+      "title": "Operation and Development Status of the Spacecraft Fire Experiments (Saffire)",
+      "authors": [
+        "Ruff, Gary A.",
+        "Urban, David L."
+      ],
+      "year": "2019",
+      "stiType": "Conference Paper",
+      "keywords": [
+        "Fire Safety",
+        "Life Support",
+        "microgravity"
+      ],
+      "abstractExcerpt": "Since 2012, a series of Spacecraft Fire Experiments (Saffire) have been under development by the Spacecraft Fire Safety Demonstration (SFS Demo) project, funded by NASA's Advanced Exploration Systems Division. The overall objective of this project is to reduce the uncertainty and risk associated with the design of spacecraft fire safety systems for NASA's exploration missions. The approach to achieving this goal has been to define, develop, and conduct experiments that address gaps in spacecraft fire safety knowledge and capabilities identified by NASA's Fire Safety System Maturation Team. The Spacecraft Fire Experiments (Saffire-I, -II, and -III) are material flammability tests at length sc",
+      "abstractTruncated": true,
+      "sourceUrl": "https://ntrs.nasa.gov/citations/20170000230",
+      "apiUrl": "https://ntrs.nasa.gov/api/citations/20170000230",
+      "indexHint": "Saffire",
+      "priority": "A",
+      "retrievedAt": "2026-11-12",
+      "measurementsExtracted": false,
+      "note": "Public NTRS citation metadata and a truncated abstract excerpt. No oxygen, pressure, gravity, airflow, geometry, or outcome numbers were extracted. An abstract is not a measured dataset.",
+      "hintBasis": "title"
+    },
+    {
+      "id": "20260001600",
+      "source": "ntrs",
+      "title": "Spacecraft Fire Safety Predictions using Verified Saffire Model",
+      "authors": [
+        "Justin Niehaus",
+        "David Urban",
+        "Gary Ruff",
+        "Gordon Berger",
+        "John Easton"
+      ],
+      "year": "2026",
+      "stiType": "Conference Paper",
+      "keywords": [
+        "Fire Safety",
+        "Modeling and Simulation"
+      ],
+      "abstractExcerpt": "A model developed using Fire Dynamics Simulator (FDS) that aimed to determine the effect of a fire in a spacecraft was validated by data collected during the Saffire campaign. The model used inlet and outlet temperatures and CO<sub>2</sub> concentrations of the Saffire payload where fire spread was taking place to determine the amount of heat and combustion products that made it into Northrop Grumman\u2019s Cygnus vehicle. The model was then validated using six remote sensors in various places in the vehicle, as well as a far field device (FFD) in the open zenith section that was representative of average vehicle values. The current work focuses on using the model to predict fire safety scenarios",
+      "abstractTruncated": true,
+      "sourceUrl": "https://ntrs.nasa.gov/citations/20260001600",
+      "apiUrl": "https://ntrs.nasa.gov/api/citations/20260001600",
+      "indexHint": "Saffire",
+      "priority": "A",
+      "retrievedAt": "2026-11-12",
+      "measurementsExtracted": false,
+      "note": "Public NTRS citation metadata and a truncated abstract excerpt. No oxygen, pressure, gravity, airflow, geometry, or outcome numbers were extracted. An abstract is not a measured dataset.",
+      "hintBasis": "title"
+    },
+    {
+      "id": "20220002714",
+      "source": "ntrs",
+      "title": "Model Development of Large-Scale Spacecraft Fires During the Saffire-IV Experiments",
+      "authors": [
+        "John Brooker",
+        "Justin Niehaus"
+      ],
+      "year": "2022",
+      "stiType": "Conference Paper",
+      "keywords": [
+        "Modeling",
+        "Fire Safety",
+        "Spacecraft"
+      ],
+      "abstractExcerpt": "An accidental fire can pose dire consequences to crew safety and mission success. The Saffire Project aims to investigate large-scale fire behavior in microgravity in order to aid in the prediction of spacecraft fires. These series of experiments ignite solid materials within the Northrup Grumman Cygnus vehicle after it departs from a resupply mission to the International Space Station. A model of the Cygnus vehicle during the Saffire-IV experiment was developed using the commercial software PyroSim. The cargo arranged during the descent phase was used for the geometry of the model. In the model, cabin air flows into the Saffire payload while heat and combustion species flow out of the Saffi",
+      "abstractTruncated": true,
+      "sourceUrl": "https://ntrs.nasa.gov/citations/20220002714",
+      "apiUrl": "https://ntrs.nasa.gov/api/citations/20220002714",
+      "indexHint": "Saffire",
+      "priority": "A",
+      "retrievedAt": "2026-11-12",
+      "measurementsExtracted": false,
+      "note": "Public NTRS citation metadata and a truncated abstract excerpt. No oxygen, pressure, gravity, airflow, geometry, or outcome numbers were extracted. An abstract is not a measured dataset.",
+      "hintBasis": "title"
+    },
+    {
+      "id": "20240002981",
+      "source": "ntrs",
+      "title": "Preliminary Results from the Saffire VI Experiment",
+      "authors": [
+        "David L Urban",
+        "Gary A Ruff",
+        "Paul Ferkul",
+        "John Easton",
+        "Michael Johnston",
+        "Jay Owens",
+        "Sandra Olson",
+        "Claire Fortenberry"
+      ],
+      "year": "2024",
+      "stiType": "Conference Paper",
+      "keywords": [
+        "fire",
+        "microgravity"
+      ],
+      "abstractExcerpt": "Preliminary results are presented for one test of the last flight of the Spacecraft Fire Experiment (Saffire VI) which was conducted on an orbiting Cygnus spacecraft. These experiments directly address the risks associated with our understanding of spacecraft fire behavior at practical length scales and geometries. The lack of this experimental data has forced spacecraft designers to base their designs and safety precautions on 1-g understanding of flame spread, flame self-extinguishment, fire detection, and suppression. The Saffire experiment was developed by an international team of investigators with the goal of addressing open issues in spacecraft fire safety. NASA\u2019s Spacecraft Fire Safe",
+      "abstractTruncated": true,
+      "sourceUrl": "https://ntrs.nasa.gov/citations/20240002981",
+      "apiUrl": "https://ntrs.nasa.gov/api/citations/20240002981",
+      "indexHint": "Saffire",
+      "priority": "A",
+      "retrievedAt": "2026-11-12",
+      "measurementsExtracted": false,
+      "note": "Public NTRS citation metadata and a truncated abstract excerpt. No oxygen, pressure, gravity, airflow, geometry, or outcome numbers were extracted. An abstract is not a measured dataset.",
+      "hintBasis": "title"
+    },
+    {
+      "id": "20210011385",
+      "source": "ntrs",
+      "title": "Burning and Suppression of Solids\u2013II  (BASS-II) Summary Report",
+      "authors": [
+        "Sandra L. Olson",
+        "Paul V. Ferkul",
+        "Subrata Bhattacharjee",
+        "Fletcher J. Miller",
+        "Carlos Fernandez-Pello",
+        "Shmuel Link",
+        "James S. T'ien",
+        "Indrek Wichman"
+      ],
+      "year": "2021",
+      "stiType": "Technical Memorandum (TM)",
+      "keywords": [
+        "Microgravity",
+        "Flammability",
+        "Flame Spread",
+        "ISS",
+        "Glovebox"
+      ],
+      "abstractExcerpt": "The Burning and Suppression of Solids (BASS) experiment hardware is a small flow duct that\nprovides containment for small scale burning of solid samples within the Microgravity Science Glovebox (MSG) aboard the International Space Station (ISS). A video camera with a data overlay and a 35-mm still camera record the combustion events. The controls (ignition, fan speed, etc.) are operated by an astronaut while the principal investigator team monitors the experiment from the ground and communicates directly with the astronaut. For the first time on ISS, BASS\u2013II utilized MSG working volume dilution with gaseous N2. We developed a perfectly stirred reactor model to determine the N2 flow time and ",
+      "abstractTruncated": true,
+      "sourceUrl": "https://ntrs.nasa.gov/citations/20210011385",
+      "apiUrl": "https://ntrs.nasa.gov/api/citations/20210011385",
+      "indexHint": "BASS-II",
+      "priority": "A",
+      "retrievedAt": "2026-11-12",
+      "measurementsExtracted": false,
+      "note": "Public NTRS citation metadata and a truncated abstract excerpt. No oxygen, pressure, gravity, airflow, geometry, or outcome numbers were extracted. An abstract is not a measured dataset.",
+      "hintBasis": "title"
+    },
+    {
+      "id": "20160000593",
+      "source": "ntrs",
+      "title": "Combustion of Solids in Microgravity: Results from the BASS-II Experiment",
+      "authors": [
+        "Ferkul, Paul V.",
+        "Bhattacharjee, Subrata ",
+        "Fernandez-Pello, Carlos",
+        "Miller, Fletcher ",
+        "Olson, Sandra L.",
+        "Takahashi, Fumiaki ",
+        "T\u2019ien, James S."
+      ],
+      "year": "2019",
+      "stiType": "Presentation",
+      "keywords": [
+        "Combustion",
+        "Fire Safety",
+        "Microgravity"
+      ],
+      "abstractExcerpt": "The Burning and Suppression of Solids-II (BASS-II) experiment was performed on the International Space Station. Microgravity combustion tests burned thin and thick flat samples, acrylic slabs, spheres, and cylinders. The samples were mounted inside a small wind tunnel which could impose air flow speeds up to 53 cms. The wind tunnel was installed in the Microgravity Science Glovebox which supplied power, imaging, and a level of containment. The effects of air flow speed, fuel thickness, fuel preheating, and oxygen concentration on flame appearance, growth, spread rate, and extinction were examined in both the opposed and concurrent flow configuration. The flames are quite sensitive to air flo",
+      "abstractTruncated": true,
+      "sourceUrl": "https://ntrs.nasa.gov/citations/20160000593",
+      "apiUrl": "https://ntrs.nasa.gov/api/citations/20160000593",
+      "indexHint": "BASS-II",
+      "priority": "A",
+      "retrievedAt": "2026-11-12",
+      "measurementsExtracted": false,
+      "note": "Public NTRS citation metadata and a truncated abstract excerpt. No oxygen, pressure, gravity, airflow, geometry, or outcome numbers were extracted. An abstract is not a measured dataset.",
+      "hintBasis": "title"
+    },
+    {
+      "id": "20130000422",
+      "source": "ntrs",
+      "title": "Particle Morphology and Size Results from the Smoke Aerosol Measurement Experiment-2",
+      "authors": [
+        "Urban, David L.",
+        "Ruff, Gary A.",
+        "Greenberg, Paul S.",
+        "Fischer, David",
+        "Meyer, Marit",
+        "Mulholland, George",
+        "Yuan, Zeng-Guang",
+        "Bryg, Victoria"
+      ],
+      "year": "2019",
+      "stiType": "Conference Paper",
+      "keywords": [],
+      "abstractExcerpt": "Results are presented from the Reflight of the Smoke Aerosol Measurement Experiment (SAME-2) which was conducted during Expedition 24 (July-September 2010). The reflight experiment built upon the results of the original flight during Expedition 15 by adding diagnostic measurements and expanding the test matrix. Five different materials representative of those found in spacecraft (Teflon, Kapton, cotton, silicone rubber and Pyrell) were heated to temperatures below the ignition point with conditions controlled to provide repeatable sample surface temperatures and air flow. The air flow past the sample during the heating period ranged from quiescent to 8 cm/s. The smoke was initially collected",
+      "abstractTruncated": true,
+      "sourceUrl": "https://ntrs.nasa.gov/citations/20130000422",
+      "apiUrl": "https://ntrs.nasa.gov/api/citations/20130000422",
+      "indexHint": "SAME",
+      "priority": "B",
+      "retrievedAt": "2026-11-12",
+      "measurementsExtracted": false,
+      "note": "Public NTRS citation metadata and a truncated abstract excerpt. No oxygen, pressure, gravity, airflow, geometry, or outcome numbers were extracted. An abstract is not a measured dataset.",
+      "hintBasis": "title"
+    },
+    {
+      "id": "20150023456",
+      "source": "ntrs",
+      "title": "Detailed Results from the Flame Extinguishment Experiment (FLEX) March 2009 to December 2011",
+      "authors": [
+        "Dietrich, Daniel L.",
+        "Ferkul, Paul V.",
+        "Bryg, Victoria M.",
+        "Nayagam, M. Vedha",
+        "Hicks, Michael C.",
+        "Williams, Forman A.",
+        "Dryer, Frederick L.",
+        "Shaw, Benjamin D."
+      ],
+      "year": "2019",
+      "stiType": "Technical Publication (TP)",
+      "keywords": [
+        "International Space Station",
+        "Droplet Combustion",
+        "Microgravity"
+      ],
+      "abstractExcerpt": "The Flame Extinguishment Experiment (FLEX) program is a continuing set of experiments on droplet combustion, performed employing the Multi-User Droplet Combustion Apparatus (MDCA), inside the chamber of the Combustion Integrated Rack (CIR), which is located in the Destiny module of the International Space Station (ISS). This report describes the experimental hardware, the diagnostic equipment, the experimental procedures, and the methods of data analysis for FLEX. It also presents the results of the first 284 tests performed. The intent is not to interpret the experimental results but rather to make them available to the entire scientific community for possible future interpretations.",
+      "abstractTruncated": false,
+      "sourceUrl": "https://ntrs.nasa.gov/citations/20150023456",
+      "apiUrl": "https://ntrs.nasa.gov/api/citations/20150023456",
+      "indexHint": "FLEX",
+      "priority": "B",
+      "retrievedAt": "2026-11-12",
+      "measurementsExtracted": false,
+      "note": "Public NTRS citation metadata and a truncated abstract excerpt. No oxygen, pressure, gravity, airflow, geometry, or outcome numbers were extracted. An abstract is not a measured dataset.",
+      "hintBasis": "title"
+    },
+    {
+      "id": "20120015928",
+      "source": "ntrs",
+      "title": "FLEX: A Decisive Step Forward in NASA's Combustion Research Program",
+      "authors": [
+        "Hickman, John M.",
+        "Dietrich, Daniel L.",
+        "Hicks, Michael C.",
+        "Nayagam, Vedha",
+        "Stocker, Dennis"
+      ],
+      "year": "2019",
+      "stiType": "Conference Paper",
+      "keywords": [],
+      "abstractExcerpt": "Stemming from the need to prevent, detect and suppress on-board spacecraft fires, the NASA microgravity combustion research program has grown to include fundamental research. From early experiment, we have known that flames behave differently in microgravity, and this environment would provide an ideal laboratory for refining many of the long held principals of combustion science. A microgravity environment can provide direct observation of phenomena that cannot be observed on Earth. Through the years, from precursor work performed in drop towers leading to experiments on the International Space Station (ISS), discoveries have been made about the nature of combustion in low gravity environme",
+      "abstractTruncated": true,
+      "sourceUrl": "https://ntrs.nasa.gov/citations/20120015928",
+      "apiUrl": "https://ntrs.nasa.gov/api/citations/20120015928",
+      "indexHint": "FLEX",
+      "priority": "B",
+      "retrievedAt": "2026-11-12",
+      "measurementsExtracted": false,
+      "note": "Public NTRS citation metadata and a truncated abstract excerpt. No oxygen, pressure, gravity, airflow, geometry, or outcome numbers were extracted. An abstract is not a measured dataset.",
+      "hintBasis": "title"
+    },
+    {
+      "id": "20210015913",
+      "source": "ntrs",
+      "title": "Advanced Combustion via Microgravity Experiments (ACME) on the International Space Station (ISS)",
+      "authors": [
+        "Dennis Stocker"
+      ],
+      "year": "2021",
+      "stiType": "Poster",
+      "keywords": [
+        "laminar flames",
+        "non-premixed flames",
+        "gaseous fuels",
+        "microgravity"
+      ],
+      "abstractExcerpt": "Experimental   studies   of   laminar,   non-premixed   flames   of   gaseous   fuels   are   underway   on   the International Space Station (ISS) as part of NASA\u2019s Advanced Combustion via Microgravity Experiments(ACME) project.  The research is primarily focused on improving practical terrestrial combustion through fundamental microgravity research, where a secondary objective is spacecraft fire safety.  Example goals are  to improve understanding of flame stability  and extinction limits, soot control and reduction, oxygen-enriched combustion which could enable practical carbon sequestration, combustion at fuel lean conditions where both optimum performance and low emissions can be achiev",
+      "abstractTruncated": true,
+      "sourceUrl": "https://ntrs.nasa.gov/citations/20210015913",
+      "apiUrl": "https://ntrs.nasa.gov/api/citations/20210015913",
+      "indexHint": "ACME",
+      "priority": "C",
+      "retrievedAt": "2026-11-12",
+      "measurementsExtracted": false,
+      "note": "Public NTRS citation metadata and a truncated abstract excerpt. No oxygen, pressure, gravity, airflow, geometry, or outcome numbers were extracted. An abstract is not a measured dataset.",
+      "hintBasis": "title"
+    },
+    {
+      "id": "20220015583",
+      "source": "ntrs",
+      "title": "ACME: Advanced Combustion via Microgravity Experiments",
+      "authors": [
+        "Dennis P Stocker"
+      ],
+      "year": "2023",
+      "stiType": "Poster",
+      "keywords": [
+        "flames",
+        "microgravity",
+        "non-premixed",
+        "laminar",
+        "gaseous fuel",
+        "soot"
+      ],
+      "abstractExcerpt": "From Nov. 2017 to Feb. 2022, the ACME project\u2019s six independent investigations of laminar, non-premixed flames of gaseous fuels were conducted on the International Space Station (ISS) in the Combustion Integrated Rack (CIR).  An exploration of flames at the extremes of high sooting and high dilution was conducted with a coaxial coflow burner, where the fuel and oxidizer velocities were typically matched.  An investigation of electric-field effects also used the same coflow burner as well as a simple gas-jet burner, with a circular electrode mesh downstream of the burner, at voltages of either polarity up to 10 kV.  A study focused on material flammability in a quiescent atmosphere emulated t",
+      "abstractTruncated": true,
+      "sourceUrl": "https://ntrs.nasa.gov/citations/20220015583",
+      "apiUrl": "https://ntrs.nasa.gov/api/citations/20220015583",
+      "indexHint": "ACME",
+      "priority": "C",
+      "retrievedAt": "2026-11-12",
+      "measurementsExtracted": false,
+      "note": "Public NTRS citation metadata and a truncated abstract excerpt. No oxygen, pressure, gravity, airflow, geometry, or outcome numbers were extracted. An abstract is not a measured dataset.",
+      "hintBasis": "title"
+    },
+    {
+      "id": "20160010073",
+      "source": "ntrs",
+      "title": "A Burning Rate Emulator (BRE) for Study in Microgravity",
+      "authors": [
+        "Markan, A.",
+        "Sunderland, P. B.",
+        "Quintiere, J. G.",
+        "DeRis, J.",
+        "Stocker, D. P."
+      ],
+      "year": "2019",
+      "stiType": "Presentation",
+      "keywords": [
+        "diffusion flames",
+        "microgravity",
+        "laminar flames"
+      ],
+      "abstractExcerpt": "A gas-fueled burner, the Burning Rate Emulator (BRE), is used to emulate condensed-phase fuel flames. The design has been validated to easily measure the burning behavior of condensed-phase fuels by igniting a controlled stream of gas fuel and diluent. Four properties, including the heat of combustion, the heat of gasification, the surface temperature, and the laminar smoke point, are assumed to be sufficient to define the steady burning rate of a condensed-phase fuel. The heat of gasification of the fuel is determined by measuring the heat flux and the fuel flow rate. Microgravity BRE tests in the NASA 5.2 s drop facility have examined the burning of pure methane and ethylene (pure and 50 i",
+      "abstractTruncated": true,
+      "sourceUrl": "https://ntrs.nasa.gov/citations/20160010073",
+      "apiUrl": "https://ntrs.nasa.gov/api/citations/20160010073",
+      "indexHint": "ACME-BRE",
+      "priority": "A",
+      "retrievedAt": "2026-11-12",
+      "measurementsExtracted": false,
+      "note": "Public NTRS citation metadata and a truncated abstract excerpt. No oxygen, pressure, gravity, airflow, geometry, or outcome numbers were extracted. An abstract is not a measured dataset.",
+      "hintBasis": "title"
+    },
+    {
+      "id": "20170009141",
+      "source": "ntrs",
+      "title": "Emulation of Condensed Fuel Flames Using a Burning Rate Emulator (BRE) in Microgravity",
+      "authors": [
+        "Markan, A.",
+        "Quintiere, J. G.",
+        "Sunderland, P. B.",
+        "De Ris, J. L.",
+        "Stocker, D. P."
+      ],
+      "year": "2019",
+      "stiType": "Conference Paper",
+      "keywords": [
+        "flames",
+        "microgravity",
+        " fire",
+        " microgravity",
+        "fire"
+      ],
+      "abstractExcerpt": "The Burning Rate Emulator (BRE) is a gaseous fuel burner developed to emulate the burning of condensed phase fuels. The current study details several tests at the NASA Glenn 5-s drop facility to test the BRE technique in microgravity conditions. The tests are conducted for two burner diameters, 25 mm and 50 mm respectively, with methane and ethylene as the fuels. The ambient pressure, oxygen content and fuel flow rate are additional parameters. The microgravity results exhibit a nominally hemispherical flame with decelerating growth and quasi-steady heat flux after about 5 seconds. The BRE burner was evaluated with a transient analysis to assess the extent of steady-state achieved. The burni",
+      "abstractTruncated": true,
+      "sourceUrl": "https://ntrs.nasa.gov/citations/20170009141",
+      "apiUrl": "https://ntrs.nasa.gov/api/citations/20170009141",
+      "indexHint": "ACME-BRE",
+      "priority": "A",
+      "retrievedAt": "2026-11-12",
+      "measurementsExtracted": false,
+      "note": "Public NTRS citation metadata and a truncated abstract excerpt. No oxygen, pressure, gravity, airflow, geometry, or outcome numbers were extracted. An abstract is not a measured dataset.",
+      "hintBasis": "title"
+    },
+    {
+      "id": "20140006750",
+      "source": "ntrs",
+      "title": "Cool-flame Extinction During N-Alkane Droplet Combustion in Microgravity",
+      "authors": [
+        "Nayagam, Vedha",
+        "Dietrich, Daniel L.",
+        "Hicks, Michael C.",
+        "Williams, Forman A."
+      ],
+      "year": "2019",
+      "stiType": "Conference Paper",
+      "keywords": [
+        "microgravity combustion",
+        "Droplet combustion",
+        "methanol"
+      ],
+      "abstractExcerpt": "Recent droplet combustion experiments onboard the International Space Station (ISS) have revealed that large n-alkane droplets can continue to burn quasi-steadily following radiative extinction in a low-temperature regime, characterized by negative-temperaturecoefficient (NTC) chemistry. In this study we report experimental observations of n-heptane, n-octane, and n-decane droplets of varying initial sizes burning in oxygen/nitrogen/carbon dioxide and oxygen/helium/nitrogen environments at 1.0, 0.7, and 0.5 atmospheric pressures. The oxygen concentration in these tests varied in the range of 14% to 25% by volume. Large n-alkane droplets exhibited quasi-steady low-temperature burning and exti",
+      "abstractTruncated": true,
+      "sourceUrl": "https://ntrs.nasa.gov/citations/20140006750",
+      "apiUrl": "https://ntrs.nasa.gov/api/citations/20140006750",
+      "indexHint": "cool-flame",
+      "priority": "C",
+      "retrievedAt": "2026-11-12",
+      "measurementsExtracted": false,
+      "note": "Public NTRS citation metadata and a truncated abstract excerpt. No oxygen, pressure, gravity, airflow, geometry, or outcome numbers were extracted. An abstract is not a measured dataset.",
+      "hintBasis": "title"
+    },
+    {
+      "id": "20160000344",
+      "source": "ntrs",
+      "title": "Aspects of Cool-Flame Supported Droplet Combustion in Microgravity",
+      "authors": [
+        "Nayagam, Vedha",
+        "Dietrich, Daniel L.",
+        "Williams, Forman A."
+      ],
+      "year": "2019",
+      "stiType": "Presentation",
+      "keywords": [
+        "cool flames",
+        "microgravity",
+        "drops (liquids)"
+      ],
+      "abstractExcerpt": "Droplet combustion experiments performed on board the International Space Station have shown that normal-alkane fuels with negative temperature coefficient (NTC) chemistry can support quasi-steady, low-temperature combustion without any visible flame. Here we review the results for n-decane, n-heptane, and n-octane droplets burning in carbon dioxidehelium diluted environments at different pressures and initial droplet sizes. Experimental results for cool-flame burning rates, flame standoff ratios, and extinction diameters are compared against simplified theoretical models of the phenomenon. A simplified quasi-steady model based on the partial-burning regime of Lin predicts the burning rate, ",
+      "abstractTruncated": true,
+      "sourceUrl": "https://ntrs.nasa.gov/citations/20160000344",
+      "apiUrl": "https://ntrs.nasa.gov/api/citations/20160000344",
+      "indexHint": "cool-flame",
+      "priority": "C",
+      "retrievedAt": "2026-11-12",
+      "measurementsExtracted": false,
+      "note": "Public NTRS citation metadata and a truncated abstract excerpt. No oxygen, pressure, gravity, airflow, geometry, or outcome numbers were extracted. An abstract is not a measured dataset.",
+      "hintBasis": "title"
+    },
+    {
+      "id": "20040142387",
+      "source": "ntrs",
+      "title": "Research Plan for Fire Signatures and Detection",
+      "authors": [],
+      "year": "2018",
+      "stiType": "Conference Paper",
+      "keywords": [],
+      "abstractExcerpt": "Viewgraphs on the prevention, suppression, and detection of fires aboard a spacecraft is presented. The topics include: 1) Fire Prevention, Detection, and Suppression Sub-Element Products; 2) FPDS Organizing Questions; 3) FPDS Organizing Questions; 4) Signatures, Sensors, and Simulations; 5) Quantification of Fire and Pre-Fire Signatures; 6) Smoke; 7) DAFT Hardware; 8) Additional Benefits of DAFT; 9) Development and Characterization of Sensors 10) Simulation of the Transport of Smoke and Fire Precursors; and 11) FPDS Organizing Questions.",
+      "abstractTruncated": false,
+      "sourceUrl": "https://ntrs.nasa.gov/citations/20040142387",
+      "apiUrl": "https://ntrs.nasa.gov/api/citations/20040142387",
+      "indexHint": "DAFT",
+      "priority": "B",
+      "retrievedAt": "2026-11-12",
+      "measurementsExtracted": false,
+      "note": "Public NTRS citation metadata and a truncated abstract excerpt. No oxygen, pressure, gravity, airflow, geometry, or outcome numbers were extracted. An abstract is not a measured dataset.",
+      "hintBasis": "abstract names DAFT hardware"
+    },
+    {
+      "id": "20170007283",
+      "source": "ntrs",
+      "title": "Spacecraft Fire Safety Research at NASA Glenn Research Center",
+      "authors": [
+        "Meyer, Marit"
+      ],
+      "year": "2019",
+      "stiType": "Conference Paper",
+      "keywords": [
+        "Aerosol",
+        "Spacecraft Fire Safety",
+        "Smoke"
+      ],
+      "abstractExcerpt": "Appropriate design of fire detection systems requires knowledge of both the expected fire signature and the background aerosol levels. Terrestrial fire detection systems have been developed based on extensive study of terrestrial fires. Unfortunately there is no corresponding data set for spacecraft fires and consequently the fire detectors in current spacecraft were developed based upon terrestrial designs. In low gravity, buoyant flow is negligible which causes particles to concentrate at the smoke source, increasing their residence time, and increasing the transport time to smoke detectors. Microgravity fires have significantly different structure than those in 1-g which can change the fo",
+      "abstractTruncated": true,
+      "sourceUrl": "https://ntrs.nasa.gov/citations/20170007283",
+      "apiUrl": "https://ntrs.nasa.gov/api/citations/20170007283",
+      "indexHint": "smoke-detection survey",
+      "priority": "B",
+      "retrievedAt": "2026-11-12",
+      "measurementsExtracted": false,
+      "note": "Public NTRS citation metadata and a truncated abstract excerpt. No oxygen, pressure, gravity, airflow, geometry, or outcome numbers were extracted. An abstract is not a measured dataset.",
+      "hintBasis": "title does not name one investigation; kept as a public fire-safety survey"
+    },
+    {
+      "id": "20070031686",
+      "source": "ntrs",
+      "title": "Particle and Smoke Detection on ISS for Next Generation Smoke Detectors",
+      "authors": [
+        "Urban, David L.",
+        "Ruff, Gary",
+        "Yuan, Zeng-guang",
+        "Sheredy, William",
+        "Funk, Greg"
+      ],
+      "year": "2019",
+      "stiType": "Presentation",
+      "keywords": [],
+      "abstractExcerpt": "Rapid fire detection requires the ability to differentiate fire signatures from background conditions and nuisance sources. Proper design of a fire detector requires detailed knowledge of all of these signal sources so that a discriminating detector can be designed. Owing to the absence of microgravity smoke data, all current spacecraft smoke detectors were designed based upon normal-g conditions. The removal of buoyancy reduces the velocities in the high temperature zones in flames, increasing the residence time of smoke particles and consequently allowing longer growth time for the particles. Recent space shuttle experiments confirmed that, in some cases, increased particles sizes are seen",
+      "abstractTruncated": true,
+      "sourceUrl": "https://ntrs.nasa.gov/citations/20070031686",
+      "apiUrl": "https://ntrs.nasa.gov/api/citations/20070031686",
+      "indexHint": "smoke-detection",
+      "priority": "B",
+      "retrievedAt": "2026-11-12",
+      "measurementsExtracted": false,
+      "note": "Public NTRS citation metadata and a truncated abstract excerpt. No oxygen, pressure, gravity, airflow, geometry, or outcome numbers were extracted. An abstract is not a measured dataset.",
+      "hintBasis": "title is smoke detection; abstract excerpt does not name SAME"
+    }
+  ],
+  "explicitlyNotIndexed": [
+    "No PSI raw datasets",
+    "No PDF full texts",
+    "No invented DOIs",
+    "No parsed numeric measurements",
+    "SPICE and SAME-R name searches returned unrelated hits and were not indexed",
+    "SLICE name search did not return a title naming SLICE; those papers were not indexed"
+  ]
+}

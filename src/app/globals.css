@@ -1,0 +1,280 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-plex-sans), "IBM Plex Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-cond: var(--font-plex-cond), "IBM Plex Sans Condensed", "Helvetica Neue", sans-serif;
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--data-5);
+  --color-chart-4: var(--data-4);
+  --color-chart-3: var(--data-3);
+  --color-chart-2: var(--data-2);
+  --color-chart-1: var(--data-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-ember: #E07A3D;
+  --color-ember-text: #F0A66A;
+  --color-ink: #EDEAE4;
+  --color-void: #07080B;
+  --color-elev-1: #16181C;
+  --color-elev-2: #1F2125;
+  --color-elev-3: #292C30;
+  --color-elev-4: #36383C;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+  --radius-2xl: 4px;
+  --radius-3xl: 4px;
+  --radius-4xl: 4px;
+}
+
+/* Ember Instrument. Hex values are the source of truth. */
+:root,
+.dark {
+  --background: #0D0F13;
+  --foreground: #EDEAE4;
+  --card: #1F2125;
+  --card-foreground: #EDEAE4;
+  --popover: #292C30;
+  --popover-foreground: #EDEAE4;
+  --primary: #E07A3D;
+  --primary-foreground: #140C08;
+  --secondary: #16181C;
+  --secondary-foreground: #EDEAE4;
+  --muted: #292C30;
+  --muted-foreground: #A39E96;
+  --accent: #36383C;
+  --accent-foreground: #EDEAE4;
+  --destructive: #F67A6C;
+  --border: #3A3E44;
+  --input: #757679;
+  --ring: #E07A3D;
+  --radius: 0.25rem;
+  --sidebar: #16181C;
+  --sidebar-foreground: #EDEAE4;
+  --sidebar-primary: #E07A3D;
+  --sidebar-primary-foreground: #140C08;
+  --sidebar-accent: #36383C;
+  --sidebar-accent-foreground: #EDEAE4;
+  --sidebar-border: #2A2D32;
+  --sidebar-ring: #E07A3D;
+  --text-primary: #EDEAE4;
+  --text-secondary: #A39E96;
+  --text-tertiary: #847F79;
+  --accent-text: #F0A66A;
+  --status-nominal: #3DCC8D;
+  --status-info: #6BA3C7;
+  --status-caution: #E8C15A;
+  --status-warning: #F67A6C;
+  --status-critical: #F67A6C;
+  --status-critical-fill: #6F221C;
+  --terrain: #3A342C;
+  --terrain-mars: #5C4036;
+  --hull: #D8D2C6;
+  --hull-mars: #C4B2A4;
+  --sky: #000000;
+  --metal: #8A8E94;
+  --sun: #FFF3DC;
+  --earthshine: #B7C8E0;
+  --pad: #3A342C;
+  --data-1: #E69F00;
+  --data-2: #56B4E9;
+  --data-3: #009E73;
+  --data-4: #F0E442;
+  --data-5: #2484C6;
+  --border-subtle: #2A2D32;
+  --duration-fast: 120ms;
+  --duration-panel: 200ms;
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    background: #0D0F13;
+    color: #EDEAE4;
+    font-size: 13px;
+    line-height: 20px;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid #E07A3D;
+  outline-offset: 2px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+@utility font-cond {
+  font-family: var(--font-cond);
+}
+
+@utility numeric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+@utility micro {
+  font-family: var(--font-cond);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  line-height: 14px;
+  text-transform: uppercase;
+}
+
+.hotspot-label {
+  background: rgba(31, 33, 37, 0.92);
+  border: 1px solid #3A3E44;
+  border-radius: 2px;
+  color: #EDEAE4;
+  font-family: var(--font-cond), "IBM Plex Sans Condensed", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 12px;
+  padding: 3px 6px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.prototype-badge {
+  align-items: center;
+  background: #2A2418;
+  border: 1px solid #8A7040;
+  border-radius: 2px;
+  color: #E8C15A;
+  display: inline-flex;
+  font-family: var(--font-cond), "IBM Plex Sans Condensed", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  gap: 6px;
+  height: 22px;
+  letter-spacing: 0.1em;
+  line-height: 12px;
+  padding: 0 8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.prototype-badge-mark {
+  border-bottom: 7px solid #E8C15A;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  height: 0;
+  width: 0;
+}
+
+.status-chip {
+  align-items: center;
+  border-radius: 2px;
+  display: inline-flex;
+  font-family: var(--font-cond), "IBM Plex Sans Condensed", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  gap: 5px;
+  height: 18px;
+  letter-spacing: 0.1em;
+  line-height: 12px;
+  padding: 0 6px;
+  text-transform: uppercase;
+}
+.status-mark { display: inline-block; }
+.status-nominal { border: 1px solid #3DCC8D; color: #3DCC8D; }
+.status-nominal .status-mark { border-bottom: 2px solid currentColor; border-left: 2px solid currentColor; height: 5px; transform: rotate(-45deg); width: 8px; }
+.status-info { border: 1px solid #6BA3C7; color: #6BA3C7; }
+.status-info .status-mark { border: 1.5px solid currentColor; border-radius: 50%; height: 7px; width: 7px; }
+.status-caution { background: #E8C15A; color: #140C08; }
+.status-caution .status-mark { border-bottom: 7px solid currentColor; border-left: 4px solid transparent; border-right: 4px solid transparent; height: 0; width: 0; }
+.status-warning { border: 1px solid #F67A6C; color: #F67A6C; }
+.status-warning .status-mark { border-bottom: 7px solid currentColor; border-left: 4px solid transparent; border-right: 4px solid transparent; height: 0; width: 0; }
+.status-critical { background: #6F221C; color: #EDEAE4; }
+.status-critical .status-mark { background: currentColor; height: 7px; width: 7px; }
+.status-category { border: 1px solid #3A3E44; color: #EDEAE4; }
+
+.synthetic-stamp {
+  color: #847F79;
+  font-family: var(--font-cond), "IBM Plex Sans Condensed", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.cov-nodata {
+  background-color: #141519;
+  background-image: repeating-linear-gradient(45deg, #3A3E44 0 1px, transparent 1px 6px);
+  color: #847F79;
+}
+.cov-partial {
+  background-image: repeating-linear-gradient(-45deg, rgba(138, 112, 64, 0.4) 0 1px, transparent 1px 6px);
+}
+.evidence-dashed {
+  border-style: dashed;
+}
+
+[data-slot="slider-thumb"] {
+  background: #EDEAE4 !important;
+  border: 1px solid #E07A3D !important;
+  border-radius: 1px !important;
+  transform: rotate(45deg);
+}
+[data-slot="slider-range"] { background: #E07A3D !important; }
+
+@media (max-width: 767px) {
+  body { font-size: 14px; line-height: 22px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: white !important; color: #1A1814 !important; }
+  .report-sheet {
+    background: white !important;
+    border-color: #C8C2B8 !important;
+    color: #1A1814 !important;
+  }
+  .report-sheet .numeric, .report-sheet a { color: #1A1814 !important; }
+}

@@ -1,0 +1,8 @@
+[build]
+  command = "next build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NEXT_PUBLIC_DATA_SOURCE = "mock"
+  NEXT_PUBLIC_ASSISTANT_PROVIDER = "mock"

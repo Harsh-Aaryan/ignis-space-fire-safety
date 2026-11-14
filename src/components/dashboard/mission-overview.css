@@ -1,0 +1,227 @@
+/* Overview styles are prefixed so they do not affect the research tools or FireTwin. */
+.ignis-overview {
+  --rule: #303337;
+  --quiet: #a39e96;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0;
+  color: #edeae4;
+}
+.ignis-overview-eyebrow, .ignis-overview-figureLabel, .ignis-overview-figureNote, .ignis-overview-imageIndex, .ignis-overview-gravityLabel, .ignis-overview-questionTopic, .ignis-overview-sourceTag, .ignis-overview-demoTag {
+  font-family: var(--font-plex-cond);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.ignis-overview-eyebrow { color: #c0aea0; }
+.ignis-overview-body { max-width: 1240px; margin: 0 auto; padding: 0 12px 4px; }
+.ignis-overview-hero {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  align-items: center;
+  height: clamp(480px, 54svh, 640px);
+  margin: -24px -24px 30px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--rule);
+  background: #05070a;
+}
+.ignis-overview-habitatFigure { position: absolute; inset: 0; margin: 0; }
+.ignis-overview-previewImage { position: absolute; inset: 0; overflow: hidden; }
+.ignis-overview-previewImage img { object-fit: contain; object-position: 96% 35%; }
+.ignis-overview-previewImage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, #05070a 0%, #05070af2 26%, #05070ab8 43%, #05070a18 68%, transparent 88%), linear-gradient(0deg, #05070af2 0%, #05070a80 17%, transparent 47%, #05070a40 100%);
+}
+.ignis-overview-previewImage[data-habitat="moon-exterior"] img,
+.ignis-overview-previewImage[data-habitat="mars-exterior"] img { mask-image: linear-gradient(90deg, transparent 30%, #000 62%); }
+.ignis-overview-introduction { position: relative; z-index: 1; width: min(55%, 680px); padding: 32px clamp(28px, 4.2vw, 88px) 44px; }
+.ignis-overview-introduction h1 { margin: 18px 0 18px; font-family: var(--font-plex-cond); font-size: clamp(44px, 3.5vw, 60px); font-weight: 450; line-height: 1.04; letter-spacing: -.025em; }
+.ignis-overview-lead { max-width: 460px; color: #d0ccc4; font-size: 17px; line-height: 1.65; }
+.ignis-overview-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; margin-top: 24px; }
+.ignis-overview-primaryLink { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 42px; border: 1px solid #df8955; border-radius: 2px; padding: 9px 16px; background: #db8b59; color: #1a110d; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 120ms; }
+.ignis-overview-primaryLink:hover { background: #ecaa7c; }
+.ignis-overview-secondaryLink, .ignis-overview-textLink { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; }
+.ignis-overview-secondaryLink { min-height: 42px; }
+.ignis-overview-secondaryLink:hover, .ignis-overview-textLink:hover { color: #f0a66a; text-decoration: underline; text-underline-offset: 5px; }
+.ignis-overview-audience { max-width: 420px; margin-top: 18px; color: #aaa69f; font-size: 11px; line-height: 1.6; }
+.ignis-overview-figureBar { position: absolute; z-index: 2; top: 22px; right: 32px; display: flex; align-items: center; gap: 20px; }
+.ignis-overview-figureLabel { color: #9faaaF; font-size: 10px; }
+.ignis-overview-previewOptions { display: flex; gap: 3px; border: 1px solid #43484c; background: #0d1115d9; }
+.ignis-overview-previewOptions button { min-height: 42px; border-bottom: 2px solid transparent; padding: 0 15px; color: #c1beb7; font-size: 12px; cursor: pointer; }
+.ignis-overview-previewOptions button:hover { color: #edeae4; background: #23272c; }
+.ignis-overview-previewOptions button[aria-pressed="true"] { color: #f0a66a; border-bottom-color: #df8955; background: #20242a; }
+.ignis-overview-figureCaption { position: absolute; z-index: 2; right: 32px; bottom: 25px; width: min(32%, 380px); padding: 12px 14px; border-top: 1px solid #ffffff1f; background: #05070ad9; }
+.ignis-overview-figureMeta { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+.ignis-overview-imageIndex { color: #d2c1b3; font-size: 10px; }
+.ignis-overview-gravityLabel { padding-left: 14px; border-left: 1px solid #62696e; color: #c5cbd0; font-family: var(--font-plex-mono); font-size: 11px; text-transform: none; letter-spacing: 0; }
+.ignis-overview-figureCaption p { color: #aeb4b9; font-size: 11px; line-height: 1.65; }
+.ignis-overview-figureCaption button { display: inline-flex; align-items: center; gap: 4px; min-height: 38px; color: #f0a66a; font-size: 12px; cursor: pointer; }
+.ignis-overview-figureCaption button:hover { text-decoration: underline; text-underline-offset: 4px; }
+.ignis-overview-figureNote { display: block; color: #929ca5; font-size: 8px; letter-spacing: .04em; }
+.ignis-overview-workflow { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.ignis-overview-workflowStep { display: flex; align-items: flex-start; gap: 14px; padding: 22px 22px 22px 0; }
+.ignis-overview-workflowStep + .ignis-overview-workflowStep { padding-left: 24px; border-left: 1px solid var(--rule); }
+.ignis-overview-workflowStep > svg { flex-shrink: 0; margin: 4px 0 0 auto; color: #8f969b; }
+.ignis-overview-workflowStep strong { display: block; font-size: 15px; line-height: 1.4; font-weight: 500; }
+.ignis-overview-workflowStep span span { display: block; margin-top: 5px; max-width: 225px; color: var(--quiet); font-size: 12px; line-height: 1.6; }
+.ignis-overview-workflowStep:hover strong { color: #f0a66a; }
+.ignis-overview-stepNumber { padding-top: 1px; color: #b69781; font-family: var(--font-plex-mono); font-size: 11px; }
+.ignis-overview-sectionHeading { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 30px; margin-bottom: 22px; }
+.ignis-overview h2 { margin-top: 8px; font-family: var(--font-plex-cond); font-size: 26px; font-weight: 450; line-height: 1.25; letter-spacing: -.01em; }
+.ignis-overview-sectionHeading > p { color: var(--quiet); font-size: 12px; padding-bottom: 2px; }
+.ignis-overview-questionSection { margin-top: 40px; }
+.ignis-overview-questionWorkspace { display: grid; grid-template-columns: minmax(0,.85fr) minmax(0,1.3fr); border: 1px solid var(--rule); }
+.ignis-overview-questionOptions { min-width: 0; border: 0; margin: 0; padding: 0; background: #121519; }
+.ignis-overview-questionOption { position: relative; display: flex; align-items: center; gap: 16px; min-height: 114px; border-left: 2px solid transparent; padding: 22px 24px 22px 20px; cursor: pointer; }
+.ignis-overview-questionOption + .ignis-overview-questionOption { border-top: 1px solid var(--rule); }
+.ignis-overview-questionOption input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.ignis-overview-questionOption:has(input:checked) { border-left-color: #df8955; background: #202224; }
+.ignis-overview-questionOption:has(input:focus-visible) { outline: 2px solid #e07a3d; outline-offset: -3px; }
+.ignis-overview-questionOption:hover { background: #1b1e21; }
+.ignis-overview-questionOption:has(input:checked) .ignis-overview-questionNumber, .ignis-overview-questionOption:has(input:checked) > svg { color: #f0a66a; }
+.ignis-overview-questionNumber { align-self: flex-start; padding-top: 2px; font-family: var(--font-plex-mono); font-size: 11px; color: #8f969b; }
+.ignis-overview-questionTopic { display: block; margin-bottom: 7px; color: #a7a097; font-size: 10px; }
+.ignis-overview-questionTitle { display: block; max-width: 270px; font-size: 15px; font-weight: 400; line-height: 1.5; }
+.ignis-overview-questionOption > svg { flex-shrink: 0; margin-left: auto; color: #666c71; }
+.ignis-overview-questionDetail { display: flex; flex-direction: column; min-width: 0; padding: 28px 32px; border-left: 1px solid var(--rule); background: #191c20; }
+.ignis-overview-questionDetail h3 { margin: 10px 0 10px; font-family: var(--font-plex-cond); font-size: 24px; font-weight: 450; line-height: 1.25; }
+.ignis-overview-questionDescription { color: #b8b3aa; font-size: 13px; line-height: 1.7; }
+.ignis-overview-exampleConditions { display: flex; flex-wrap: wrap; gap: 20px 36px; margin: 22px 0; padding-bottom: 18px; border-bottom: 1px solid #34373b; }
+.ignis-overview-exampleConditions dt, .ignis-overview-currentConditions dt { color: var(--quiet); font-size: 11px; line-height: 1.4; }
+.ignis-overview-exampleConditions dd, .ignis-overview-currentConditions dd { margin-top: 5px; font-family: var(--font-plex-mono); font-size: 13px; line-height: 1.5; }
+.ignis-overview-exampleSteps { display: flex; flex-direction: column; gap: 7px; list-style: decimal; margin: 0 0 17px 16px; padding: 0; color: #d1ccc3; font-size: 12px; line-height: 1.55; }
+.ignis-overview-exampleSteps li { padding-left: 5px; }
+.ignis-overview-exampleSteps li::marker { color: #9f8f80; font-family: var(--font-plex-mono); font-size: 10px; }
+.ignis-overview-researchNote { padding-left: 12px; border-left: 2px solid #72675c; color: #a9a59d; font-size: 11px; line-height: 1.7; }
+.ignis-overview-launchExample { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; margin-top: auto; padding-top: 23px; }
+.ignis-overview-launchExample .ignis-overview-primaryLink { font-size: 12px; }
+.ignis-overview-launchExample p { flex: 1; min-width: 150px; max-width: 220px; font-size: 10px; line-height: 1.6; color: var(--quiet); }
+.ignis-overview-evidenceSection { display: grid; grid-template-columns: minmax(0,.85fr) minmax(0,1.3fr); gap: 45px; margin-top: 46px; padding-bottom: 26px; }
+.ignis-overview-evidenceIntro > p:not(.ignis-overview-eyebrow) { max-width: 340px; margin: 13px 0 18px; color: var(--quiet); font-size: 13px; line-height: 1.8; }
+.ignis-overview-evidenceIntro .ignis-overview-textLink { color: #d0b9a7; font-size: 12px; }
+.ignis-overview-sourceRow { display: flex; align-items: flex-start; gap: 23px; padding: 18px 0; border-top: 1px solid var(--rule); }
+.ignis-overview-sourceCount { min-width: 42px; padding-top: 1px; color: #d0c5b8; font-family: var(--font-plex-mono); font-size: 24px; line-height: 1.2; }
+.ignis-overview-sourceRow h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 9px 14px; font-size: 14px; font-weight: 450; }
+.ignis-overview-sourceTag, .ignis-overview-demoTag { color: #8eb8cb; font-size: 9px; letter-spacing: .045em; }
+.ignis-overview-demoTag { color: #d8b080; }
+.ignis-overview-sourceRow p, .ignis-overview-provenanceNote { margin-top: 8px; color: var(--quiet); font-size: 12px; line-height: 1.65; }
+.ignis-overview-provenanceNote { margin: 0; padding-top: 12px; border-top: 1px solid var(--rule); font-size: 10px; }
+.ignis-overview-scienceNote { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.ignis-overview-scienceNote summary, .ignis-overview-scenarioDetails summary, .ignis-overview-activity summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 50px; padding: 12px 0; list-style: none; font-size: 12px; cursor: pointer; }
+.ignis-overview summary::-webkit-details-marker { display: none; }
+.ignis-overview summary svg { flex-shrink: 0; color: #b3aaa0; transition: transform 120ms; }
+.ignis-overview details[open] > summary > svg { transform: rotate(180deg); }
+.ignis-overview-scienceNote > div { max-width: 780px; padding-bottom: 20px; }
+.ignis-overview-scienceNote p { color: var(--quiet); font-size: 13px; line-height: 1.8; }
+.ignis-overview-scienceNote .ignis-overview-textLink { margin-top: 12px; font-size: 12px; color: #d0b9a7; }
+.ignis-overview-furtherTools { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 30px; padding: 24px 0 30px; }
+.ignis-overview-furtherTools a > span { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.ignis-overview-furtherTools svg { color: #a39e96; }
+.ignis-overview-furtherTools p { max-width: 290px; margin-top: 7px; color: var(--quiet); font-size: 12px; line-height: 1.7; }
+.ignis-overview-furtherTools a:hover > span { color: #f0a66a; }
+.ignis-overview-currentWorkspace { border: 1px solid var(--rule); padding: 22px 24px 0; background: #121519; }
+.ignis-overview-workspaceHeading { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+.ignis-overview-workspaceHeading h2 { font-size: 21px; }
+.ignis-overview-workspaceObjective { color: var(--quiet); font-size: 12px; }
+.ignis-overview-currentConditions { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 18px; padding: 22px 0; }
+.ignis-overview-scenarioDetails { border-top: 1px solid var(--rule); }
+.ignis-overview-scenarioDetails summary { min-height: 52px; }
+.ignis-overview-scenarioPanel { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,.8fr); gap: 40px; padding: 15px 0 28px; }
+.ignis-overview-scenarioPanel h3 { margin-bottom: 10px; font-size: 15px; font-weight: 500; }
+.ignis-overview-panelDescription { margin-bottom: 20px; color: var(--quiet); font-size: 12px; line-height: 1.7; }
+.ignis-overview-metrics > div { display: flex; justify-content: space-between; gap: 15px; align-items: baseline; border-bottom: 1px solid var(--rule); padding: 12px 0; }
+.ignis-overview-metrics dt { color: #b8b3aa; font-size: 12px; }
+.ignis-overview-metrics dd { font-family: var(--font-plex-mono); font-size: 18px; }
+.ignis-overview-activity { margin-top: 20px; border-top: 1px solid var(--rule); }
+.ignis-overview-activity li { display: flex; justify-content: space-between; align-items: baseline; gap: 18px; border-top: 1px solid var(--rule); padding: 10px 0; font-size: 11px; line-height: 1.6; }
+.ignis-overview-activity time { flex-shrink: 0; color: var(--quiet); font-size: 10px; }
+.ignis-overview-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 24px; padding: 23px 0 12px; color: #9b9892; font-size: 10px; line-height: 1.7; }
+.ignis-overview-footer > p { max-width: 670px; }
+.ignis-overview-footer > div { display: flex; flex-wrap: wrap; gap: 18px; }
+.ignis-overview-footer a { display: inline-flex; align-items: center; gap: 3px; }
+.ignis-overview-footer a:hover { color: #f0a66a; }
+@media (max-width: 1250px) {
+  .ignis-overview-body { padding-left: 4px; padding-right: 4px; }
+  .ignis-overview-workflowStep { gap: 10px; padding-right: 16px; }
+  .ignis-overview-workflowStep + .ignis-overview-workflowStep { padding-left: 16px; }
+  .ignis-overview-questionDetail { padding: 25px; }
+}
+@media (max-width: 1000px) {
+  .ignis-overview-body { padding-top: 2px; }
+  .ignis-overview-questionOption { padding: 20px 15px; gap: 12px; }
+  .ignis-overview-questionTitle { font-size: 14px; }
+  .ignis-overview-evidenceSection { gap: 28px; }
+  .ignis-overview-currentConditions { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+@media (max-width: 700px) {
+  .ignis-overview-body { padding: 4px 0 16px; }
+  .ignis-overview-workflow { grid-template-columns: 1fr; }
+  .ignis-overview-workflowStep, .ignis-overview-workflowStep + .ignis-overview-workflowStep { border-left: 0; padding: 17px 6px; }
+  .ignis-overview-workflowStep + .ignis-overview-workflowStep { border-top: 1px solid var(--rule); }
+  .ignis-overview-workflowStep strong { font-size: 14px; }
+  .ignis-overview-workflowStep span span { max-width: none; margin-top: 3px; }
+  .ignis-overview-stepNumber { min-width: 27px; }
+  .ignis-overview-questionSection { margin-top: 30px; }
+  .ignis-overview h2 { font-size: 24px; }
+  .ignis-overview-sectionHeading { gap: 9px; margin-bottom: 17px; }
+  .ignis-overview-questionWorkspace { grid-template-columns: 1fr; }
+  .ignis-overview-questionOption { min-height: 85px; padding: 16px; }
+  .ignis-overview-questionTitle { max-width: none; font-size: 13px; }
+  .ignis-overview-questionTopic { margin-bottom: 4px; font-size: 9px; }
+  .ignis-overview-questionDetail { border-left: 0; border-top: 1px solid var(--rule); padding: 24px 20px; }
+  .ignis-overview-questionDetail h3 { font-size: 23px; }
+  .ignis-overview-questionDescription { font-size: 12px; }
+  .ignis-overview-exampleConditions { gap: 20px 24px; margin-top: 20px; }
+  .ignis-overview-launchExample { gap: 11px; }
+  .ignis-overview-launchExample p { max-width: none; min-width: 100%; }
+  .ignis-overview-evidenceSection { grid-template-columns: 1fr; gap: 22px; margin-top: 32px; padding-bottom: 24px; }
+  .ignis-overview-evidenceIntro > p:not(.ignis-overview-eyebrow) { max-width: none; margin-bottom: 12px; }
+  .ignis-overview-sourceRow { gap: 16px; }
+  .ignis-overview-sourceRow h3 { font-size: 13px; }
+  .ignis-overview-scienceNote summary { font-size: 12px; line-height: 1.6; }
+  .ignis-overview-furtherTools { grid-template-columns: 1fr; gap: 21px; padding-bottom: 28px; }
+  .ignis-overview-furtherTools p { max-width: none; margin-top: 4px; }
+  .ignis-overview-currentWorkspace { padding: 20px 16px 0; }
+  .ignis-overview-workspaceHeading h2 { font-size: 21px; }
+  .ignis-overview-workspaceObjective { font-size: 11px; }
+  .ignis-overview-currentConditions { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px 18px; }
+  .ignis-overview-currentConditions dt { font-size: 10px; }
+  .ignis-overview-scenarioPanel { grid-template-columns: 1fr; gap: 28px; }
+  .ignis-overview-scenarioDetails summary { font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ignis-overview *, .ignis-overview *::before, .ignis-overview *::after { transition: none; }
+}
+
+@media (max-width: 1279px) {
+  .ignis-overview-hero { margin: -16px -16px 26px; }
+  .ignis-overview-introduction { width: 56%; padding-left: 32px; padding-right: 25px; }
+  .ignis-overview-introduction h1 { font-size: 46px; }
+  .ignis-overview-lead { font-size: 16px; }
+  .ignis-overview-figureBar { top: 18px; right: 24px; }
+  .ignis-overview-figureLabel { display: none; }
+  .ignis-overview-figureCaption { right: 24px; bottom: 22px; width: 34%; }
+}
+@media (max-width: 700px) {
+  .ignis-overview-hero { align-items: start; height: 660px; margin-bottom: 24px; }
+  .ignis-overview-figureBar { top: 17px; right: 20px; }
+  .ignis-overview-previewOptions button { min-height: 44px; padding: 0 13px; }
+  .ignis-overview-previewImage img { object-position: center 70px; }
+  .ignis-overview-previewImage::after { background: linear-gradient(90deg, #05070ae0, #05070a50 80%), linear-gradient(0deg, #05070a 0%, #05070af2 18%, #05070a50 78%, #05070a80); }
+  .ignis-overview-introduction { align-self: center; width: 100%; padding: 60px 24px 110px; }
+  .ignis-overview-introduction h1 { margin: 17px 0 18px; font-size: 46px; }
+  .ignis-overview-lead { max-width: 400px; color: #d0ccc4; font-size: 16px; }
+  .ignis-overview-actions { gap: 18px; margin-top: 22px; }
+  .ignis-overview-audience { max-width: 300px; margin-top: 16px; font-size: 10px; }
+  .ignis-overview-figureCaption { right: 24px; left: 24px; bottom: 21px; width: auto; padding: 0; border: 0; background: transparent; }
+  .ignis-overview-figureCaption p { display: none; }
+  .ignis-overview-figureCaption button { position: absolute; right: 0; top: -13px; min-height: 44px; }
+  .ignis-overview-figureMeta { margin-bottom: 8px; }
+  .ignis-overview-figureNote { max-width: 270px; font-size: 8px; }
+}
