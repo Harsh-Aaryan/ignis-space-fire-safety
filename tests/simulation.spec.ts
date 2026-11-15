@@ -122,6 +122,51 @@ test("gravity comparison runs one setup at three gravity levels", async ({ page 
   await expect(page.getByLabel("Fire origin", { exact: true })).toHaveValue("lunar-habitat-lab-bench-0");
 });
 
+test("telemetry fits all readouts and centers its graph without horizontal scrolling", async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, type: string, ...args: unknown[]) {
+      if (type.startsWith("webgl")) return null;
+      return original.apply(this, [type, ...args] as never);
+    } as typeof original;
+  });
+  await page.goto("/simulation", { waitUntil: "domcontentloaded" });
+  await expect(page.getByText(/WebGL is unavailable/)).toBeVisible();
+  await page.getByRole("tab", { name: "Fire scenario", exact: true }).click();
+  await expect(page.getByRole("tab", { name: "Fire scenario", exact: true })).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("button", { name: "Acrylic ignition", exact: true }).click();
+  await page.getByRole("button", { name: "60×", exact: true }).click();
+  await page.getByRole("button", { name: "Start scenario", exact: true }).click();
+  await expect(page.getByTestId("fire-status")).toContainText("Flaming");
+  await page.getByRole("button", { name: "Pause", exact: true }).click();
+
+  const hud = page.getByTestId("fire-hud");
+  for (const width of [1024, 1280, 1600, 1920, 390, 320]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await hud.scrollIntoViewIfNeeded();
+    await expect(hud.locator("dt")).toHaveCount(8);
+    expect(await hud.evaluate(el => el.scrollWidth <= el.clientWidth), `Telemetry fits at ${width}px`).toBe(true);
+    expect(await hud.locator("dt, dd, p, figcaption").evaluateAll(elements => elements.every(el => {
+      const box = el.getBoundingClientRect();
+      const parent = el.closest("section")!.getBoundingClientRect();
+      return box.left >= parent.left - 1 && box.right <= parent.right + 1 && el.scrollWidth <= el.clientWidth + 1;
+    })), `Every readout fits at ${width}px`).toBe(true);
+    const bar = (await hud.boundingBox())!;
+    const graph = (await page.getByTestId("telemetry-graph").boundingBox())!;
+    expect(Math.abs(graph.x + graph.width / 2 - (bar.x + bar.width / 2)), `Graph centered at ${width}px`).toBeLessThanOrEqual(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    if (width >= 1024) {
+      const main = (await page.locator("main").boundingBox())!;
+      expect(Math.abs(bar.x - main.x)).toBeLessThanOrEqual(1);
+      expect(Math.abs(bar.width - main.width)).toBeLessThanOrEqual(1);
+      expect(Math.abs(bar.y + bar.height - (main.y + main.height))).toBeLessThanOrEqual(1);
+      expect(bar.height).toBeLessThanOrEqual(180);
+      const scene = (await page.getByTestId("habitat-viewport").boundingBox())!;
+      expect(scene.height).toBeGreaterThan(300);
+    }
+  }
+});
+
 test("the simulation works on a narrow screen without WebGL", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => {

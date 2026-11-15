@@ -43,6 +43,35 @@ test("overview leads to the three research questions", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test("overview render spans the workspace and Ask IGNIS shares the primary accent", async ({ page }) => {
+  await page.goto("/");
+  const main = await page.locator("main").boundingBox();
+  const render = await page.locator("#habitat-preview").boundingBox();
+  expect(main).not.toBeNull();
+  expect(render).not.toBeNull();
+  expect(Math.abs(render!.x - main!.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(render!.width - main!.width)).toBeLessThanOrEqual(1);
+  expect(render!.height).toBeGreaterThanOrEqual(600);
+  expect(Math.abs(render!.y - main!.y)).toBeLessThanOrEqual(1);
+  const image = (await page.locator("#habitat-preview img").boundingBox())!;
+  expect(Math.abs(image.width - render!.width)).toBeLessThanOrEqual(1);
+  expect(Math.abs(image.height - render!.height)).toBeLessThanOrEqual(1);
+  const heading = (await page.getByRole("heading", { level: 1 }).boundingBox())!;
+  expect(Math.abs(heading.x + heading.width / 2 - (render!.x + render!.width / 2))).toBeLessThanOrEqual(1);
+  expect(heading.y).toBeGreaterThanOrEqual(render!.y);
+  await expect(page.locator('section[aria-labelledby="overview-title"] dl')).toHaveCount(0);
+  await expect(page.getByText("Exterior after NASA Gateway; interiors are conceptual", { exact: true })).toBeVisible();
+  const primary = await page.getByRole("link", { name: "Run a fire scenario", exact: true }).evaluate(el => ({
+    background: getComputedStyle(el).backgroundColor,
+    color: getComputedStyle(el).color,
+  }));
+  const assistant = await page.getByRole("button", { name: "Ask IGNIS", exact: true }).evaluate(el => ({
+    background: getComputedStyle(el).backgroundColor,
+    color: getComputedStyle(el).color,
+  }));
+  expect(assistant).toEqual(primary);
+});
+
 test("mobile cabin readouts stay visible and habitat keyboard selection keeps focus", async ({ page }) => {
   await page.goto("/");
   const cabin = page.getByRole("button", { name: /Cabin.*O₂/ });

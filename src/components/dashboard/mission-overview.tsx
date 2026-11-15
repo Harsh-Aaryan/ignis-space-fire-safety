@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { useFireSimStore } from "@/stores/fire-sim-store";
 import { useMissionStore } from "@/stores/mission-store";
 import type { MissionId } from "@/types/domain";
+import "./mission-overview.css";
 
 const PSI_REPO = "https://psi.nasa.gov/physci/repo/";
 const NTRS = "https://ntrs.nasa.gov/";
@@ -138,80 +139,67 @@ export function MissionOverview() {
   return (
     <div className="flex flex-col gap-16 md:gap-20">
       <Hero />
-      <ResearchQuestions />
-      <Findings />
-      <Environments />
-      <OverviewFooter />
+      <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-16 px-4 pb-8 md:gap-20 md:px-6 xl:px-10">
+        <ResearchQuestions />
+        <Findings />
+        <Environments />
+        <OverviewFooter />
+      </div>
     </div>
   );
 }
 
 function Hero() {
-  const summary = RESEARCH_INDEX_SUMMARY;
   return (
-    <section aria-labelledby="overview-title" className="grid items-center gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-12">
-      <div className="max-w-xl">
-        <p className="micro text-muted-foreground">Spacecraft fire safety research</p>
-        <h1
-          id="overview-title"
-          className="mt-3 text-[36px] leading-10 font-normal text-foreground md:text-[44px] md:leading-[48px] md:tracking-[-0.02em]"
-        >
-          Fire behaves differently off Earth
-        </h1>
-        <p className="mt-4 text-[16px] leading-7 text-muted-foreground md:text-[18px]">
-          Explore NASA&apos;s flight fire experiments and model a fire inside a crewed habitat. Compare microgravity, Moon and Mars scenarios,
-          and see where the evidence stops.
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <ActionLink href={ROUTES.simulation} variant="primary" onClick={() => useFireSimStore.getState().setOpen(true)}>
-            <Flame className="size-4" aria-hidden="true" />
-            Run a fire scenario
-          </ActionLink>
-          <ActionLink href={ROUTES.research}>Browse the research</ActionLink>
+    <section aria-labelledby="overview-title" className="overview-hero">
+      <HabitatPreview>
+        <div className="overview-copy">
+          <p className="micro text-muted-foreground">Spacecraft fire safety research</p>
+          <h1
+            id="overview-title"
+            className="mt-3 text-[36px] leading-10 font-normal text-foreground md:text-[44px] md:leading-[48px] md:tracking-[-0.02em]"
+          >
+            Fire behaves differently off Earth
+          </h1>
+          <p className="mt-4 text-[16px] leading-7 text-muted-foreground md:text-[18px]">
+            Explore NASA&apos;s flight fire experiments and model a fire inside a crewed habitat. Compare microgravity, Moon and Mars scenarios,
+            and see where the evidence stops.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <ActionLink href={ROUTES.simulation} variant="primary" onClick={() => useFireSimStore.getState().setOpen(true)}>
+              <Flame className="size-4" aria-hidden="true" />
+              Run a fire scenario
+            </ActionLink>
+            <ActionLink href={ROUTES.research}>Browse the research</ActionLink>
+          </div>
         </div>
-        <dl className="mt-6 grid grid-cols-3 gap-4 border-t border-border-subtle pt-4 md:mt-8 md:pt-6">
-          <HeroStat value={summary.investigations} label="indexed records" />
-          <HeroStat value={summary.flightExperiments} label="flight experiments" />
-          <HeroStat value={summary.partialGravity} label="tested at lunar or Martian gravity" />
-        </dl>
-      </div>
-      <HabitatPreview />
+      </HabitatPreview>
     </section>
   );
 }
 
-function HeroStat({ value, label }: { value: number; label: string }) {
-  return (
-    <div className="min-w-0">
-      <dt className="sr-only">{label}</dt>
-      <dd className="numeric text-[28px] leading-8 text-foreground">{value}</dd>
-      <dd aria-hidden="true" className="mt-1 text-[13px] leading-5 text-muted-foreground">
-        {label}
-      </dd>
-    </div>
-  );
-}
-
-function HabitatPreview() {
+function HabitatPreview({ children }: { children: React.ReactNode }) {
   const [index, setIndex] = useState(() => HABITAT_PREVIEWS.findIndex((habitat) => habitat.id === "gateway-orbit"));
   const selectMission = useMissionStore((state) => state.selectMission);
   const preview = HABITAT_PREVIEWS[index];
 
   return (
-    <figure className="min-w-0 overflow-hidden rounded-lg border border-border-subtle bg-elev-1">
-      <div id="habitat-preview" data-habitat={preview.image} className="relative aspect-[16/10] w-full bg-void">
+    <figure className="overview-scene">
+      <div className="overview-content">{children}</div>
+      <div id="habitat-preview" data-habitat={preview.image} className="overview-render">
         <Image
           src={`/overview/${preview.image}.jpg`}
           alt={preview.alt}
           fill
-          className="object-cover"
-          sizes="(min-width: 1280px) 720px, (min-width: 1024px) 58vw, 100vw"
+          className="overview-image"
+          sizes="(min-width: 1280px) calc(100vw - 240px), (min-width: 768px) calc(100vw - 64px), 100vw"
           loading="eager"
           fetchPriority="high"
         />
       </div>
-      <figcaption className="flex flex-col gap-4 p-4 md:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <div aria-hidden="true" className="overview-shade" />
+      <figcaption className="overview-caption">
+        <div className="overview-controls">
           <div role="group" aria-label="Preview a habitat" className="flex rounded-md border border-border-subtle bg-background p-0.5">
             {HABITAT_PREVIEWS.map((habitat, i) => {
               const active = i === index;
@@ -243,10 +231,10 @@ function HabitatPreview() {
             <ArrowRight className="size-4" aria-hidden="true" />
           </Link>
         </div>
-        <p className="text-sm leading-6 text-muted-foreground" aria-live="polite">
+        <p className={cn("overview-description", "text-sm leading-6 text-muted-foreground")} aria-live="polite">
           {preview.caption}
         </p>
-        <p className="text-[12px] leading-4 text-text-tertiary">{preview.credit}</p>
+        <p className={cn("overview-credit", "text-[12px] leading-4 text-text-tertiary")}>{preview.credit}</p>
       </figcaption>
     </figure>
   );

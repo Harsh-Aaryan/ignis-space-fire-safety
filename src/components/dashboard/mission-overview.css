@@ -1,0 +1,104 @@
+.overview-hero {
+  min-width: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--background);
+}
+
+.overview-scene {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  min-width: 0;
+  min-height: 640px;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--background);
+}
+
+.overview-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  max-width: 1560px;
+  margin-inline: auto;
+  padding: 32px 24px;
+}
+
+.overview-copy {
+  max-width: 680px;
+  text-align: center;
+}
+
+.overview-render {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--color-void);
+}
+
+.overview-image {
+  object-fit: cover;
+  object-position: center;
+}
+
+.overview-shade {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(13 15 19 / 88%) 0%, rgb(13 15 19 / 72%) 38%, rgb(13 15 19 / 28%) 64%, rgb(13 15 19 / 96%) 100%);
+}
+
+.overview-caption {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: 100%;
+  max-width: 1560px;
+  gap: 16px;
+  margin-inline: auto;
+  padding: 24px;
+}
+
+.overview-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+@media (min-width: 1024px) {
+  .overview-content {
+    padding: 64px 40px 32px;
+  }
+
+  .overview-caption {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px 32px;
+    padding: 24px 40px 32px;
+  }
+
+  .overview-controls {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    justify-content: flex-end;
+    gap: 24px;
+  }
+
+  .overview-description {
+    grid-column: 1;
+    grid-row: 1;
+    max-width: 680px;
+  }
+
+  .overview-credit {
+    grid-column: 1;
+    grid-row: 2;
+  }
+}

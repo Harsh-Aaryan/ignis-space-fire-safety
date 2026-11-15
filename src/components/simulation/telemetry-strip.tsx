@@ -8,9 +8,10 @@ import { cn } from "@/lib/utils";
 import { useFireSimStore } from "@/stores/fire-sim-store";
 import { useMissionStore } from "@/stores/mission-store";
 import { PHASE_LABEL, PHASE_TONE, clock, formatPower } from "./format";
+import "./telemetry-strip.css";
 
 /** Live readouts, docked along the bottom edge of the viewport so the scene stays clear. */
-export function TelemetryStrip() {
+export function TelemetryStrip({ className }: { className?: string }) {
   const snapshot = useFireSimStore((store) => store.snapshot);
   const history = useFireSimStore((store) => store.history);
   const status = useFireSimStore((store) => store.status);
@@ -35,17 +36,10 @@ export function TelemetryStrip() {
     <section
       aria-label="Fire scenario telemetry"
       data-testid="fire-hud"
-      className="shrink-0 border-t border-border bg-elev-1"
+      className={cn("telemetry-strip", "shrink-0 border-t border-border bg-elev-1", className)}
     >
-      <div className="flex overflow-x-auto">
-        <div className="flex min-w-[148px] shrink-0 flex-col justify-center px-3 py-2">
-          <p className={cn("text-[13px] font-medium", snapshot ? PHASE_TONE[snapshot.phase] : "text-muted-foreground")}>
-            {snapshot ? PHASE_LABEL[snapshot.phase] : "No fire"}
-          </p>
-          <p className="numeric text-[15px] leading-5 text-foreground">T+{clock(snapshot?.t ?? 0)}</p>
-          <p className="text-[12px] text-muted-foreground">{runState}</p>
-        </div>
-        <dl className="flex">
+      <div className="telemetry-layout">
+        <dl className="telemetry-readouts-left">
           <Readout
             label="Heat release"
             abbr="HRR"
@@ -70,6 +64,18 @@ export function TelemetryStrip() {
             unit="CFM"
             note={`${(speedMs * 100).toFixed(1)} cm/s`}
           />
+        </dl>
+        <div className="telemetry-center">
+          <div className="telemetry-state">
+            <p className={cn("text-[13px] font-medium", snapshot ? PHASE_TONE[snapshot.phase] : "text-muted-foreground")}>
+              {snapshot ? PHASE_LABEL[snapshot.phase] : "No fire"}
+            </p>
+            <p className="numeric text-[13px] leading-5 text-foreground">T+{clock(snapshot?.t ?? 0)}</p>
+          </div>
+          <Trace history={history} />
+          <p className={cn("telemetry-run-state", "text-[12px] leading-4 text-muted-foreground")}>{runState}</p>
+        </div>
+        <dl className="telemetry-readouts-right">
           <Readout
             label="Gravity"
             value={formatGravity(scenario.gravityG)}
@@ -90,7 +96,6 @@ export function TelemetryStrip() {
             note={snapshot ? `At sensor ${snapshot.detectorSmokeMgM3.toFixed(1)}` : undefined}
           />
         </dl>
-        <Trace history={history} />
       </div>
       <p className="border-t border-border-subtle px-3 py-1 text-[12px] leading-4 text-text-tertiary">
         Gas values are instantaneous readings; exposure averages are not calculated.
@@ -113,30 +118,30 @@ function Readout({
   note?: string;
 }) {
   return (
-    <div className="min-w-[118px] shrink-0 border-l border-border-subtle px-3 py-2">
-      <dt className="text-[12px] leading-4 whitespace-nowrap text-muted-foreground">
+    <div className="telemetry-readout">
+      <dt className="text-[12px] leading-4 text-muted-foreground">
         {label}
         {abbr ? <span className="ml-1 text-text-tertiary">{abbr}</span> : null}
       </dt>
-      <dd className="numeric text-[16px] leading-6 whitespace-nowrap text-foreground">
-        {value}
-        {unit ? <span className="ml-1 font-sans text-[12px] text-muted-foreground">{unit}</span> : null}
+      <dd className="numeric flex flex-wrap items-baseline gap-x-1 text-[15px] leading-5 text-foreground">
+        <span>{value}</span>
+        {unit ? <span className="font-sans text-[12px] text-muted-foreground">{unit}</span> : null}
       </dd>
-      {note ? <p className="text-[12px] leading-4 whitespace-nowrap text-text-tertiary">{note}</p> : null}
+      {note ? <p className="text-[12px] leading-4 text-text-tertiary">{note}</p> : null}
     </div>
   );
 }
 
 /** Heat release and cabin oxygen on one small plot. */
 function Trace({ history }: { history: FireSample[] }) {
-  if (history.length < 3) return null;
+  const hasHistory = history.length >= 3;
   const width = 200;
-  const height = 40;
-  const t0 = history[0].t;
-  const span = Math.max(1, history[history.length - 1].t - t0);
+  const height = 48;
+  const t0 = history[0]?.t ?? 0;
+  const span = Math.max(1, (history.at(-1)?.t ?? t0) - t0);
   const peak = Math.max(50, ...history.map((point) => point.hrrW));
   const o2 = history.map((point) => point.o2Pct);
-  const o2High = Math.max(...o2);
+  const o2High = Math.max(0, ...o2);
   const o2Low = Math.min(o2High - 0.5, ...o2);
   const path = (pick: (point: FireSample) => number) =>
     history
@@ -147,26 +152,33 @@ function Trace({ history }: { history: FireSample[] }) {
       })
       .join("");
   return (
-    <figure className="flex min-w-[220px] shrink-0 flex-col justify-center border-l border-border-subtle px-3 py-2">
+    <figure className="telemetry-trace" data-testid="telemetry-graph">
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="h-10 w-full"
+        className="h-12 w-full"
         role="img"
-        aria-label="Heat release rate and oxygen over time"
+        aria-label={hasHistory ? "Heat release rate and oxygen over time" : "Heat release and oxygen graph, no run history yet"}
       >
-        <path d={path((point) => point.hrrW / peak)} fill="none" strokeWidth="1.4" className="stroke-ember" />
-        <path
-          d={path((point) => (point.o2Pct - o2Low) / (o2High - o2Low))}
-          fill="none"
-          strokeWidth="1.2"
-          strokeDasharray="3 2"
-          className="stroke-status-info"
-        />
+        <path d={`M0,2H${width}M0,${height - 2}H${width}`} fill="none" strokeWidth="1" className="stroke-border-subtle" />
+        {hasHistory ? (
+          <>
+            <path d={path((point) => point.hrrW / peak)} fill="none" strokeWidth="1.4" className="stroke-ember" />
+            <path
+              d={path((point) => (point.o2Pct - o2Low) / (o2High - o2Low))}
+              fill="none"
+              strokeWidth="1.2"
+              strokeDasharray="3 2"
+              className="stroke-status-info"
+            />
+          </>
+        ) : (
+          <text x={width / 2} y={height / 2 + 4} textAnchor="middle" className="fill-text-tertiary text-[12px]">No run history</text>
+        )}
       </svg>
-      <figcaption className="mt-1 flex justify-between gap-3 text-[12px] leading-4 whitespace-nowrap">
+      <figcaption className="mt-1 flex flex-wrap justify-center gap-x-3 text-[11px] leading-4">
         <span className="text-ember-text">Heat release</span>
         <span className="text-status-info">
-          O₂ {o2Low.toFixed(1)} to {o2High.toFixed(1)}%
+          {hasHistory ? `O₂ ${o2Low.toFixed(1)} to ${o2High.toFixed(1)}%` : "Cabin oxygen"}
         </span>
       </figcaption>
     </figure>

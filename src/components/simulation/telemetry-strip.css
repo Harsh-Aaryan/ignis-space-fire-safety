@@ -1,0 +1,112 @@
+.telemetry-strip {
+  min-width: 0;
+  container: telemetry / inline-size;
+}
+
+.telemetry-layout {
+  display: grid;
+  grid-template-areas:
+    "center center"
+    "left right";
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+}
+
+.telemetry-readouts-left,
+.telemetry-readouts-right {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.telemetry-readouts-left {
+  grid-area: left;
+}
+
+.telemetry-readouts-right {
+  grid-area: right;
+}
+
+.telemetry-readout {
+  min-width: 0;
+  padding: 8px;
+  border-top: 1px solid var(--border-subtle);
+  border-left: 1px solid var(--border-subtle);
+}
+
+.telemetry-readout dt {
+  min-height: 32px;
+  overflow-wrap: anywhere;
+}
+
+.telemetry-readout dd > span,
+.telemetry-readout p {
+  overflow-wrap: anywhere;
+}
+
+.telemetry-center {
+  grid-area: center;
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(140px, 44%) minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+.telemetry-state {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 8px;
+}
+
+.telemetry-run-state {
+  min-width: 0;
+  text-align: right;
+}
+
+.telemetry-trace {
+  width: 100%;
+  min-width: 0;
+  max-width: 240px;
+  justify-self: center;
+}
+
+@container telemetry (min-width: 640px) {
+  .telemetry-readouts-left,
+  .telemetry-readouts-right {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@container telemetry (min-width: 880px) {
+  .telemetry-layout {
+    grid-template-areas: "left center right";
+    grid-template-columns: minmax(0, 1fr) minmax(168px, 18%) minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .telemetry-readout {
+    padding: 12px 8px;
+    border-top: 0;
+  }
+
+  .telemetry-center {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    border-left: 1px solid var(--border-subtle);
+    padding: 8px;
+  }
+
+  .telemetry-state {
+    justify-content: center;
+  }
+
+  .telemetry-run-state {
+    text-align: center;
+  }
+}

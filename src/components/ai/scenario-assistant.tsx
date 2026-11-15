@@ -22,9 +22,9 @@ export function AskIgnisButton({ prompt, label = "Ask IGNIS" }: { prompt?: strin
       type="button"
       onClick={() => show(prompt)}
       aria-label={label}
-      className={cn(actionClass("secondary"), "shrink-0 px-4 md:min-h-9")}
+      className={cn(actionClass("primary"), "shrink-0 px-4 md:min-h-9")}
     >
-      <MessageCircle className="size-4 text-muted-foreground" strokeWidth={1.5} aria-hidden="true" />
+      <MessageCircle className="size-4" strokeWidth={1.5} aria-hidden="true" />
       {label}
     </button>
   );

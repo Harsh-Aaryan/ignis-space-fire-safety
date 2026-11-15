@@ -34,19 +34,17 @@ export function SimulationView() {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <RouteTabs tabs={SIMULATION_TABS} label="Simulation views" className="shrink-0 bg-elev-1 px-2 md:px-4" />
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto xl:grid xl:grid-cols-[minmax(0,1fr)_400px] xl:overflow-hidden">
-        <div className="flex min-h-0 shrink-0 flex-col xl:shrink">
-          <div data-testid="habitat-viewport" className="relative min-h-[56dvh] w-full flex-1 bg-black xl:min-h-0">
-            <div className="absolute inset-0">
-              <HabitatMount fallback={<Schematic onSelect={selectEquipment} selected={selectedEquipment} />} />
-            </div>
-            <ViewToolbar />
-            <ViewportFootnote />
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[minmax(0,1fr)_auto] lg:overflow-hidden xl:grid-cols-[minmax(0,1fr)_400px]">
+        <div data-testid="habitat-viewport" className="relative order-1 min-h-[56dvh] min-w-0 w-full shrink-0 bg-black lg:col-start-1 lg:row-start-1 lg:min-h-0">
+          <div className="absolute inset-0">
+            <HabitatMount fallback={<Schematic onSelect={selectEquipment} selected={selectedEquipment} />} />
           </div>
-          {scenarioOpen || status !== "idle" ? <TelemetryStrip /> : null}
+          <ViewToolbar />
+          <ViewportFootnote />
         </div>
+        {scenarioOpen || status !== "idle" ? <TelemetryStrip className="order-2 lg:col-span-2 lg:col-start-1 lg:row-start-2" /> : null}
 
-        <div className="flex min-h-[60dvh] shrink-0 flex-col border-t border-border-subtle bg-card xl:min-h-0 xl:overflow-hidden xl:border-t-0 xl:border-l">
+        <div className="order-3 flex min-h-[60dvh] min-w-0 shrink-0 flex-col border-t border-border-subtle bg-card lg:col-start-2 lg:row-start-1 lg:min-h-0 lg:overflow-hidden lg:border-t-0 lg:border-l">
           <div role="tablist" aria-label="Side panel" className="flex shrink-0 border-b border-border-subtle bg-elev-1">
             {PANEL_TABS.map((tab) => {
               const selected = scenarioOpen === tab.scenario;

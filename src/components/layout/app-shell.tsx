@@ -89,7 +89,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {fullBleed ? (
             children
           ) : (
-            <div className="mx-auto w-full max-w-[1280px] px-4 py-6 md:px-6 md:py-8 xl:px-10">{children}</div>
+            <div className={pathname === ROUTES.overview ? "w-full" : "mx-auto w-full max-w-[1280px] px-4 py-6 md:px-6 md:py-8 xl:px-10"}>{children}</div>
           )}
         </main>
       </div>
