@@ -9,7 +9,7 @@ export const MODEL_ASSUMPTIONS = [
   "Handbook-tagged properties without exact table references remain unverified exploratory inputs.",
   "CO and soot partition are empirical. Other toxic gases and deflagration are not resolved.",
 ];
-export function applicability(input: FireInput) {
+export function applicability(input: Pick<FireInput, "material" | "gravityG" | "pressureKpa" | "oxygenPct" | "ventilationMs" | "fuel">) {
   const measuredMaterial = ["pmma", "sibal"].includes(input.material.id);
   const matchedSummary = measuredMaterial && input.gravityG === 0 && input.pressureKpa >= 54 && input.pressureKpa <= 101 && input.oxygenPct >= 21 && input.oxygenPct <= 31.1 && Math.abs(input.ventilationMs - 0.2) < 0.001 && Math.abs(input.fuel.widthM - 0.41) < 0.01;
   return {

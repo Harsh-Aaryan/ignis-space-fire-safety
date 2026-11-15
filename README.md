@@ -13,7 +13,7 @@ Navigation is **Home · Fire simulation · NASA research · Results**. Fire simu
 - `transport.ts` exchanges species and energy in a finite-volume source/room/connected-habitat network. Gas pressure follows the ideal-gas inventory. Recirculation introduces no fresh oxygen. Particle diffusion uses Stokes–Einstein with slip correction.
 - Finite CO₂, water and Halon doses enter the same network. Water evaporation is bounded by captured water and accessible surface heat. Spray capture and chemical inhibition remain assumptions.
 - The shader flame envelope uses modeled extent, airflow and soot tendency. Smoke follows a bounded history of solver transport steps. Physical display scale is the default; **Enhance visibility** explicitly enlarges the envelope. Original room lighting is retained.
-- **Ask IGNIS** is a global scenario assistant using structured explanations, the live snapshot and actual source citations. It can run a copied ventilation comparison. A generative AI provider is not connected. The older synthetic briefing remains an explicitly labeled research demonstration.
+- **Ask IGNIS** is a global scenario assistant using captured model output and the project's source registry. An optional server-side Groq connection adds scoped generative answers from retrieved source extracts. Local explanations remain available without a key or when AI output fails validation. It can run a copied ventilation comparison. The older synthetic briefing remains an explicitly labeled research demonstration.
 - Results exports include model version, exact inputs, evidence status, telemetry, agent inventories and events. Materials exports include parameter units, provenance, reference pressure and uncertainty notes.
 
 Quantitative flaming chemistry is currently limited to the four PMMA/cellulose/polyethylene profiles (`pmma`, `sibal`, `paper`, `ldpe-wire`). The other eight profiles remain available for exploratory heating/pyrolysis and aerosol detection; their flaming chemistry is withheld. Handbook values without verified property-level tables stay labeled as assumed. Model v2 has substantial Saffire comparison residuals and has not established predictive accuracy. See [VALIDATION.md](VALIDATION.md) and the [implementation plan](SCIENCE-UX-PLAN.md).
@@ -92,7 +92,7 @@ NEXT_PUBLIC_DATA_SOURCE=mock
 NEXT_PUBLIC_ASSISTANT_PROVIDER=mock
 ```
 
-Any other data source or assistant provider throws, on purpose, until Phase 2 exists. Do not put API keys in the client bundle.
+These two public switches configure the synthetic research demonstration and stay `mock`. Ask IGNIS has a separate server-side configuration described below. Do not put API keys in the client bundle.
 
 ## Architecture
 
@@ -133,7 +133,19 @@ With a production server running, use `npm run test:e2e`. Playwright defaults to
 
 `netlify.toml` builds with `next build` and publishes `.next`, with Node 22. Netlify’s Next.js runtime picks up the App Router from that output. The site can be public for review while the GitHub repository stays private.
 
-This environment does not ship Netlify credentials. After the private repository exists, connect it in Netlify and use the build settings already in `netlify.toml`. Confirm `NEXT_PUBLIC_DATA_SOURCE=mock` and do not add an LLM key for Phase 1.
+Connect the GitHub repository in Netlify and use the build settings already in `netlify.toml`. Keep both `NEXT_PUBLIC_*` switches set to `mock` for the synthetic research demonstration.
+
+### Ask IGNIS with Groq
+
+No fine-tuning or extra database is required. Set `GROQ_API_KEY` in Netlify's project environment variables and redeploy. The key must be available to **Functions** (or all scopes); values in `netlify.toml` are build-time settings and are not available to serverless functions. See [Netlify's function environment documentation](https://docs.netlify.com/build/functions/environment-variables/). Never prefix the key with `NEXT_PUBLIC_`, commit it, or paste it into chat.
+
+For local use, copy `.env.example` to `.env.local`, fill in `GROQ_API_KEY`, and restart `npm run dev`. A configured key enables Groq by default. `IGNIS_CHAT_PROVIDER=local` explicitly disables external calls; `IGNIS_CHAT_PROVIDER=groq` explicitly enables them. Missing keys use local explanations. `GROQ_MODEL` defaults to `openai/gpt-oss-20b`; an override must support [Groq strict structured outputs](https://console.groq.com/docs/structured-outputs).
+
+The browser sends a bounded question, up to four earlier questions and a small numeric scenario snapshot to `POST /api/ask-ignis`. The server restores material definitions and source extracts from the project, classifies the latest question for scope, then asks Groq for an answer with source IDs constrained to the retrieved registry entries. Groq receives this question/context data; it receives no browser storage dump, credentials or unrelated chat history. It cannot browse, run code, change a scenario or perform app actions. The comparison button runs the local solver on the setup captured with that answer.
+
+Off-topic questions and detected instruction overrides receive a fixed redirect to the subject. Insufficient evidence receives a fixed response rather than a guessed answer. Unknown citations, invalid output, timeouts and provider failures fall back to a labeled local explanation. The UI renders model text as plain text and builds links only from the project's registry. These layers reduce topic drift and unsupported claims; neither a system prompt nor a schema guarantees factual accuracy, citation entailment or resistance to every injection. Citations identify source extracts, not independent verification. No model tuning is performed.
+
+The endpoint bounds input size, output tokens and total upstream time, checks browser origin, and limits requests to ten per minute per IP within a server instance. This memory limit is best effort across Netlify instances, not a distributed quota. Use Groq account spend limits for a hard provider-side budget. Automated checks mock Groq; a live end-to-end provider check requires your key.
 
 ## Phase 2
 

@@ -1,12 +1,24 @@
 import type { FireInput, FireState } from "@/lib/fire/model";
 import { applicability, FIRE_MODEL_VERSION, MODEL_ASSUMPTIONS } from "@/lib/fire/evidence";
-export interface ScenarioAnswer { text: string; sources: string[]; context: string; compareVentilation?: boolean; }
+export type ScenarioInput = Pick<FireInput, "gravityG" | "oxygenPct" | "pressureKpa" | "ventilationMs" | "material" | "fuel">;
+export type ScenarioSnapshot = Pick<FireState, "t" | "smokeMgM3" | "detectorSmokeMgM3" | "transportS" | "firstAlarmTime" | "chemicalHrrW" | "sourceHeatW" | "surfaceTempC" | "localO2Pct">;
+export interface ScenarioAnswer { text: string; sources: string[]; context: string; compareVentilation?: boolean; provider?: "local" | "groq"; notice?: string; }
+export const SCOPE_REFUSAL = "I can help with spacecraft fire science, NASA combustion research and your IGNIS scenario. Please ask about flames, materials, smoke detection, ventilation, suppression or the evidence and limitations of this model.";
+/** Conservative local scope check; the Groq path also uses a separate scope classifier. */
+export function isScenarioQuestion(message: string): boolean {
+  return /\b(fire|fires|flame\w*|combust\w*|smoke|detect\w*|alarm\w*|sensor\w*|ventilat\w*|airflow|oxygen|gravity|microgravity|buoyan\w*|suppress\w*|extinguish\w*|saffire|bass|same|nasa|ignis|flammab\w*|pyrolys\w*|soot|hrr|material\w*)\b/i.test(message)
+    || /^(explain this (run|scenario)|which parts are assumptions|which parts are uncertain|what changes if i stop ventilation)[?.!]*$/i.test(message.trim());
+}
+export function isOverrideAttempt(message: string): boolean {
+  return /(?:ignore|disregard|override|forget)[\s\S]{0,70}(?:instructions?|rules?|prompts?|restrictions?|previous)|(?:reveal|print|show|repeat)[\s\S]{0,50}(?:system prompt|api key|secret)|(?:system|developer)\s*:|<\|(?:im_start|system|endoftext)\|>/i.test(message);
+}
 /** Deterministic explanations from the selected model state and real source registry.
  * No synthetic dossiers are consulted, and unsupported free text is not invented.
  */
-export function explainScenario(message: string, input: FireInput | null, state: FireState | null): ScenarioAnswer {
+export function explainScenario(message: string, input: ScenarioInput | null, state: ScenarioSnapshot | null): ScenarioAnswer {
   const q = message.toLowerCase();
   const context = `Model ${FIRE_MODEL_VERSION} · ${input ? `${input.gravityG} g · ${input.material.name} · ${input.oxygenPct}% O₂ · ${input.pressureKpa.toFixed(1)} kPa` : "No equipment selected"}${state ? ` · captured at T+${state.t.toFixed(1)} s` : " · setup preview"}`;
+  if (isOverrideAttempt(message) || !isScenarioQuestion(message)) return { context, text: SCOPE_REFUSAL, sources: [] };
   if (!input) return { context, text: "Choose a habitat and a piece of equipment, then select a material and ignition source. I can explain fire shape, smoke transport, sensor delays, ventilation changes and the evidence behind that scenario.", sources: ["saffire-vi", "bass-ii"] };
   const evidence = applicability(input);
   if (/assum|uncertain|accur|valid|limit/.test(q)) return { context, text: `${evidence.status}. ${evidence.reason} ${MODEL_ASSUMPTIONS.slice(0, 4).join(" ")} For ${input.material.name}, published findings describe particular specimens; they do not establish a universal ignition temperature or oxygen limit.`, sources: [...input.material.nasaSources, "model"] };
@@ -15,5 +27,5 @@ export function explainScenario(message: string, input: FireInput | null, state:
   if (/exting|suppress|water|co₂|co2|agent|power/.test(q)) return { context, text: "Removing power stops an electrical heat source; a self-sustaining fire can continue. CO₂ adds a finite gas dose and dilutes local oxygen. Captured water absorbs sensible and latent heat; the modeled capture fraction is assumed. Chemical-agent inhibition is exploratory. Flame-out leaves hot material and combustion products, so read the remaining heat and gases separately.", sources: ["iss-fds-2001", "fwm-pfe", "model"] };
   if (/nasa|source|research|evidence|support|experiment/.test(q)) return { context, text: `${input.material.nasaFinding} The links below identify the relevant publications. Saffire supplies cabin-scale HRR and product summaries; BASS explores geometry/flow-dependent spread and extinction; SAME supplies smoke-size observations. ${evidence.reason} Open NASA research for the original tables and unmodified telemetry.`, sources: [...input.material.nasaSources, "saffire-vi", "same-2"] };
   if (/flame|shape|blue|lean|gravity|why|explain/.test(q)) return { context, text: `${input.gravityG === 0 ? "The buoyant velocity is zero. A compact source can form a rounded envelope while forced airflow stretches it downstream." : "Hot gases experience buoyancy. The balance of buoyancy and cabin airflow determines plume direction and elongation."} ${state ? `The modeled chemical HRR is ${state.chemicalHrrW.toFixed(0)} W; source heating adds ${state.sourceHeatW.toFixed(0)} W. Surface temperature is ${state.surfaceTempC.toFixed(0)} °C and local oxygen is ${state.localO2Pct.toFixed(1)}%. ` : ""}The rendering uses the burning footprint and flow. Soot and fuel affect color; a blue flame is not a rule for zero gravity. ${evidence.reason}`, sources: ["bass-ii", "saffire-iv-v", "nist-cfast"] };
-  return { context, text: "I can explain this scenario's flame shape, smoke and detector delay, ventilation response, suppression mechanisms and NASA evidence. Use one of the suggested questions. This scenario assistant uses structured explanations; open-ended generative chat is not connected.", sources: input.material.nasaSources };
+  return { context, text: "I can explain this scenario's flame shape, smoke and detector delay, ventilation response, suppression mechanisms and NASA evidence. Try a suggested question or explore the original data on the Materials page.", sources: input.material.nasaSources };
 }

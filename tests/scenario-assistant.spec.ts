@@ -1,5 +1,38 @@
 import { test, expect } from "@playwright/test";
 
+test("Ask IGNIS shows pending AI answers, citations and recoverable errors", async ({ page }) => {
+  let releaseAnswer!: () => void;
+  const gate = new Promise<void>(resolve => { releaseAnswer = resolve; });
+  let calls = 0;
+  await page.route("**/api/ask-ignis", async route => {
+    const payload = route.request().postDataJSON();
+    expect(payload.message).toBe("Why does airflow affect a flame?");
+    expect(payload).not.toHaveProperty("apiKey");
+    if (++calls === 1) {
+      await gate;
+      await route.fulfill({ json: { text: "Airflow transports oxygen to the flame. This is an exploratory model explanation.", sources: ["bass-ii"], context: "Model 2.0.0 · setup preview", provider: "groq" } });
+    } else {
+      await route.fulfill({ status: 429, json: { error: "Too many questions." } });
+    }
+  });
+  await page.goto("/materials");
+  await page.getByRole("button", { name: "Ask IGNIS", exact: true }).click();
+  const assistant = page.getByRole("complementary", { name: "Ask IGNIS scenario assistant" });
+  const input = assistant.getByLabel("Ask IGNIS a question");
+  await input.fill("Why does airflow affect a flame?");
+  await assistant.getByRole("button", { name: "Send question", exact: true }).click();
+  await expect(assistant.getByRole("status")).toContainText("Checking the scenario");
+  await expect(assistant.getByRole("button", { name: "Send question", exact: true })).toBeDisabled();
+  releaseAnswer();
+  await expect(assistant).toContainText("AI explanation · Groq");
+  await expect(assistant.getByRole("link", { name: /BASS-II/ })).toHaveAttribute("href", /ntrs\.nasa\.gov/);
+  await input.fill("Why does airflow affect a flame?");
+  await assistant.getByRole("button", { name: "Send question", exact: true }).click();
+  await expect(assistant.getByRole("alert")).toContainText("Please wait a minute");
+  await expect(input).toHaveValue("Why does airflow affect a flame?");
+  await expect(input).toBeEnabled();
+});
+
 test("guided setup, grounded assistant and review work together", async ({ page }, info) => {
   const errors: string[]=[];
   page.on("pageerror",e=>errors.push(e.message));
