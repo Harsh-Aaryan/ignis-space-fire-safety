@@ -1,21 +1,34 @@
 "use client";
 
-import Link from "next/link";
-import { ScenarioSetup } from "@/components/fire/scenario-setup";
-import { FIRE_MODEL_VERSION, applicability } from "@/lib/fire/evidence";
 import { useMemo, useState } from "react";
+import { Download } from "lucide-react";
+import { ActionLink, EvidenceTag, Note, Panel, Stat, TextLink, actionClass, table } from "@/components/design/kit";
 import { Cite } from "@/components/fire/cite";
-import { clock, formatPower } from "@/components/firetwin/fire-hud";
+import { ScenarioSetup } from "@/components/fire/scenario-setup";
+import { ApplicabilityTag } from "@/components/simulation/model-applicability";
+import { PHASE_LABEL, clock, formatPower } from "@/components/simulation/format";
 import { objectById, roomById } from "@/data/habitat-interiors";
-import { runFire, type FireSample } from "@/lib/fire/model";
+import { FIRE_MODEL_VERSION, applicability } from "@/lib/fire/evidence";
+import { runFire, type FireRun, type FireSample } from "@/lib/fire/model";
 import { buildFireInput } from "@/lib/fire/scenario";
-import { downloadText } from "@/lib/export-csv";
+import { downloadText } from "@/lib/research/export";
+import { ROUTES } from "@/lib/routes";
+import { cn } from "@/lib/utils";
 import { useFireSimStore } from "@/stores/fire-sim-store";
 import { useMissionStore } from "@/stores/mission-store";
 
-const field = "mt-1 w-full rounded border border-border bg-background px-2 py-2 text-sm disabled:opacity-60";
-const regimes = [{ g: 0, name: "Orbit / 0 g" }, { g: 0.165, name: "Moon / 0.165 g" }, { g: 0.38, name: "Mars / 0.38 g" }];
+const REGIMES = [
+  { g: 0, name: "Orbit, 0 g" },
+  { g: 0.165, name: "Moon, 0.165 g" },
+  { g: 0.38, name: "Mars, 0.38 g" },
+];
 
+const DURATIONS = [300, 600, 1200];
+
+const TRACE_COLOR = ["stroke-status-info", "stroke-ember", "stroke-status-caution"];
+const TRACE_TEXT = ["text-status-info", "text-ember-text", "text-status-caution"];
+
+/** The same fuel, heat source and cabin, run at three gravity levels. */
 export function ScenarioForecast() {
   const mission = useMissionStore();
   const sim = useFireSimStore();
@@ -23,53 +36,203 @@ export function ScenarioForecast() {
   const locked = sim.status !== "idle";
   const object = objectById(locked ? sim.activeObjectId : mission.selectedObjectId);
   const room = roomById(object?.roomId ?? null);
-  const input = useMemo(() => room && object ? buildFireInput(mission.scenario, room, object, sim.config) : null,
-    [mission.scenario, room, object, sim.config]);
-  const runs = useMemo(() => input ? regimes.map((regime) => ({ ...regime, run: runFire({ ...input, gravityG: regime.g }, { durationS }) })) : [], [input, durationS]);
-  const current = runs.find((item) => item.g === mission.scenario.gravityG);
-  if (!input || !object || !room) return <section className="rounded border border-border bg-card p-4"><h2 className="mb-4 text-lg font-medium">Compare fire conditions</h2><ScenarioSetup /><p className="mt-4 text-sm text-muted-foreground">Choose equipment to compare this setup across gravity regimes.</p></section>;
-  const active = current?.run ?? runFire(input, { durationS });
+  const input = useMemo(
+    () => (room && object ? buildFireInput(mission.scenario, room, object, sim.config) : null),
+    [mission.scenario, room, object, sim.config],
+  );
+  const runs = useMemo(
+    () => (input ? REGIMES.map((regime) => ({ ...regime, input: { ...input, gravityG: regime.g }, run: runFire({ ...input, gravityG: regime.g }, { durationS }) })) : []),
+    [input, durationS],
+  );
 
-  function openInTwin() {
+  if (!input || !object || !room) {
+    return (
+      <Panel title="Choose a setup" description="Pick where the fire starts. The same setup is then run at each gravity level.">
+        <ScenarioSetup />
+      </Panel>
+    );
+  }
+
+  function openInHabitat() {
     if (!object || !input) return;
     mission.selectObject(object.id);
     sim.patchConfig({ materialId: input.material.id, ignitionId: input.ignition.id });
     sim.setOpen(true);
   }
 
-  return <section className="rounded border border-border bg-card p-4" aria-label="Physics-based scenario forecast">
-    <header className="flex flex-wrap items-start justify-between gap-3">
-      <div><p className="micro text-ember-text">Fire simulation / Compare conditions</p><h2 className="mt-1 text-lg font-medium">Compare fire conditions</h2></div>
-      <Link href="/firetwin" onClick={openInTwin} className="border border-primary px-3 py-2 text-sm text-ember-text">Open in 3D simulation</Link>
-    </header>
-    <p className="mt-2 max-w-3xl text-sm text-muted-foreground">The same ignition, HRR, gas balance, smoke transport and response model drives this forecast and the live 3D simulation. This is a reduced-order model; partial-gravity results are extrapolations.</p>
-    {locked ? <p className="mt-3 text-xs text-muted-foreground">An existing run owns this setup. <button type="button" onClick={sim.reset} className="text-ember-text underline">Reset fire run to edit</button></p> : null}
-    <div className="mt-4"><ScenarioSetup /></div>
-    <label className="mt-4 block max-w-xs text-sm">Comparison duration<select aria-label="Prediction duration" className={field} value={durationS} onChange={(event) => setDurationS(Number(event.target.value))}>{[300,600,1200].map(seconds => <option key={seconds} value={seconds}>{seconds/60} minutes</option>)}</select></label>
-    <p className="mt-3 text-xs text-muted-foreground">{room.name} · {input.roomVolumeM3.toFixed(1)} m³ room / {input.habitatVolumeM3.toFixed(1)} m³ connected air · {input.oxygenPct}% O₂ · {mission.scenario.pressurePsi} psi · {(input.ventilationMs * 100).toFixed(1)} cm/s. Fuel dimensions and free-air volume are conceptual assumptions. <Cite id="model" /></p>
-    <div className="mt-4 grid gap-3 sm:grid-cols-4" data-testid="forecast-summary">
-      {[["Peak HRR", formatPower(active.state.peakHrrW)], ["Final O₂", `${active.state.o2Pct.toFixed(2)} %`], ["Final cabin temperature", `${active.state.tempC.toFixed(1)} °C`], ["First alarm", active.state.firstAlarmTime === null ? "No alarm in window" : `T+${clock(active.state.firstAlarmTime)}`]].map(([label, value]) => <div key={label} className="border border-border p-3"><p className="text-xs text-muted-foreground">{label}</p><p className="numeric mt-1 text-lg">{value}</p></div>)}
-    </div>
-    <ForecastTrace history={active.history} />
-    <div className="mt-4 overflow-x-auto"><table className="w-full text-left text-xs" aria-label="Gravity regime comparison">
-      <thead><tr>{["Same fuel and cabin; gravity varies", "Peak HRR", "Final O₂", "Final CO", "CO₂ rise", "First alarm", "Final phase"].map((label) => <th key={label} className="px-2 py-2 whitespace-nowrap">{label}</th>)}</tr></thead>
-      <tbody>{runs.map(({ g, name, run }) => <tr key={g} className={`border-t border-border ${g === input.gravityG ? "bg-secondary" : ""}`}><th scope="row" className="px-2 py-2 font-normal whitespace-nowrap">{name}</th>{[formatPower(run.state.peakHrrW), `${run.state.o2Pct.toFixed(2)} %`, `${run.state.coPpm.toFixed(0)} ppm`, `${run.state.co2RiseMmHg.toFixed(2)} mmHg`, run.state.firstAlarmTime === null ? "No alarm" : clock(run.state.firstAlarmTime), run.state.phase].map((value, index) => <td key={index} className="numeric px-2 py-2 whitespace-nowrap">{value}</td>)}</tr>)}</tbody>
-    </table></div>
-    <p className="mt-3 text-xs text-muted-foreground">{input.material.nasaFinding} {input.material.nasaSources.map((id) => <Cite key={id} id={id} compact />)}</p>
-    <details className="mt-4 border-t border-border pt-3"><summary className="cursor-pointer text-sm">Equations, assumptions and export</summary>
-      <div className="mt-3 space-y-2 text-xs text-muted-foreground">
-        <p>Q̇ = ṁburn ΔHc; nominal polymer element balances constrain oxygen use, CO₂, CO, soot and water. The 13.1 MJ/kg O₂ rule is an approximate calorimetry diagnostic for suitable fuels. Gas exchange carries species and energy together. Buoyant velocity vanishes in 0 g. <Cite id="saffire-vi" /> <Cite id="nist-cfast" /></p>
-        <p>Sensor thresholds, enclosure leakage, heat-transfer coefficients and some material properties are assumptions. A predicted alarm time is not a NASA detector validation result. Crew response: {input.autoResponse ? "power and ventilation isolation on alarm" : "manual"}; agent {input.crewAgent ?? "none"}. <Cite id="model" /></p>
-        <p>Saffire summaries provide comparison cases. Model v2 has not been recalibrated against them. Independent time histories and partial-gravity validation data are still needed. <Link href="/materials" className="text-ember-text underline">Inspect measured values and sources</Link></p>
-        <button type="button" className="border border-border px-3 py-2 text-foreground" onClick={() => downloadText("ignis-fire-forecast.json", JSON.stringify({ modelVersion: FIRE_MODEL_VERSION, applicability: applicability(input), provenance: "IGNIS reduced-order model output, not NASA measurements", input, durationS, history: active.history, events: active.state.events }, null, 2), "application/json")}>Export model forecast (JSON)</button>
+  function exportForecast() {
+    if (!input) return;
+    const payload = {
+      modelVersion: FIRE_MODEL_VERSION,
+      provenance: "IGNIS reduced-order model output, not NASA measurements",
+      durationS,
+      regimes: runs.map((item) => ({
+        gravityG: item.g,
+        applicability: applicability(item.input),
+        input: item.input,
+        history: item.run.history,
+        events: item.run.state.events,
+      })),
+    };
+    downloadText("ignis-gravity-comparison.json", JSON.stringify(payload, null, 2), "application/json");
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      <Panel
+        title="Setup"
+        description={
+          locked ? (
+            <>
+              A run in the habitat is using this setup.{" "}
+              <button type="button" onClick={sim.reset} className="text-ember-text underline underline-offset-4">
+                Reset the run to edit it
+              </button>
+            </>
+          ) : (
+            "The same fuel, heat source and cabin atmosphere are used for every gravity level."
+          )
+        }
+        actions={
+          <ActionLink href={ROUTES.simulation} onClick={openInHabitat}>
+            Open in 3D simulation
+          </ActionLink>
+        }
+      >
+        <ScenarioSetup />
+        <div className="mt-4 flex flex-wrap items-end gap-x-6 gap-y-3">
+          <label className="text-sm text-foreground">
+            Duration
+            <select
+              aria-label="Prediction duration"
+              value={durationS}
+              onChange={(event) => setDurationS(Number(event.target.value))}
+              className="mt-1.5 block min-h-10 rounded-md border border-border bg-background px-3 text-sm"
+            >
+              {DURATIONS.map((seconds) => (
+                <option key={seconds} value={seconds}>
+                  {seconds / 60} minutes
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="min-w-0 flex-1 basis-72 text-[13px] leading-5 text-muted-foreground">
+            {room.name}: {input.roomVolumeM3.toFixed(1)} m³ of air in the room, {input.habitatVolumeM3.toFixed(1)} m³ connected.{" "}
+            {input.oxygenPct}% O₂, {mission.scenario.pressurePsi} psi, {(input.ventilationMs * 100).toFixed(1)} cm/s. Fuel
+            dimensions and air volume are conceptual.
+          </p>
+        </div>
+      </Panel>
+
+      <Panel title="Result by gravity" flush>
+        <div className="overflow-x-auto">
+          <table className={table.root} aria-label="Gravity regime comparison">
+            <thead className={table.head}>
+              <tr>
+                <th scope="col" className={table.th}>
+                  Gravity
+                </th>
+                <th scope="col" className={table.th}>
+                  Basis
+                </th>
+                {["Peak heat release", "Final O₂", "Final CO", "CO₂ rise", "First alarm", "Final state"].map((label) => (
+                  <th key={label} scope="col" className={cn(table.th, "text-right")}>
+                    {label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {runs.map(({ g, name, run, input: regimeInput }) => (
+                <tr key={g} className={cn(table.tr, g === mission.scenario.gravityG ? "bg-elev-2" : "")}>
+                  <th scope="row" className={cn(table.td, "font-medium whitespace-nowrap text-foreground")}>
+                    {name}
+                    {g === mission.scenario.gravityG ? <span className="ml-2 text-[12px] font-normal text-text-tertiary">current habitat</span> : null}
+                  </th>
+                  <td className={table.td}>
+                    <ApplicabilityTag input={regimeInput} />
+                  </td>
+                  <td className={table.num}>{formatPower(run.state.peakHrrW)}</td>
+                  <td className={table.num}>{run.state.o2Pct.toFixed(2)}%</td>
+                  <td className={table.num}>{run.state.coPpm.toFixed(0)} ppm</td>
+                  <td className={table.num}>{run.state.co2RiseMmHg.toFixed(2)} mmHg</td>
+                  <td className={table.num}>{run.state.firstAlarmTime === null ? "No alarm" : `T+${clock(run.state.firstAlarmTime)}`}</td>
+                  <td className={cn(table.td, "text-right whitespace-nowrap")}>{PHASE_LABEL[run.state.phase]}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+
+      <Panel title="Heat release over time" description="Each line is the same fire at a different gravity level.">
+        <ComparisonTrace runs={runs.map((item) => ({ name: item.name, run: item.run }))} durationS={durationS} />
+        <dl className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3" data-testid="forecast-summary">
+          {runs.map((item, index) => (
+            <Stat
+              key={item.g}
+              label={item.name}
+              value={formatPower(item.run.state.peakHrrW)}
+              note={<span className={TRACE_TEXT[index]}>Peak heat release</span>}
+            />
+          ))}
+        </dl>
+      </Panel>
+
+      <Note>
+        Lunar and Martian results are <EvidenceTag kind="extrapolated" className="mx-0.5 align-middle" /> : no cabin-scale fire has
+        been measured in partial gravity. {input.material.nasaFinding}{" "}
+        <span className="inline-flex flex-wrap gap-1.5 align-middle">
+          {input.material.nasaSources.map((id) => (
+            <Cite key={id} id={id} compact />
+          ))}
+        </span>{" "}
+        <TextLink href={`${ROUTES.modelingData}?view=check`}>How the model compares with Saffire</TextLink>
+      </Note>
+
+      <div>
+        <button type="button" onClick={exportForecast} className={actionClass("secondary")}>
+          <Download className="size-4" aria-hidden="true" />
+          Export comparison (JSON)
+        </button>
       </div>
-    </details>
-  </section>;
+    </div>
+  );
 }
 
-function ForecastTrace({ history }: { history: FireSample[] }) {
-  const peak = Math.max(1, ...history.map((point) => point.hrrW));
-  const duration = Math.max(1, history.at(-1)?.t ?? 1);
-  const path = history.map((point, index) => `${index ? "L" : "M"}${(point.t / duration * 600).toFixed(1)},${(96 - point.hrrW / peak * 88).toFixed(1)}`).join(" ");
-  return <figure className="mt-4 border border-border p-3"><svg viewBox="0 0 600 100" className="h-28 w-full" role="img" aria-label="Predicted heat release rate over time"><path d={path} fill="none" stroke="#E07A3D" strokeWidth="2" vectorEffect="non-scaling-stroke" /></svg><figcaption className="flex justify-between text-xs text-muted-foreground"><span>Model HRR · peak {formatPower(peak)}</span><span>0–{clock(duration)} simulated time</span></figcaption></figure>;
+function ComparisonTrace({ runs, durationS }: { runs: Array<{ name: string; run: FireRun }>; durationS: number }) {
+  const width = 600;
+  const height = 140;
+  const peak = Math.max(1, ...runs.flatMap((item) => item.run.history.map((point) => point.hrrW)));
+  const path = (history: FireSample[]) =>
+    history
+      .map((point, index) => {
+        const x = (point.t / Math.max(1, durationS)) * width;
+        const y = height - 4 - (point.hrrW / peak) * (height - 12);
+        return `${index ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(" ");
+
+  return (
+    <figure>
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-40 w-full" role="img" aria-label="Modeled heat release rate over time at three gravity levels">
+        <line x1="0" y1={height - 4} x2={width} y2={height - 4} className="stroke-border" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+        {runs.map((item, index) => (
+          <path key={item.name} d={path(item.run.history)} fill="none" strokeWidth="2" vectorEffect="non-scaling-stroke" className={TRACE_COLOR[index]} />
+        ))}
+      </svg>
+      <figcaption className="mt-2 flex flex-wrap justify-between gap-x-6 gap-y-1 text-[12px] leading-4 text-muted-foreground">
+        <span className="flex flex-wrap gap-x-4 gap-y-1">
+          {runs.map((item, index) => (
+            <span key={item.name} className={TRACE_TEXT[index]}>
+              {item.name}
+            </span>
+          ))}
+        </span>
+        <span>
+          0 to {clock(durationS)}, vertical scale to {formatPower(peak)}
+        </span>
+      </figcaption>
+    </figure>
+  );
 }

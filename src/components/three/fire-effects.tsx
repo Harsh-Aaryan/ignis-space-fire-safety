@@ -54,9 +54,12 @@ export function FireEffects({ room }: { room: HabitatRoomConfig }) {
       const height = (dome ? Math.max(f.standoffM * 4, width * .6) : Math.max(.05, f.lengthM)) * scale;
       const reach = dome ? Math.max(width, f.lengthM * scale) : width;
       flame.current.scale.set(width * 1.4, height * 1.25, reach * 1.4);
-      flame.current.position.set(origin[0], origin[1] + height * .5, origin[2]);
+      // A dome's long axis is local z: yaw it onto the room flow and shift it downstream of the fuel.
+      const downstream = dome ? Math.max(0, reach - width) * .7 : 0;
+      flame.current.position.set(origin[0] + flow[0] * downstream, origin[1] + height * .5, origin[2] + flow[2] * downstream);
       const direction = new THREE.Vector3(flow[0] * Math.sin(f.tiltRad), Math.cos(f.tiltRad), flow[2] * Math.sin(f.tiltRad));
-      flame.current.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dome ? new THREE.Vector3(0,1,0) : direction);
+      if (dome) flame.current.quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.atan2(flow[0], flow[2]));
+      else flame.current.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), direction);
       flame.current.updateWorldMatrix(true,false);
       resources.flame.uniforms.uEye.value.copy(flame.current.worldToLocal(camera.getWorldPosition(new THREE.Vector3())));
       resources.flame.uniforms.uTime.value = time;

@@ -6,6 +6,7 @@ import { createPortal, useThree } from "@react-three/fiber";
 import { HabitatRoom } from "@/components/three/habitat-interior";
 import { roomById, roomsForHabitat, type HabitatRoomConfig } from "@/data/habitat-interiors";
 import { useMissionStore } from "@/stores/mission-store";
+import { seededRandom } from "@/lib/three/seeded-random";
 import * as THREE from "three";
 import { Hotspot } from "@/components/three/hotspot";
 import {
@@ -14,7 +15,6 @@ import {
   Detector,
   DockingPort,
   Rack,
-  RadiatorPanel,
   SolarWing,
   Suppression,
   VentDuct,
@@ -36,11 +36,12 @@ function LegacyGateway({
   const spread = exploded ? 1.4 : 0;
   const clip = useMemo(() => (cutaway ? [new THREE.Plane(new THREE.Vector3(0, 0, -1), 0.2)] : []), [cutaway]);
   const stars = useMemo(() => {
+    const random = seededRandom(200);
     const positions = new Float32Array(200 * 3);
     const look = new THREE.Vector3(-20, -6.2, -16.5).normalize();
     for (let i = 0; i < 200; i += 1) {
       const inFrame = i < 100;
-      const dir = new THREE.Vector3(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1).normalize();
+      const dir = new THREE.Vector3(random() * 2 - 1, random() * 2 - 1, random() * 2 - 1).normalize();
       if (inFrame) dir.lerp(look, 0.72).normalize();
       dir.multiplyScalar(600);
       positions[i * 3] = dir.x;

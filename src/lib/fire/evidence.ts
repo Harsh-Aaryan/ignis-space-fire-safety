@@ -5,6 +5,8 @@ export const MODEL_ASSUMPTIONS = [
   "Conceptual fuel dimensions and free-air volume; HVAC paths approximate the rendered rooms.",
   "Surface emissivity 0.9; wall capacity 12 kJ/(m² K); ambient wall coupling 0.3 W/(m² K).",
   "Near-source mixing length and heat-feedback efficiency are exploratory closures.",
+  "Thick fuels burn at an assumed local rate of 4 g/m²s where the flame is attached; flame feedback is capped at 55% of the heat released.",
+  "The still-air oxygen limit of thick acrylic is calibrated to one flight observation (Saffire V-3).",
   "Detector thresholds, response constants and mist capture efficiency need hardware calibration.",
   "Handbook-tagged properties without exact table references remain unverified exploratory inputs.",
   "CO and soot partition are empirical. Other toxic gases and deflagration are not resolved.",

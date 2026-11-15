@@ -10,7 +10,7 @@ const cache = new Map();
 function load(file) {
   const absolute = path.resolve(root, file);
   if (cache.has(absolute)) return cache.get(absolute).exports;
-  const module = { exports: {} }; cache.set(absolute, module);
+  const auditModule = { exports: {} }; cache.set(absolute, auditModule);
   const source = fs.readFileSync(absolute, "utf8");
   const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;
   const localRequire = specifier => {
@@ -18,8 +18,8 @@ function load(file) {
     if (specifier.startsWith(".")) return load(path.resolve(path.dirname(absolute), specifier) + ".ts");
     return require(specifier);
   };
-  vm.runInThisContext(`(function(require,module,exports){${code}\n})`, { filename: absolute })(localRequire, module, module.exports);
-  return module.exports;
+  vm.runInThisContext(`(function(require,module,exports){${code}\n})`, { filename: absolute })(localRequire, auditModule, auditModule.exports);
+  return auditModule.exports;
 }
 const { compareSaffireSummaries } = load("src/lib/fire/benchmarks.ts");
 const { genericFireInput } = load("src/lib/fire/scenario.ts");

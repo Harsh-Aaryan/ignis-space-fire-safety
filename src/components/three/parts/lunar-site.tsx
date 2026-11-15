@@ -165,7 +165,8 @@ function groundGeometry(samples: Uint16Array, n: number, size: number, segments:
 
 export function LunarSite({ coarse }: { coarse: boolean }) {
   const heightUrl = coarse ? "/textures/moon/apollo11_nac_dtm_1024.png" : "/textures/moon/apollo11_nac_dtm_2048.png";
-  const [field, setField] = useState<{ samples: Uint16Array; n: number } | null>(null);
+  const [loadedField, setLoadedField] = useState<{ url: string; samples: Uint16Array; n: number } | null>(null);
+  const field = loadedField?.url === heightUrl ? loadedField : null;
   const [albedo, normal, rough, ao] = useTexture([
     "/textures/moon/moon_01_color.webp",
     "/textures/moon/moon_01_normal.webp",
@@ -174,9 +175,8 @@ export function LunarSite({ coarse }: { coarse: boolean }) {
   ]);
   useEffect(() => {
     let cancel = false;
-    setField(null);
     decodePng16(heightUrl).then((image) => {
-      if (!cancel) setField({ samples: image.samples, n: image.width });
+      if (!cancel) setLoadedField({ url: heightUrl, samples: image.samples, n: image.width });
     });
     return () => {
       cancel = true;

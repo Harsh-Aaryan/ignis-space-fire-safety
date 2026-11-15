@@ -3,7 +3,9 @@
 import { useEffect, useRef } from "react";
 import { FIRETWIN_HABITATS, missionById } from "@/data/missions";
 import { formatGravity } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { useMissionStore } from "@/stores/mission-store";
+
 const ORDER = ["lunar-habitat", "mars-habitat", "gateway-orbit"] as const;
 
 const LABEL: Record<(typeof ORDER)[number], string> = {
@@ -12,16 +14,11 @@ const LABEL: Record<(typeof ORDER)[number], string> = {
   "gateway-orbit": "Gateway",
 };
 
-const MOBILE: Record<(typeof ORDER)[number], string> = {
-  "lunar-habitat": "Moon",
-  "mars-habitat": "Mars",
-  "gateway-orbit": "Orbit",
-};
-
+/** Accessible names. Browser tests select the radios by these strings; keep them exactly. */
 const ARIA: Record<(typeof ORDER)[number], string> = {
   "lunar-habitat": "Moon, 0.165 g",
   "mars-habitat": "Mars, 0.38 g",
-  "gateway-orbit": "Gateway-inspired lunar orbit habitat, about 0 g, conceptual digital twin",
+  "gateway-orbit": "Gateway, about 0 g",
 };
 
 export function HabitatSwitcher() {
@@ -49,7 +46,7 @@ export function HabitatSwitcher() {
     <div
       role="radiogroup"
       aria-label="Habitat"
-      className="flex h-7 w-full border border-[#3A3E44] bg-[#16181C] md:w-auto"
+      className="flex h-10 w-full rounded-md border border-border-subtle bg-background p-0.5 md:h-9 md:w-auto"
       onKeyDown={(event) => {
         const index = ORDER.indexOf(active as (typeof ORDER)[number]);
         if (event.key === "ArrowRight" || event.key === "ArrowDown") {
@@ -81,12 +78,14 @@ export function HabitatSwitcher() {
             aria-label={ARIA[id]}
             tabIndex={selected ? 0 : -1}
             onClick={() => select(id)}
-            className={`relative h-full flex-1 border-r border-[#2A2D32] px-3 font-cond text-[11px] font-semibold tracking-[0.08em] uppercase last:border-r-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E07A3D] md:flex-none ${selected ? "bg-[#1F2125] text-[#EDEAE4]" : "text-[#A39E96] hover:bg-[#1F2125] hover:text-[#EDEAE4]"}`}
+            className={cn(
+              "relative h-full flex-1 rounded-sm px-3 text-[13px] transition-colors md:flex-none",
+              selected ? "bg-elev-3 text-foreground" : "text-muted-foreground hover:bg-elev-2 hover:text-foreground",
+            )}
           >
-            <span className="md:hidden">{MOBILE[id]}</span>
-            <span className="hidden md:inline">{LABEL[id]}</span>
+            {LABEL[id]}
             <span className="sr-only">{missionById(id).gravityLabel}</span>
-            {selected ? <span className="absolute inset-x-1 bottom-0 h-0.5 bg-[#E07A3D]" /> : null}
+            {selected ? <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-primary" aria-hidden="true" /> : null}
           </button>
         );
       })}

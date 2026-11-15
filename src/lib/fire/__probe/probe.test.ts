@@ -2,6 +2,7 @@ import { it } from "vitest";
 import { SAFFIRE_BENCHMARKS } from "@/data/fire/options";
 import { runFire } from "@/lib/fire/model";
 import { genericFireInput, saffireInput } from "@/lib/fire/scenario";
+// Integrates 19 full burns; allow for slower CI hosts and concurrent checks.
 it("probe", () => {
   for (const b of SAFFIRE_BENCHMARKS) {
     const r = runFire(saffireInput(b), { durationS: b.burnDurationS + 20 });
@@ -13,4 +14,4 @@ it("probe", () => {
     const s = r.state;
     console.log("g",g,m,"ign",s.ignitionTime?.toFixed(0),"peak",s.peakHrrW.toFixed(0),"phase",s.phase,"cause",s.extinctionCause,"O2",s.o2Pct.toFixed(2),"T",s.tempC.toFixed(1),"CO",s.coPpm.toFixed(0),"CO2mmHg",s.co2RiseMmHg.toFixed(2),"smoke",s.smokeMgM3.toFixed(2),"layer",s.layerHeightM.toFixed(2),"alarm",s.firstAlarmTime?.toFixed(0),"tCO1h",r.timeToCo1h,"flameL",s.flame.lengthM.toFixed(2),s.flame.kind,"LOC",s.locPct.toFixed(1));
   }
-});
+}, 20_000);

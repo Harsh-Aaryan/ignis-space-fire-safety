@@ -224,6 +224,22 @@ export const U_OPTIMUM = 0.08; // PMMA rod envelope only, not a material-indepen
 export function buoyantBaseVelocity(g: number, p: number) {
   return g <= 0 ? 0 : Math.cbrt(g * G0 * 1.5e-4 * 101.325 / p * 5);
 }
+/** Area-averaged burn-rate cap, kg/(m² s): fitted to Saffire VI peak heat release
+ * over the whole pyrolysing footprint (materials.ts refMassFluxGm2s). */
+export function massFluxCap(m: FireMaterial, u: number, p: number, o2Pct: number) {
+  return m.refMassFluxGm2s.value * 1e-3 * Math.sqrt(Math.max(0.01, u) / 0.2 * p / 101.325) * o2Pct / 21;
+}
+/**
+ * Assumption (model 2.1.0): local burning mass flux of a thick fuel where its
+ * flame is attached, kg/(m² s). The Saffire cap above is a footprint average
+ * (about 1 g/m²s at 20 cm/s), far below the local rate that an attached flame
+ * must sustain. 4 g/m²s is the order of the critical mass flux below which a
+ * PMMA diffusion flame cannot be maintained in 1 g (a few g/m²s, Drysdale,
+ * Introduction to Fire Dynamics, ch. 5–6) and of the low-flow microgravity
+ * regression rates of PMMA (a few µm/s × 1190 kg/m³). It sets the area over which
+ * feedback and surface losses act; it does not change the burn-rate cap.
+ */
+export const THICK_LOCAL_BURNING_FLUX = 4e-3;
 export function buoyantFlameVelocity(g: number, lengthM: number) {
   return g <= 0 ? 0 : 0.35 * Math.sqrt(g * G0 * Math.max(lengthM, 0.02) * 5);
 }
@@ -231,11 +247,16 @@ export function buoyantFlameVelocity(g: number, lengthM: number) {
  * Other materials retain exploratory margins with their own reference pressure.
  * No universal White Sands pressure slope is applied outside its specimens.
  */
+/** Bounds the low-flow branch of the envelope as flow tends to zero. Calibrated
+ * to one flight observation (2.1.0): Saffire V-3 acrylic at 25.4 % O₂ burned at
+ * 5 cm/s and went out quickly once the flow stopped, so the still-air limit of
+ * thick acrylic must lie above 25.4 %. This floor gives 27.2 %. */
+export const QUIESCENT_FLOOR_MS = 0.002;
 export function limitingOxygenPct(m: FireMaterial, u: number, p: number) {
   const referencePressure = m.id === "pei" ? 70.3 : 101.325;
   const min = m.loc1gPct.value - m.lowFlowMarginPct.value;
   const opt = m.id === "pmma" ? 0.08 : m.id === "sibal" || m.id === "paper" ? 0.2 : 0.15;
-  const x = Math.log(Math.max(u, 0.003) / opt);
+  const x = Math.log(Math.max(u, QUIESCENT_FLOOR_MS) / opt);
   const quench = m.form === "thick" ? 1.0 : 2.0;
   const curvature = x < 0 ? quench : m.lowFlowMarginPct.value / Math.max(0.3, Math.log(0.45 / opt) ** 2);
   // Pressure extrapolation is explicitly a closure, not the WSTF mean transferred to all fuels.
@@ -392,36 +413,60 @@ function advance(s: FireState, input: FireInput, dt: number) {
   s.sourceHeatW = (circuit ? circuit.currentA ** 2 * circuit.resistanceOhm : input.ignition.ownHeatW) * sourceDt / dt;
   if (input.ignition.durationS.value !== null && s.sourceOnTime >= input.ignition.durationS.value) s.sourceActive = false;
   s.sourceEnergyJ += s.sourceHeatW * dt;
+  const spot = input.ignition.areaM2;
+  const thick = m.form === "thick";
+  // Burning footprint: the Saffire-calibrated burn-rate cap applies over this area.
+  const footprintArea = Math.max(spot, s.burningAreaM2);
+  // Thick fuel: the flame's feedback and the hot-surface losses act over the
+  // flame-attached area, sized so the calibrated footprint burn rate is carried
+  // at the assumed local burning flux (THICK_LOCAL_BURNING_FLUX). Thin fuels
+  // keep the footprint. Sized before the agents act so mist capture is bounded
+  // by the same surface the solid step heats.
+  const attachedArea = (o2Pct: number) => thick ? clamp(massFluxCap(m, s.uBaseMs, s.pressureKpa, o2Pct) * footprintArea / THICK_LOCAL_BURNING_FLUX, spot, footprintArea) : footprintArea;
+  const activeArea = attachedArea(s.localO2Pct);
   // This reduced-order mist branch cools the exposed solid. Limit evaporation
   // to its available sensible heat so an assumed capture fraction cannot cool
   // the surface below incoming water temperature without a wet-bulb model.
-  const exposedArea = Math.max(input.ignition.areaM2, s.burningAreaM2);
-  const exposedCapacity = s.solid.densityKgM3 * m.specificHeatKJkgK * 1000 * s.solid.thicknessM / s.solid.temperaturesK.length * exposedArea;
+  const exposedCapacity = s.solid.densityKgM3 * m.specificHeatKJkgK * 1000 * s.solid.thicknessM / s.solid.temperaturesK.length * activeArea;
   agents(s, input, dt, 0.8 * exposedCapacity * Math.max(0, s.solid.temperaturesK[0] - 295.15) / dt);
   s.localO2Pct = s.local.o2 / gasMoles(s.local) * 100;
   s.locPct = limitingOxygenPct(m, s.uBaseMs, s.pressureKpa);
   const flammable = s.localO2Pct >= s.locPct && s.agent.localHalon < 0.05 && fuelElements(m).supported;
 
-  const spot = input.ignition.areaM2;
   const sourceSurfaceW = Math.min(s.sourceHeatW, input.ignition.heatFluxKwM2.value * 1000 * spot);
   // Effective gasification latent heat is a documented closure, not a measured kinetic rate.
   const latent = 1.6e6;
-  const potentialFlux = m.refMassFluxGm2s.value * 1e-3 * Math.sqrt(Math.max(0.01, s.uBaseMs) / 0.2 * s.pressureKpa / 101.325) * s.localO2Pct / 21;
+  const potentialFlux = massFluxCap(m, s.uBaseMs, s.pressureKpa, s.localO2Pct);
   const flaming = s.phase === "flaming";
-  const activeArea = Math.max(spot, s.burningAreaM2);
-  const feedbackW = flaming ? Math.min(s.chemicalHrrW * 0.55, potentialFlux * activeArea * latent + 35e3 * activeArea) : 0;
+  const pyroK = m.ignitionTempC.value + 273.15;
+  const capacityM2 = s.solid.densityKgM3 * m.specificHeatKJkgK * 1000 * s.solid.thicknessM / s.solid.temperaturesK.length;
+  const cp = m.specificHeatKJkgK * 1000, film = 2 + 6 * Math.sqrt(s.uBaseMs);
+  let feedbackW = 0;
+  if (flaming && thick) {
+    // Energy-consistent thick-fuel feedback (2.1.0): the flame returns exactly the
+    // heat that holds the attached surface where it gasifies the calibrated burn
+    // rate (latent heat + re-radiation + convection + in-depth conduction), never
+    // more than its 55 % feedback efficiency allows. The implicit solid step is
+    // linear in the imposed flux, so two probe solves give the required flux.
+    const targetPyroKg = Math.min(potentialFlux * footprintArea * dt, Math.max(0, s.fuelTotalKg - s.fuelPyrolysedKg));
+    const targetK = pyroK + targetPyroKg * latent / (capacityM2 * activeArea);
+    const baseFlux = (sourceSurfaceW - s.agent.mistCoolingW) / activeArea;
+    const probe = (flux: number) => { const c = { ...s.solid, temperaturesK: [...s.solid.temperaturesK] }; heatSolid(c, cp, flux, s.room.tempK, s.wallTempK, film, dt); return c.temperaturesK[0]; };
+    const t0 = probe(baseFlux), gain = (probe(baseFlux + 1e4) - t0) / 1e4;
+    feedbackW = clamp((targetK - t0) / gain * activeArea, 0, s.chemicalHrrW * 0.55);
+  } else if (flaming) {
+    feedbackW = Math.min(s.chemicalHrrW * 0.55, potentialFlux * activeArea * latent + 35e3 * activeArea);
+  }
   const netSurfaceW = sourceSurfaceW + feedbackW - s.agent.mistCoolingW;
-  const solidEnergyChange = heatSolid(s.solid, m.specificHeatKJkgK * 1000, netSurfaceW / activeArea, s.room.tempK, s.wallTempK, 2 + 6 * Math.sqrt(s.uBaseMs), dt) * activeArea;
-  const solidGasExchangeW = (2 + 6 * Math.sqrt(s.uBaseMs)) * (s.room.tempK - s.solid.temperaturesK[0]) * activeArea;
+  const solidEnergyChange = heatSolid(s.solid, cp, netSurfaceW / activeArea, s.room.tempK, s.wallTempK, film, dt) * activeArea;
+  const solidGasExchangeW = film * (s.room.tempK - s.solid.temperaturesK[0]) * activeArea;
   // Close the implicit solid step's energy balance: its radiative residual reaches walls.
   const solidRadiationJ = netSurfaceW * dt + solidGasExchangeW * dt - solidEnergyChange;
   const roomEnergyBeforeSolid = gasEnergy(s.room);
   s.room.tempK = (roomEnergyBeforeSolid - solidGasExchangeW * dt) / (gasMoles(s.room) * GAS_CV);
   s.surfaceTempC = s.solid.temperaturesK[0] - 273.15;
-  const pyroK = m.ignitionTempC.value + 273.15;
-  const capacityM2 = s.solid.densityKgM3 * m.specificHeatKJkgK * 1000 * s.solid.thicknessM / s.solid.temperaturesK.length;
   const excessJ = Math.max(0, s.solid.temperaturesK[0] - pyroK) * capacityM2 * activeArea;
-  let pyro = Math.min(excessJ / latent, Math.max(0, s.fuelTotalKg - s.fuelPyrolysedKg));
+  const pyro = Math.min(excessJ / latent, Math.max(0, s.fuelTotalKg - s.fuelPyrolysedKg));
   if (pyro > 0) { s.solid.temperaturesK[0] -= pyro * latent / (capacityM2 * activeArea); s.fuelPyrolysedKg += pyro; s.vaporFuelKg += pyro; s.local.vapor += pyro / 0.1; }
   // Sub-ignition emissions are pyrolysis, never automatically called solid smoldering.
   if (s.phase === "heating" && s.surfaceTempC > input.ambientC + 0.65 * (m.ignitionTempC.value - input.ambientC)) { s.phase = "pyrolysis"; log(s, "info", "Heated material is approaching pyrolysis; no flaming reaction yet.", "same-2"); }
@@ -497,9 +542,11 @@ function advance(s: FireState, input: FireInput, dt: number) {
     z.aerosolFuelKg -= aerosolRemoved; s.removedAerosolFuelKg += aerosolRemoved;
   }
   if (s.phase === "flaming") {
-    const weak = !flammable || s.chemicalHrrW < 0.5 || s.agent.mistCoolingW > feedbackW;
+    // A flame cannot persist over a surface well below its pyrolysis temperature.
+    const cold = s.surfaceTempC < m.ignitionTempC.value - 25;
+    const weak = !flammable || s.chemicalHrrW < 0.5 || s.agent.mistCoolingW > feedbackW || cold;
     s.belowLimitS = weak ? s.belowLimitS + dt : Math.max(0, s.belowLimitS - dt);
-    if (s.belowLimitS > 2) extinguish(s, s.agent.mistCoolingW > 0 ? "fuel cooled by captured water" : s.agent.localHalon >= 0.05 ? "assumed chemical inhibition threshold reached" : "local heat/oxygen balance no longer sustains burning");
+    if (s.belowLimitS > 2) extinguish(s, s.agent.mistCoolingW > 0 ? "fuel cooled by captured water" : s.agent.localHalon >= 0.05 ? "assumed chemical inhibition threshold reached" : cold && flammable ? "fuel surface cooled below its pyrolysis temperature" : "local heat/oxygen balance no longer sustains burning");
     if (s.fuelPyrolysedKg >= s.fuelTotalKg - 1e-9 && s.vaporFuelKg < 1e-8) { s.phase = "burned-out"; s.extinctionTime = s.t; s.extinctionCause = "solid fuel exhausted; unburned gases may remain"; }
   }
   if (!s.sourceActive && s.surfaceTempC < input.ambientC + 20 && !s.ignitionTime) { s.phase = "no-ignition"; s.extinctionTime ??= s.t; }
@@ -583,7 +630,10 @@ function updateFlame(s: FireState, input: FireInput) {
   const qStar = g > 0 ? s.chemicalHrrW / (density * 1005 * (input.ambientC + 273.15) * Math.sqrt(g * diameter) * diameter * diameter) : 0;
   const length = g > 0 ? diameter * (3.7 * qStar ** 0.4 - 1.02) : 0;
   f.kind = g > 0 && buoyant > s.uForcedMs * 0.6 ? "plume" : "dome";
-  f.lengthM = f.kind === "plume" ? clamp(length, diameter * 0.4, input.roomHeightM - input.fireHeightM) : Math.max(diameter, s.pyroLengthM);
+  // A dome follows the zone burning now, not the distance the front has travelled.
+  const sides = input.material.form === "thick" ? input.fuel.sides : 1;
+  const burningLengthM = s.burningAreaM2 / Math.max(0.001, s.pyroWidthM) / sides;
+  f.lengthM = f.kind === "plume" ? clamp(length, diameter * 0.4, input.roomHeightM - input.fireHeightM) : Math.max(diameter, burningLengthM);
   f.widthM = Math.max(0.025, s.pyroWidthM, diameter * 0.5);
   f.standoffM = clamp(0.008 * Math.sqrt(0.2 / Math.max(s.uBaseMs, 0.005)), 0.004, 0.05);
   f.tiltRad = Math.atan2(s.uForcedMs, Math.max(buoyant, 1e-6));
@@ -616,6 +666,6 @@ export function runFire(input: FireInput, options: { durationS: number; dt?: num
   }
   while (pending.length && pending[0].t <= s.t + 1e-9) applyAction(s, input, pending.shift()!.id);
   if (history.at(-1)!.t < s.t) history.push(sample(s));
-  // Kept for legacy callers; these are instantaneous reference crossings, never exposure verdicts.
+  // Convenience for callers; these are instantaneous reference crossings, never exposure verdicts.
   return { state: s, history, timeToCo24h: history.find(p => p.coPpm >= 100)?.t ?? null, timeToCo1h: history.find(p => p.coPpm >= 425)?.t ?? null, timeToCo2Limit: history.find(p => p.co2RiseMmHg >= 3)?.t ?? null };
 }

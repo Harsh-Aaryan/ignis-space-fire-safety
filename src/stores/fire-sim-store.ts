@@ -19,7 +19,7 @@ import type { MissionScenario } from "@/types/domain";
 
 /**
  * The running simulation lives outside React. The 3D layer reads it every
- * frame; the HUD reads snapshots published a few times a second.
+ * frame; the telemetry strip reads snapshots published a few times a second.
  */
 export const fireRuntime: {
   state: FireState | null;
@@ -35,7 +35,7 @@ const STEP_S = 0.25;
 const MAX_HISTORY = 480;
 
 interface FireSimStore {
-  /** The fire scenario panel is showing in FireTwin. */
+  /** The fire scenario panel is showing in the Simulation side panel. */
   open: boolean;
   enhanceVisibility: boolean;
   showAirflow: boolean;

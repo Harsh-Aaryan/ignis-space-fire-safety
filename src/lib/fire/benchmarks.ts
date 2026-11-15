@@ -2,7 +2,7 @@ import { SAFFIRE_BENCHMARKS } from "@/data/fire/options";
 import { runFire } from "@/lib/fire/model";
 import { saffireInput } from "@/lib/fire/scenario";
 
-/** Model v2 comparison residuals, not a validation score. No flight fan schedule is inferred from summary rows. */
+/** Comparison residuals against published Saffire summaries, not a validation score. No flight fan schedule is inferred from summary rows. */
 export function compareSaffireSummaries() {
   return SAFFIRE_BENCHMARKS.map((reference) => {
     const run = runFire(saffireInput(reference), { durationS: reference.burnDurationS });

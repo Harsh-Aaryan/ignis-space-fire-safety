@@ -1,14 +1,10 @@
-﻿import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   HABITAT_ROOMS,
   objectById,
   roomsForHabitat,
 } from "@/data/habitat-interiors";
-import { investigations, runs } from "@/data/mock";
-import { VERIFIED_CITATIONS } from "@/data/verified";
-import { citationMatchesObjective } from "@/lib/analytics/gap-class";
-import { analyzeMission } from "@/lib/evidence/selectors";
-import { EMPTY_FILTERS } from "@/lib/evidence/filters";
+import { investigationById } from "@/data/research/investigations";
 import { oxygenPartialPressurePsi } from "@/lib/physics/atmosphere";
 let store: typeof import("@/stores/mission-store").useMissionStore;
 beforeAll(async () => {
@@ -22,7 +18,7 @@ beforeAll(async () => {
 });
 beforeEach(() => store.getState().resetScenario());
 describe("interior scientific navigation", () => {
-  it("has unique object identities and real research associations for every inspection object", () => {
+  it("has unique object identities and research records for every inspection object", () => {
     const objects = HABITAT_ROOMS.flatMap((room) => room.equipment);
     expect(new Set(objects.map((object) => object.id)).size).toBe(
       objects.length,
@@ -31,16 +27,10 @@ describe("interior scientific navigation", () => {
       expect(
         HABITAT_ROOMS.find((room) => room.id === object.roomId)?.habitatId,
       ).toBe(object.habitatId);
-      expect(
-        investigations.some((inv) =>
-          inv.equipmentLinks.includes(object.system),
-        ),
-      ).toBe(true);
-      expect(
-        VERIFIED_CITATIONS.some((c) =>
-          citationMatchesObjective(c, object.objective),
-        ),
-      ).toBe(true);
+      expect(object.investigations.length).toBeGreaterThan(0);
+      for (const id of object.investigations) {
+        expect(investigationById(id), `${object.id} links to ${id}`).not.toBeNull();
+      }
       expect(object.limitation.length).toBeGreaterThan(30);
     }
     expect(roomsForHabitat("mars-habitat").map((room) => room.level)).toEqual([
@@ -106,26 +96,7 @@ describe("interior scientific navigation", () => {
       selectedRoomId: null,
     });
   });
-  it("recalculates relevance when cabin atmosphere changes, without mutating verified metadata", () => {
-    store.getState().selectObject("lunar-habitat-lab-samples-1");
-    const analyze = () =>
-      analyzeMission({
-        scenario: store.getState().scenario,
-        runs,
-        investigations,
-        filters: EMPTY_FILTERS,
-      });
-    const before = analyze().ranked.find(
-      (row) => row.investigation.id === "syn-inv-bass2-01",
-    )?.relevance;
-    store.getState().patchScenario({ oxygenPct: 45, pressurePsi: 5 });
-    const after = analyze().ranked.find(
-      (row) => row.investigation.id === "syn-inv-bass2-01",
-    )?.relevance;
-    expect(after).not.toBe(before);
+  it("derives oxygen partial pressure from the cabin atmosphere", () => {
     expect(oxygenPartialPressurePsi(35, 12)).toBeCloseTo(4.2);
-    expect(
-      VERIFIED_CITATIONS.every((c) => c.measurementsExtracted === false),
-    ).toBe(true);
   });
 });

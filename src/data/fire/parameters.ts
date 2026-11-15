@@ -13,5 +13,5 @@ export function materialParameterRecords(m: FireMaterial) {
       conditions: v.source === "same-2" ? "Microgravity, below ignition, fresh versus aged 720 s; source airflow must be matched" : v.source === "bass-ii" ? "PMMA rod observation; not a slab or wire qualification" : v.source === "saffire-vi" ? "Microgravity, 0.2 m/s initial concurrent duct flow; original atmosphere/geometry in Tables 1–2" : "Refer to specimen-specific source; application transfer is not verified",
       applicability:"Source specimen and method required; arbitrary habitat transfer is exploratory",modelVersion:FIRE_MODEL_VERSION };
   });
-  return [...records,{parameter:"specificHeatKJkgK",value:m.specificHeatKJkgK,units:"kJ/(kg K)",evidence:"assumed",source:null,locator:"Legacy nominal value; primary table not verified",uncertainty:"Not quantified",specimen:m.name,configuration:m.form,referencePressureKpa:null,applicability:"Exploratory",modelVersion:FIRE_MODEL_VERSION}];
+  return [...records,{parameter:"specificHeatKJkgK",value:m.specificHeatKJkgK,units:"kJ/(kg K)",evidence:"assumed",source:null,locator:"Nominal value; primary table not verified",uncertainty:"Not quantified",specimen:m.name,configuration:m.form,referencePressureKpa:null,applicability:"Exploratory",modelVersion:FIRE_MODEL_VERSION}];
 }

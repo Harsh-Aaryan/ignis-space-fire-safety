@@ -6,7 +6,7 @@ import { ignitionById } from "@/data/fire/options";
 import { createFireState, stepFire, runFire, ignitionDelayS, buoyantBaseVelocity } from "./model";
 import { genericFireInput } from "./scenario";
 import { reactionYields } from "./chemistry";
-import { exchangeGas, equaliseGas, gasEnergy, gasMoles, gasPressure, makeZone, brownianDiffusivity, opticalOpacity } from "./transport";
+import { exchangeGas, equaliseGas, gasEnergy, gasPressure, makeZone, brownianDiffusivity, opticalOpacity } from "./transport";
 import { heatSolid, thickIgnitionBenchmark } from "./thermal";
 import { applicability } from "./evidence";
 import { explainScenario } from "@/services/scenario-assistant";

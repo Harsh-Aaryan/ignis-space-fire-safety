@@ -10,12 +10,12 @@ test("Ask IGNIS shows pending AI answers, citations and recoverable errors", asy
     expect(payload).not.toHaveProperty("apiKey");
     if (++calls === 1) {
       await gate;
-      await route.fulfill({ json: { text: "Airflow transports oxygen to the flame. This is an exploratory model explanation.", sources: ["bass-ii"], context: "Model 2.0.0 · setup preview", provider: "groq" } });
+      await route.fulfill({ json: { text: "Airflow transports oxygen to the flame. This is an exploratory model explanation.", sources: ["bass-ii"], context: "Model 2.1.0 · setup preview", provider: "groq" } });
     } else {
       await route.fulfill({ status: 429, json: { error: "Too many questions." } });
     }
   });
-  await page.goto("/materials");
+  await page.goto("/research/data");
   await page.getByRole("button", { name: "Ask IGNIS", exact: true }).click();
   const assistant = page.getByRole("complementary", { name: "Ask IGNIS scenario assistant" });
   const input = assistant.getByLabel("Ask IGNIS a question");
@@ -24,7 +24,7 @@ test("Ask IGNIS shows pending AI answers, citations and recoverable errors", asy
   await expect(assistant.getByRole("status")).toContainText("Checking the scenario");
   await expect(assistant.getByRole("button", { name: "Send question", exact: true })).toBeDisabled();
   releaseAnswer();
-  await expect(assistant).toContainText("AI explanation · Groq");
+  await expect(assistant).toContainText("Generated explanation (Groq)");
   await expect(assistant.getByRole("link", { name: /BASS-II/ })).toHaveAttribute("href", /ntrs\.nasa\.gov/);
   await input.fill("Why does airflow affect a flame?");
   await assistant.getByRole("button", { name: "Send question", exact: true }).click();
@@ -37,13 +37,13 @@ test("guided setup, grounded assistant and review work together", async ({ page 
   const errors: string[]=[];
   page.on("pageerror",e=>errors.push(e.message));
   page.on("console",msg=>{if(msg.type()==="error" && /Shader Error|VALIDATE_STATUS|shader.*compil/i.test(msg.text()))errors.push(msg.text());});
-  await page.goto("/firetwin");
+  await page.goto("/simulation");
   await page.getByRole("tab",{name:"Fire scenario",exact:true}).click();
   await page.getByRole("button",{name:"Acrylic ignition",exact:true}).click();
   await expect(page.getByRole("button",{name:"Start scenario",exact:true})).toBeEnabled();
   await page.getByRole("button",{name:"10×",exact:true}).click();
   await page.getByRole("button",{name:"Start scenario",exact:true}).click();
-  await expect(page.getByTestId("fire-status")).toContainText("flaming");
+  await expect(page.getByTestId("fire-status")).toContainText("Flaming");
   await page.getByRole("button",{name:"Pause",exact:true}).click();
   await page.getByRole("button",{name:"Explain this run",exact:true}).click();
   const assistant=page.getByRole("complementary",{name:"Ask IGNIS scenario assistant"});
@@ -68,7 +68,7 @@ test("guided setup, grounded assistant and review work together", async ({ page 
 
 test("Ask IGNIS stays visible and keyboard accessible on mobile",async({page},info)=>{
   await page.setViewportSize({width:390,height:844});
-  await page.goto("/materials");
+  await page.goto("/research/data");
   await page.getByRole("button",{name:"Ask IGNIS",exact:true}).click();
   const assistant=page.getByRole("complementary",{name:"Ask IGNIS scenario assistant"});
   await expect(assistant).toBeVisible();
@@ -80,4 +80,5 @@ test("Ask IGNIS stays visible and keyboard accessible on mobile",async({page},in
   await page.screenshot({path:info.outputPath("ask-ignis-mobile.png")});
   await page.keyboard.press("Escape");
   await expect(assistant).toHaveCount(0);
+  await expect(page.getByRole("button",{name:"Ask IGNIS",exact:true})).toBeFocused();
 });

@@ -6,9 +6,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "IGNIS — Evidence-grounded space fire safety",
+  title: {
+    default: "IGNIS — Fire safety research for crewed spaceflight",
+    template: "%s · IGNIS",
+  },
   description:
-    "NASA Space Apps Challenge 2026: cited combustion research, material properties, and an interactive habitat fire model. Synthetic catalog rows and model assumptions are labeled.",
+    "NASA's flight fire experiments, indexed by the crew environments they bear on, with a physics model of fire in habitats from microgravity to the Moon and Mars.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -19,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="min-h-full bg-background text-foreground">
         <TooltipProvider delay={200}>
-          <Suspense fallback={<div className="p-6 text-[13px] text-muted-foreground">Loading IGNIS…</div>}>
+          <Suspense fallback={<div className="p-6 text-[13px] text-muted-foreground">Loading…</div>}>
             <AppShell>{children}</AppShell>
           </Suspense>
         </TooltipProvider>

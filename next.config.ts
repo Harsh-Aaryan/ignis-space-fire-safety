@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
+import { LEGACY_REDIRECTS } from "./src/lib/routes";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {
@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
         as: "*.css",
       },
     },
+  },
+  /** Section names changed; earlier links keep working. */
+  redirects() {
+    return LEGACY_REDIRECTS.map((entry) => ({ ...entry, permanent: true }));
   },
 };
 

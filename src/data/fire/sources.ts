@@ -9,7 +9,7 @@
  */
 
 export const RETRIEVED_AT = "2026-11-14";
-export const FIRE_MODEL_VERSION = "2.0.0";
+export const FIRE_MODEL_VERSION = "2.1.0";
 
 export type SourceKind = "nasa" | "peer-reviewed" | "handbook" | "assumption";
 

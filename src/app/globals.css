@@ -48,6 +48,12 @@
   --color-elev-2: #1F2125;
   --color-elev-3: #292C30;
   --color-elev-4: #36383C;
+  --color-border-subtle: var(--border-subtle);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-status-nominal: var(--status-nominal);
+  --color-status-info: var(--status-info);
+  --color-status-caution: var(--status-caution);
+  --color-status-warning: var(--status-warning);
   --radius-sm: 2px;
   --radius-md: 4px;
   --radius-lg: 4px;
@@ -173,32 +179,6 @@
   white-space: nowrap;
 }
 
-.prototype-badge {
-  align-items: center;
-  background: #2A2418;
-  border: 1px solid #8A7040;
-  border-radius: 2px;
-  color: #E8C15A;
-  display: inline-flex;
-  font-family: var(--font-cond), "IBM Plex Sans Condensed", sans-serif;
-  font-size: 10px;
-  font-weight: 600;
-  gap: 6px;
-  height: 22px;
-  letter-spacing: 0.1em;
-  line-height: 12px;
-  padding: 0 8px;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-.prototype-badge-mark {
-  border-bottom: 7px solid #E8C15A;
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  height: 0;
-  width: 0;
-}
-
 .status-chip {
   align-items: center;
   border-radius: 2px;
@@ -225,27 +205,6 @@
 .status-critical { background: #6F221C; color: #EDEAE4; }
 .status-critical .status-mark { background: currentColor; height: 7px; width: 7px; }
 .status-category { border: 1px solid #3A3E44; color: #EDEAE4; }
-
-.synthetic-stamp {
-  color: #847F79;
-  font-family: var(--font-cond), "IBM Plex Sans Condensed", sans-serif;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.cov-nodata {
-  background-color: #141519;
-  background-image: repeating-linear-gradient(45deg, #3A3E44 0 1px, transparent 1px 6px);
-  color: #847F79;
-}
-.cov-partial {
-  background-image: repeating-linear-gradient(-45deg, rgba(138, 112, 64, 0.4) 0 1px, transparent 1px 6px);
-}
-.evidence-dashed {
-  border-style: dashed;
-}
 
 [data-slot="slider-thumb"] {
   background: #EDEAE4 !important;

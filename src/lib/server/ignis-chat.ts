@@ -125,7 +125,7 @@ export async function answerWithGroq(request: ChatRequest, apiKey: string, model
     const answer = record(await complete(apiKey, model, ANSWER_PROMPT, {
       ...question, sources,
       app: { modelVersion: FIRE_MODEL_VERSION, assumptions: MODEL_ASSUMPTIONS,
-        facts: ["Navigation: Home, Fire simulation, NASA research, Results.", "Fire simulation: Set up, Run, Respond, Review. Select equipment and a material before running.", "Materials page exposes original tables and source metadata. The research demonstration catalog is synthetic and is not supplied here.", "The app can compare fan shutdown in a copy without modifying the active run."] },
+        facts: ["Navigation: Overview, Simulation, Research, Results.", "Simulation: Set up, Run, Respond, Review. Select equipment and a material before running. Compare gravity runs the same fire at 0 g, lunar and Martian gravity.", "Research has four views: Investigations, Modeling data (original NASA tables, material properties, model check, sources), Detection and suppression, and Evidence gaps.", "The app can compare fan shutdown in a copy without modifying the active run."] },
       scenario: request.input,
       modelSnapshot: request.snapshot,
       applicability: request.input ? applicability(request.input) : null,
@@ -137,7 +137,7 @@ export async function answerWithGroq(request: ChatRequest, apiKey: string, model
     if (answer.status === "out_of_scope") return refuse();
     if (answer.status === "insufficient_evidence") return {
       context: local.context, provider: "groq", sources: [],
-      text: "The source extracts and captured scenario available to IGNIS do not establish an answer to that question. Explore the original NASA data on the Materials page or ask about the model's assumptions.",
+      text: "The source extracts and captured scenario available to IGNIS do not establish an answer to that question. See the original NASA data under Research, Modeling data, or ask about the model's assumptions.",
     };
     if (answer.status !== "answer" || typeof answer.text !== "string" || !answer.text.trim() || answer.text.length > 4000
       || /https?:\/\/|www\.|\]\(|```/i.test(answer.text)

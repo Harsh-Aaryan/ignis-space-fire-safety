@@ -3,6 +3,7 @@
 import { useGLTF, useTexture } from "@react-three/drei";
 import { lazy, Suspense, useLayoutEffect, useMemo, useRef } from "react";
 import { useMissionStore } from "@/stores/mission-store";
+import { seededRandom } from "@/lib/three/seeded-random";
 import * as THREE from "three";
 import { Hotspot } from "@/components/three/hotspot";
 import { LunarSite } from "@/components/three/parts/lunar-site";
@@ -326,10 +327,11 @@ function LowRadiator() {
 
 function Stars() {
   const geometry = useMemo(() => {
+    const random = seededRandom(170);
     const data = new Float32Array(170 * 3);
     for (let i = 0; i < 170; i += 1) {
-      const theta = Math.PI * 2 * Math.random();
-      const phi = Math.acos(0.08 + 0.92 * Math.random());
+      const theta = Math.PI * 2 * random();
+      const phi = Math.acos(0.08 + 0.92 * random());
       const radius = 800;
       data[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
       data[i * 3 + 1] = radius * Math.cos(phi);
@@ -343,31 +345,6 @@ function Stars() {
     <points geometry={geometry}>
       <pointsMaterial color="#E6E4DE" size={1.15} sizeAttenuation={false} transparent opacity={0.85} depthWrite={false} />
     </points>
-  );
-}
-
-function CellularWall({ clip }: { clip: THREE.Plane[] }) {
-  const cells = useMemo(() => {
-    const list: Array<[number, number, number]> = [];
-    for (let layer = 0; layer < 3; layer += 1) {
-      const radius = TUBE_R + 0.42 + layer * 0.42;
-      const count = Math.round((Math.PI * radius) / 0.42);
-      for (let i = 0; i < count; i += 1) {
-        const a = Math.PI * 0.15 + (i / count) * Math.PI * 0.7;
-        list.push([0.62, TUBE_Y + Math.sin(a) * radius * 0.55, Z_OPEN - 1.1 - layer * 0.55 + Math.cos(a) * 0.8]);
-      }
-    }
-    return list;
-  }, []);
-  return (
-    <group>
-      {cells.map((position, index) => (
-        <mesh key={index} position={position}>
-          <sphereGeometry args={[0.175, 8, 6]} />
-          <meshStandardMaterial color="#3A3834" roughness={0.95} clippingPlanes={clip} />
-        </mesh>
-      ))}
-    </group>
   );
 }
 

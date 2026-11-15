@@ -80,7 +80,7 @@ describe("scoped Groq answers", () => {
     expect(sent.response_format.json_schema.strict).toBe(true);
     expect(sent.tools).toBeUndefined();
     expect(sent.max_completion_tokens).toBe(1800);
-    expect(answer.context).toContain("2.0.0");
+    expect(answer.context).toContain("2.1.0");
   });
   it.each([
     { ...goodAnswer, sourceIds: ["invented-nasa-paper"] },

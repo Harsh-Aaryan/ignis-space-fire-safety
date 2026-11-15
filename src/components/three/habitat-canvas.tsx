@@ -133,25 +133,20 @@ export function HabitatCanvas() {
   const coarse = useCoarse();
   const missionId = useMissionStore((state) => state.scenario.missionId);
   const [shown, setShown] = useState(missionId);
-  const [veil, setVeil] = useState(false);
-  const [showLabels, setShowLabels] = useState(true);
+  const [labelsFor, setLabelsFor] = useState(missionId);
+  const veil = missionId !== shown;
+  const showLabels = !veil && labelsFor === missionId;
   useEffect(() => {
-    if (missionId === shown) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const out = reduce ? 80 : 160;
     const labelsAt = reduce ? 0 : 120;
-    setVeil(true);
-    setShowLabels(false);
-    const swap = window.setTimeout(() => {
-      setShown(missionId);
-      setVeil(false);
-    }, out);
-    const labels = window.setTimeout(() => setShowLabels(true), out + labelsAt);
+    const swap = window.setTimeout(() => setShown(missionId), out);
+    const labels = window.setTimeout(() => setLabelsFor(missionId), out + labelsAt);
     return () => {
       window.clearTimeout(swap);
       window.clearTimeout(labels);
     };
-  }, [missionId, shown]);
+  }, [missionId]);
   return (
     <>
       <Canvas
@@ -375,7 +370,6 @@ function Sun({ coarse, preset, dusk }: { coarse: boolean; preset: keyof typeof L
 }
 
 function TriangleProbe({ missionId, tier }: { missionId: string; tier: "high" | "low" }) {
-  const gl = useThree((state) => state.gl);
   const scene = useThree((state) => state.scene);
   const invalidate = useThree((state) => state.invalidate);
   const seen = useRef(0);
@@ -579,7 +573,6 @@ function Base({
   registry,
   coarse,
   iss,
-  mars,
   cutaway,
   exploded,
   surfaces,

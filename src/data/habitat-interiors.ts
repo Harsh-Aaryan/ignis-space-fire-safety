@@ -27,12 +27,15 @@ export interface EquipmentProfile {
   system: EquipmentId;
   objective: ResearchObjective;
   description: string;
+  /** Display names of the related programs. */
   families: string[];
+  /** Ids of related records in src/data/research/investigations.ts. */
+  investigations: string[];
   parameters: string[];
   limitation: string;
   material?: FuelCategory;
 }
-// Topical research links do not imply that this conceptual hardware was tested.
+// Research links are topical. They do not imply that this conceptual hardware was tested.
 export const EQUIPMENT_PROFILES: Record<EquipmentType, EquipmentProfile> = {
   rack: {
     label: "Equipment rack",
@@ -40,9 +43,11 @@ export const EQUIPMENT_PROFILES: Record<EquipmentType, EquipmentProfile> = {
     objective: "habitat-fire-safety",
     description:
       "Instrument drawers, power distribution and a monitoring display.",
-    families: ["ACME", "Saffire"],
+    families: ["Saffire","Wire fires in partial gravity"],
+    investigations: ["saffire-vi","partial-gravity-wires","iss-fire-detection-suppression","fine-water-mist"],
     parameters: ["sample geometry", "oxygen", "airflow"],
-    limitation: "Combustion investigations do not certify this equipment rack.",
+    limitation:
+      "The rack is conceptual. Evidence on wire and rack fires comes from other hardware and atmospheres.",
   },
   cabinet: {
     label: "Storage cabinet",
@@ -50,10 +55,11 @@ export const EQUIPMENT_PROFILES: Record<EquipmentType, EquipmentProfile> = {
     objective: "solid-material-flammability",
     description:
       "Sealed, restrained containers for polymer, fabric and composite supplies.",
-    families: ["BASS", "BASS-II", "Saffire"],
+    families: ["BASS-II","White Sands flammability limits","Saffire"],
+    investigations: ["bass-ii","wstf-flammability-limits","nasa-std-6001","saffire-vi"],
     parameters: ["material", "sample geometry", "oxygen", "pressure"],
     limitation:
-      "Contents are illustrative. Material-scale results do not establish enclosure fire behavior.",
+      "Contents are illustrative. Material-scale results do not establish how an enclosure burns.",
     material: "solid-polymer",
   },
   duct: {
@@ -62,20 +68,22 @@ export const EQUIPMENT_PROFILES: Record<EquipmentType, EquipmentProfile> = {
     objective: "flame-spread",
     description:
       "Supply duct, intake grille and direction arrows for the selected cabin airflow.",
-    families: ["BASS-II", "Saffire", "SLICE"],
+    families: ["BASS-II","Saffire","SAME-2"],
+    investigations: ["bass-ii","saffire-iv-v","same-2","iss-fire-detection-suppression"],
     parameters: ["airflow", "gravity", "oxygen"],
     limitation:
-      "Arrows show an assumed direction, not a computed flow field. Forced flow cannot reproduce partial-gravity buoyancy.",
+      "Arrows show an assumed flow direction, not a computed flow field.",
   },
   filter: {
     label: "Air processing unit",
     system: "ventilation",
     objective: "detector-aerosol",
     description: "Replaceable filter cartridges and a circulation fan.",
-    families: ["SAME", "DAFT", "smoke-detection"],
+    families: ["SAME-2","Fire signatures and detection"],
+    investigations: ["same-2","fire-detection-research","cabin-atmosphere-limits","iss-fire-detection-suppression"],
     parameters: ["particle diameter", "airflow", "detector response"],
     limitation:
-      "No filtration efficiency or cabin aerosol transport measurements are available for this model.",
+      "No filtration efficiency or cabin aerosol transport has been measured for this conceptual unit.",
   },
   detector: {
     label: "Smoke detector",
@@ -83,7 +91,8 @@ export const EQUIPMENT_PROFILES: Record<EquipmentType, EquipmentProfile> = {
     objective: "smoke-detection",
     description:
       "Ceiling aerosol sensing head connected to the conceptual monitoring system.",
-    families: ["SAME", "SAME-R", "DAFT", "smoke-detection"],
+    families: ["SAME","SAME-2","Saffire VI"],
+    investigations: ["same-2","same","fire-detection-research","saffire-vi","iss-fire-detection-suppression"],
     parameters: [
       "particle diameter",
       "number density",
@@ -91,7 +100,7 @@ export const EQUIPMENT_PROFILES: Record<EquipmentType, EquipmentProfile> = {
       "airflow",
     ],
     limitation:
-      "SAME-R is a synthetic family here. Indexed NASA metadata has no extracted detector measurements. No alarm time is predicted.",
+      "Detector thresholds and response times in the model are assumed, not calibrated to flight hardware.",
   },
   oxygen: {
     label: "Oxygen control panel",
@@ -99,10 +108,11 @@ export const EQUIPMENT_PROFILES: Record<EquipmentType, EquipmentProfile> = {
     objective: "oxygen-enriched-atmospheres",
     description:
       "Cabin oxygen, total pressure and oxygen partial-pressure readout.",
-    families: ["BASS-II", "Saffire"],
+    families: ["Exploration atmospheres","White Sands flammability limits","Saffire VI"],
+    investigations: ["exploration-atmospheres","wstf-flammability-limits","saffire-vi","cabin-atmosphere-limits"],
     parameters: ["oxygen", "pressure", "oxygen partial pressure"],
     limitation:
-      "Scenario inputs are research conditions, not approved atmosphere settings. Indexed numeric experimental conditions have not been extracted.",
+      "Scenario inputs are research conditions, not approved atmosphere settings.",
   },
   extinguisher: {
     label: "Fire extinguisher",
@@ -110,10 +120,11 @@ export const EQUIPMENT_PROFILES: Record<EquipmentType, EquipmentProfile> = {
     objective: "extinction-suppression",
     description:
       "Restrained portable suppression bottle with valve, hose and bracket.",
-    families: ["FLEX", "FLEX-2", "cool-flame"],
+    families: ["Fine water mist extinguisher","ISS fire detection and suppression","FLEX"],
+    investigations: ["fine-water-mist","iss-fire-detection-suppression","flex","saffire-iv-v"],
     parameters: ["extinction limit", "oxygen", "gravity"],
     limitation:
-      "Droplet extinction studies do not validate an extinguisher, agent, response time or habitat suppression strategy.",
+      "Agent delivery and capture in the model are assumed. Published extinction times belong to the tested configurations.",
   },
   bench: {
     label: "Research workbench",
@@ -121,10 +132,11 @@ export const EQUIPMENT_PROFILES: Record<EquipmentType, EquipmentProfile> = {
     objective: "flame-spread",
     description:
       "Work surface with a sample fixture, monitor and instrument enclosure.",
-    families: ["BASS-II", "ACME", "Saffire"],
+    families: ["BASS-II","Saffire"],
+    investigations: ["bass-ii","saffire-vi","saffire-iv-v","lunar-martian-flammability"],
     parameters: ["sample geometry", "flame spread", "oxygen", "airflow"],
     limitation:
-      "This is a conceptual workspace. The scene does not simulate ignition or combustion.",
+      "The workbench is conceptual. Its fuel package is a representative sample, not a tested article.",
   },
   samples: {
     label: "Material sample rack",
@@ -132,7 +144,8 @@ export const EQUIPMENT_PROFILES: Record<EquipmentType, EquipmentProfile> = {
     objective: "solid-material-flammability",
     description:
       "Labeled polymer coupons, fabric strips and composite samples in restrained holders.",
-    families: ["BASS", "BASS-II", "Saffire", "ACME-BRE"],
+    families: ["BASS","BASS-II","White Sands flammability limits"],
+    investigations: ["bass-ii","bass","wstf-flammability-limits","exploration-atmospheres","nasa-std-6001"],
     parameters: [
       "sample geometry",
       "oxygen",
@@ -141,7 +154,7 @@ export const EQUIPMENT_PROFILES: Record<EquipmentType, EquipmentProfile> = {
       "mass loss",
     ],
     limitation:
-      "Synthetic measurements are demonstrations. Verified citations have no extracted measurements; material-scale findings cannot predict a habitat fire.",
+      "Sample materials are representative. A material-scale result cannot by itself predict a habitat fire.",
     material: "solid-polymer",
   },
   bed: {
@@ -150,7 +163,8 @@ export const EQUIPMENT_PROFILES: Record<EquipmentType, EquipmentProfile> = {
     objective: "solid-material-flammability",
     description:
       "Crew berth, fabric bedding, restraint straps and a personal reading light.",
-    families: ["BASS-II", "Saffire"],
+    families: ["Saffire","BASS-II"],
+    investigations: ["saffire-vi","saffire-i-iii","bass-ii","nasa-std-6001"],
     parameters: ["fabric", "sample geometry", "oxygen"],
     limitation:
       "Bedding is illustrative. No tested composition or certified flammability rating is asserted.",
@@ -161,10 +175,11 @@ export const EQUIPMENT_PROFILES: Record<EquipmentType, EquipmentProfile> = {
     system: "fire-suppression",
     objective: "extinction-suppression",
     description: "Conceptual isolation, alarm and suppression controls.",
-    families: ["FLEX", "FLEX-2", "Saffire"],
+    families: ["ISS fire detection and suppression","Fine water mist extinguisher"],
+    investigations: ["iss-fire-detection-suppression","fine-water-mist","saffire-iv-v","cabin-atmosphere-limits"],
     parameters: ["oxygen", "extinction limit", "gravity"],
     limitation:
-      "This inspection object does not define an operational emergency procedure.",
+      "This panel is conceptual and does not define an operational emergency procedure.",
   },
   door: {
     label: "Airlock door",
@@ -172,7 +187,8 @@ export const EQUIPMENT_PROFILES: Record<EquipmentType, EquipmentProfile> = {
     objective: "oxygen-enriched-atmospheres",
     description:
       "Pressure hatch, wheel, frame and viewport beside an open inspection passage.",
-    families: ["BASS-II", "Saffire"],
+    families: ["Exploration atmospheres","White Sands flammability limits"],
+    investigations: ["exploration-atmospheres","wstf-flammability-limits","cabin-atmosphere-limits"],
     parameters: ["pressure", "oxygen", "material"],
     limitation:
       "Pressure geometry and seals are illustrative and are not structurally analyzed.",
@@ -182,10 +198,11 @@ export const EQUIPMENT_PROFILES: Record<EquipmentType, EquipmentProfile> = {
     system: "living-quarters",
     objective: "habitat-fire-safety",
     description: "Low-profile room lighting with an enclosed power connection.",
-    families: ["Saffire", "ACME"],
+    families: ["Wire fires in partial gravity","Saffire"],
+    investigations: ["partial-gravity-wires","nasa-std-6001","saffire-vi"],
     parameters: ["material", "oxygen"],
     limitation:
-      "This is a visual model; electrical ignition behavior has not been modeled.",
+      "The fixture is conceptual. Electrical ignition is represented only by the model's generic heat sources.",
   },
 };
 export interface InteriorEquipment extends EquipmentProfile {

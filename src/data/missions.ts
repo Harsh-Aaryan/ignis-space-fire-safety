@@ -1,8 +1,7 @@
 import { GRAVITY_G } from "@/lib/physics/atmosphere";
 import type { MissionId, MissionScenario, ResearchObjective, FuelCategory } from "@/types/domain";
 
-export const GATEWAY_SCENE_LABEL =
-  "Gateway-Inspired Lunar Orbit Habitat — Conceptual Digital Twin";
+export const GATEWAY_SCENE_LABEL = "Gateway";
 
 export interface MissionProfile {
   id: MissionId;
@@ -60,7 +59,7 @@ export const MISSIONS: MissionProfile[] = [
     gravityG: GRAVITY_G.microgravity,
     gravityLabel: "~0 g",
     summary:
-      "Microgravity spacecraft reference. Closest to the gravity regime actually represented in the synthetic runs.",
+      "Microgravity spacecraft reference, at the gravity level of the ISS flight experiments.",
     defaults: {
       oxygenPct: 21,
       pressurePsi: 14.7,
@@ -92,7 +91,7 @@ export const MISSIONS: MissionProfile[] = [
     gravityG: GRAVITY_G.microgravity,
     gravityLabel: "~0 g",
     summary:
-      "Conceptual lunar-orbit habitat in microgravity (~0 g), not lunar surface gravity (0.165 g). A research visualization, not certified NASA geometry.",
+      "Conceptual lunar-orbit habitat in microgravity, not lunar surface gravity. Not certified NASA geometry.",
     defaults: {
       oxygenPct: 32,
       pressurePsi: 10.2,
@@ -139,45 +138,3 @@ export function scenarioFromMission(id: MissionId): MissionScenario {
 }
 
 export const LUNAR_DEFAULT = scenarioFromMission("lunar-habitat");
-
-export interface Journey {
-  id: string;
-  code: "A" | "B" | "C";
-  title: string;
-  summary: string;
-  route: string;
-  equipment?: "material-storage" | "smoke-detection" | "airlock-oxygen";
-  scenario: MissionScenario;
-}
-
-export const JOURNEYS: Journey[] = [
-  {
-    id: "lunar-materials",
-    code: "A",
-    title: "Lunar material flammability",
-    summary:
-      "Oxygen-enriched lunar habitat, solid polymers, then the material-storage evidence panel and the ranked BASS-family dossiers.",
-    route: "/firetwin",
-    equipment: "material-storage",
-    scenario: scenarioFromMission("lunar-habitat"),
-  },
-  {
-    id: "smoke-microg",
-    code: "B",
-    title: "Microgravity smoke detection",
-    summary:
-      "ISS-like atmosphere and a smoke-detection objective. Explorer rankings shift toward the SAME and DAFT family dossiers.",
-    route: "/research",
-    equipment: "smoke-detection",
-    scenario: scenarioFromMission("iss-microgravity"),
-  },
-  {
-    id: "mars-gaps",
-    code: "C",
-    title: "Martian habitat research gaps",
-    summary:
-      "Martian gravity and a fabric-rich cabin. GravityBridge shows an empty partial-gravity band and FireLab drafts studies from that gap.",
-    route: "/gravity-bridge",
-    scenario: scenarioFromMission("mars-habitat"),
-  },
-];
