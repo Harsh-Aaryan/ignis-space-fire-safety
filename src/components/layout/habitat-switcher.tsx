@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { FIRETWIN_HABITATS, missionById } from "@/data/missions";
 import { formatGravity } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -27,26 +27,17 @@ export function HabitatSwitcher() {
   const select = useMissionStore((state) => state.selectMission);
   const active = FIRETWIN_HABITATS.includes(missionId) ? missionId : "lunar-habitat";
   const refs = useRef<Array<HTMLButtonElement | null>>([]);
-  const fromKey = useRef(false);
-
-  useEffect(() => {
-    if (!fromKey.current) return;
-    fromKey.current = false;
-    const index = ORDER.indexOf(active as (typeof ORDER)[number]);
-    refs.current[index]?.focus({ preventScroll: true });
-  }, [active]);
-
   function move(next: number) {
-    fromKey.current = true;
     const index = (next + ORDER.length) % ORDER.length;
     select(ORDER[index]);
+    refs.current[index]?.focus({ preventScroll: true });
   }
 
   return (
     <div
       role="radiogroup"
       aria-label="Habitat"
-      className="flex h-10 w-full rounded-md border border-border-subtle bg-background p-0.5 md:h-9 md:w-auto"
+      className="flex h-11 w-full rounded-md border border-border-subtle bg-background p-1 md:h-9 md:w-auto"
       onKeyDown={(event) => {
         const index = ORDER.indexOf(active as (typeof ORDER)[number]);
         if (event.key === "ArrowRight" || event.key === "ArrowDown") {
@@ -57,10 +48,10 @@ export function HabitatSwitcher() {
           move(index - 1);
         } else if (event.key === "Home") {
           event.preventDefault();
-          select(ORDER[0]);
+          move(0);
         } else if (event.key === "End") {
           event.preventDefault();
-          select(ORDER[ORDER.length - 1]);
+          move(ORDER.length - 1);
         }
       }}
     >

@@ -33,7 +33,7 @@ test("overview leads to the three research questions", async ({ page }) => {
   const errors = monitor(page);
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Fire behaves differently off Earth.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Fire behaves differently off Earth");
   await page.getByRole("link", { name: "See the modeling data" }).click();
   await expect(page).toHaveURL(/\/research\/data$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Modeling data");
@@ -41,6 +41,33 @@ test("overview leads to the three research questions", async ({ page }) => {
   await page.getByRole("group", { name: "Preview a habitat" }).getByRole("button", { name: /Mars/ }).click();
   await expect(page.locator("#habitat-preview")).toHaveAttribute("data-habitat", "mars-exterior");
   expect(errors).toEqual([]);
+});
+
+test("mobile cabin readouts stay visible and habitat keyboard selection keeps focus", async ({ page }) => {
+  await page.goto("/");
+  const cabin = page.getByRole("button", { name: /Cabin.*O₂/ });
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    await expect(cabin).toBeVisible();
+    const readouts = cabin.locator(".numeric > span");
+    await expect(readouts).toHaveCount(4);
+    expect(await readouts.evaluateAll((values) => values.every((value) => {
+      const box = value.getBoundingClientRect();
+      const control = value.closest("button")!.getBoundingClientRect();
+      return box.width > 0 && box.left >= control.left && box.right <= control.right && value.scrollWidth <= value.clientWidth;
+    })), `Cabin readouts fit at ${width}px`).toBe(true);
+    expect(await noSidewaysScroll(page)).toBe(true);
+  }
+
+  const moon = page.getByRole("radio", { name: "Moon, 0.165 g", exact: true });
+  const mars = page.getByRole("radio", { name: "Mars, 0.38 g", exact: true });
+  const gateway = page.getByRole("radio", { name: "Gateway, about 0 g", exact: true });
+  await moon.focus();
+  for (const [key, habitat] of [["ArrowRight", mars], ["End", gateway], ["Home", moon], ["Home", moon], ["ArrowLeft", gateway]] as const) {
+    await page.keyboard.press(key);
+    await expect(habitat).toBeChecked();
+    await expect(habitat).toBeFocused();
+  }
 });
 
 test("investigations filter by crew environment and open a record", async ({ page }) => {

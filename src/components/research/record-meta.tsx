@@ -31,7 +31,7 @@ export function BasisTag({ basis }: { basis: EnvironmentLink["basis"] | null }) 
 }
 
 export function KindTag({ record }: { record: InvestigationRecord }) {
-  return <Tag tone="accent">{KIND_LABEL[record.kind]}</Tag>;
+  return <Tag>{KIND_LABEL[record.kind]}</Tag>;
 }
 
 export function GravityChips({ record, label = "Gravity tested" }: { record: InvestigationRecord; label?: string }) {

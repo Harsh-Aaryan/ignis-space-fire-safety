@@ -149,27 +149,27 @@ export function MissionOverview() {
 function Hero() {
   const summary = RESEARCH_INDEX_SUMMARY;
   return (
-    <section aria-labelledby="overview-title" className="grid items-center gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-12">
+    <section aria-labelledby="overview-title" className="grid items-center gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-12">
       <div className="max-w-xl">
-        <p className="micro text-ember-text">Spacecraft fire safety research</p>
+        <p className="micro text-muted-foreground">Spacecraft fire safety research</p>
         <h1
           id="overview-title"
-          className="mt-3 text-[32px] leading-[38px] font-medium tracking-[-0.02em] text-foreground md:text-[40px] md:leading-[46px]"
+          className="mt-3 text-[36px] leading-10 font-normal text-foreground md:text-[44px] md:leading-[48px] md:tracking-[-0.02em]"
         >
-          Fire behaves differently off Earth.
+          Fire behaves differently off Earth
         </h1>
-        <p className="mt-5 text-[16px] leading-7 text-muted-foreground">
-          IGNIS brings NASA&apos;s flight fire experiments together with a physics model of fire in crewed habitats, from microgravity to the
-          Moon and Mars. See what has been measured, run a fire scenario inside a habitat, and find where the evidence stops.
+        <p className="mt-4 text-[16px] leading-7 text-muted-foreground md:text-[18px]">
+          Explore NASA&apos;s flight fire experiments and model a fire inside a crewed habitat. Compare microgravity, Moon and Mars scenarios,
+          and see where the evidence stops.
         </p>
-        <div className="mt-7 flex flex-wrap gap-3">
+        <div className="mt-6 flex flex-wrap gap-3">
           <ActionLink href={ROUTES.simulation} variant="primary" onClick={() => useFireSimStore.getState().setOpen(true)}>
             <Flame className="size-4" aria-hidden="true" />
             Run a fire scenario
           </ActionLink>
           <ActionLink href={ROUTES.research}>Browse the research</ActionLink>
         </div>
-        <dl className="mt-10 grid grid-cols-3 gap-4 border-t border-border-subtle pt-5">
+        <dl className="mt-6 grid grid-cols-3 gap-4 border-t border-border-subtle pt-4 md:mt-8 md:pt-6">
           <HeroStat value={summary.investigations} label="indexed records" />
           <HeroStat value={summary.flightExperiments} label="flight experiments" />
           <HeroStat value={summary.partialGravity} label="tested at lunar or Martian gravity" />
@@ -184,8 +184,8 @@ function HeroStat({ value, label }: { value: number; label: string }) {
   return (
     <div className="min-w-0">
       <dt className="sr-only">{label}</dt>
-      <dd className="numeric text-[24px] leading-8 text-foreground">{value}</dd>
-      <dd aria-hidden="true" className="mt-0.5 text-[13px] leading-5 text-muted-foreground">
+      <dd className="numeric text-[28px] leading-8 text-foreground">{value}</dd>
+      <dd aria-hidden="true" className="mt-1 text-[13px] leading-5 text-muted-foreground">
         {label}
       </dd>
     </div>
@@ -198,7 +198,7 @@ function HabitatPreview() {
   const preview = HABITAT_PREVIEWS[index];
 
   return (
-    <figure className="min-w-0 overflow-hidden rounded-md border border-border-subtle bg-card">
+    <figure className="min-w-0 overflow-hidden rounded-lg border border-border-subtle bg-elev-1">
       <div id="habitat-preview" data-habitat={preview.image} className="relative aspect-[16/10] w-full bg-void">
         <Image
           src={`/overview/${preview.image}.jpg`}
@@ -210,7 +210,7 @@ function HabitatPreview() {
           fetchPriority="high"
         />
       </div>
-      <figcaption className="flex flex-col gap-4 p-4 md:p-5">
+      <figcaption className="flex flex-col gap-4 p-4 md:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div role="group" aria-label="Preview a habitat" className="flex rounded-md border border-border-subtle bg-background p-0.5">
             {HABITAT_PREVIEWS.map((habitat, i) => {
@@ -223,7 +223,7 @@ function HabitatPreview() {
                   aria-controls="habitat-preview"
                   onClick={() => setIndex(i)}
                   className={cn(
-                    "min-h-10 rounded-sm px-3 text-left text-[13px] leading-4 transition-colors md:min-h-11",
+                    "min-h-11 rounded-sm px-3 text-left text-[13px] leading-4 transition-colors",
                     active ? "bg-elev-3 text-foreground" : "text-muted-foreground hover:bg-elev-2 hover:text-foreground",
                   )}
                 >
@@ -266,9 +266,9 @@ function ResearchQuestions() {
           const info = PILLARS[pillar];
           const { href, linkLabel, facts } = pillarFacts(pillar);
           return (
-            <li key={pillar} className="flex flex-col rounded-md border border-border-subtle bg-card p-5">
+            <li key={pillar} className="flex flex-col rounded-lg border border-border-subtle bg-card p-6">
               <p className="flex items-center gap-2 text-[13px] text-muted-foreground">
-                <span className="numeric flex size-6 items-center justify-center rounded-sm border border-border text-[12px] text-ember-text">
+                <span className="numeric flex size-6 items-center justify-center rounded-sm border border-border-subtle text-[12px] text-muted-foreground">
                   {i + 1}
                 </span>
                 {info.label}
@@ -316,12 +316,12 @@ function Findings() {
       <SectionHeading
         id="findings-heading"
         title="What the experiments show"
-        description="Four results from the research index. Each is quoted from the record it links to."
+        description="Four findings from the research index, with links to the records and their implications for fire safety"
         className="mb-6"
       />
       <ul className="grid gap-4 md:grid-cols-2">
         {items.map(({ record, text, implication }) => (
-          <li key={record.id} className="flex flex-col rounded-md border border-border-subtle bg-card p-5">
+          <li key={record.id} className="flex flex-col rounded-lg border border-border-subtle bg-card p-6">
             <p className="text-[15px] leading-6 text-foreground">{text}</p>
             {implication ? (
               <p className="mt-3 text-[13px] leading-5 text-muted-foreground">
@@ -362,7 +362,7 @@ function Environments() {
         }
         className="mb-6"
       />
-      <ul className="overflow-hidden rounded-md border border-border-subtle bg-card">
+      <ul className="overflow-hidden rounded-lg border border-border-subtle bg-card">
         {ENVIRONMENT_ORDER.map((id) => {
           const env = CREW_ENVIRONMENTS[id];
           const tested = investigationsForEnvironment(id, "tested").length;

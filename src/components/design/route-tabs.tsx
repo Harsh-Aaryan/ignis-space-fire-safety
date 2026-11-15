@@ -26,7 +26,7 @@ export function RouteTabs({
             href={tab.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "relative flex min-h-10 shrink-0 items-center px-3.5 text-sm transition-colors",
+              "relative flex min-h-11 shrink-0 items-center px-4 text-sm transition-colors",
               active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
             )}
           >

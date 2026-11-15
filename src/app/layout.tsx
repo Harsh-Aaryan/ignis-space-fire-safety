@@ -1,4 +1,4 @@
-import { plexCond, plexMono, plexSans } from "@/lib/fonts";
+import { plexMono, plexSans } from "@/lib/fonts";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AppShell } from "@/components/layout/app-shell";
@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${plexSans.variable} ${plexCond.variable} ${plexMono.variable} dark h-full antialiased`}
+      className={`${plexSans.variable} ${plexMono.variable} dark h-full antialiased`}
     >
       <body className="min-h-full bg-background text-foreground">
         <TooltipProvider delay={200}>

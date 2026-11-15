@@ -11,21 +11,21 @@ export function InvestigationCard({ record, environment }: { record: Investigati
   const held = holdingSummary(record);
 
   return (
-    <article className="rounded-md border border-border-subtle bg-card transition-colors hover:border-border">
-      <Link href={ROUTES.investigation(record.id)} className="block p-4 md:p-5">
+    <article className="rounded-lg border border-border-subtle bg-card transition-colors hover:border-border focus-within:border-ring">
+      <Link href={ROUTES.investigation(record.id)} className="block rounded-lg p-4 md:p-6">
         <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
           <div className="min-w-0">
-            <h3 className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[16px] leading-6 font-medium text-foreground">
+            <h3 className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[16px] leading-6 font-medium text-foreground">
               {record.name}
               <KindTag record={record} />
             </h3>
-            <p className="mt-0.5 text-[13px] leading-5 text-text-tertiary">
+            <p className="mt-1 text-[13px] leading-5 text-text-tertiary">
               {record.platform} · {record.period}
             </p>
           </div>
           <span className="inline-flex shrink-0 items-center gap-1 text-[13px] text-ember-text">
             Open record
-            <ArrowRight className="size-3.5" aria-hidden="true" />
+            <ArrowRight className="size-4" aria-hidden="true" />
           </span>
         </div>
 

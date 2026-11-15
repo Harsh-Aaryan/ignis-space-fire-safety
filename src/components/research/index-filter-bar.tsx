@@ -3,7 +3,7 @@ import { GRAVITY_REGIMES, KIND_LABEL, TOPICS, type GravityRegime, type RecordKin
 import { isGravityRegime, isRecordKind, isTopic, type IndexFilters } from "@/lib/research/filter";
 
 export const fieldClass =
-  "min-h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary";
+  "min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground transition-colors hover:border-input focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary md:min-h-10";
 
 const labelClass = "flex min-w-0 flex-col gap-1 text-[12px] text-muted-foreground";
 
@@ -64,7 +64,7 @@ export function IndexFilterBar({ filters, onChange }: { filters: IndexFilters; o
             type="search"
             className={`${fieldClass} pl-9`}
             value={filters.query}
-            placeholder="Name, material, platform or NASA id"
+            placeholder="Search records"
             onChange={(event) => onChange({ query: event.target.value })}
           />
         </span>

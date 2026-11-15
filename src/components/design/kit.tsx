@@ -24,8 +24,8 @@ export function PageHeader({
   return (
     <header className={cn("mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-4", className)}>
       <div className="max-w-3xl">
-        {eyebrow ? <p className="micro text-ember-text">{eyebrow}</p> : null}
-        <h1 className="mt-1 text-[26px] leading-8 font-medium tracking-[-0.01em] text-foreground">{title}</h1>
+        {eyebrow ? <p className="micro text-muted-foreground">{eyebrow}</p> : null}
+        <h1 className="mt-2 text-[28px] leading-8 font-normal text-foreground md:text-[32px] md:leading-10">{title}</h1>
         {description ? <p className="mt-2 text-[15px] leading-6 text-muted-foreground">{description}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
@@ -49,7 +49,7 @@ export function SectionHeading({
   return (
     <div className={cn("mb-3 flex flex-wrap items-end justify-between gap-3", className)}>
       <div className="max-w-3xl">
-        <h2 id={id} className="text-[17px] leading-6 font-medium text-foreground">
+        <h2 id={id} className="text-[20px] leading-7 font-medium text-foreground">
           {title}
         </h2>
         {description ? <p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p> : null}
@@ -80,9 +80,9 @@ export function Panel({
   flush?: boolean;
 } & Omit<React.HTMLAttributes<HTMLElement>, "title">) {
   return (
-    <section className={cn("rounded-md border border-border-subtle bg-card", className)} {...rest}>
+    <section className={cn("rounded-lg border border-border-subtle bg-card", className)} {...rest}>
       {title || actions ? (
-        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border-subtle px-5 py-3.5">
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border-subtle px-6 py-4">
           <div className="min-w-0">
             {title ? <h2 className="text-[15px] leading-5 font-medium text-foreground">{title}</h2> : null}
             {description ? <p className="mt-1 text-[13px] leading-5 text-muted-foreground">{description}</p> : null}
@@ -90,7 +90,7 @@ export function Panel({
           {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
         </div>
       ) : null}
-      <div className={cn(flush ? "" : "p-5", bodyClassName)}>{children}</div>
+      <div className={cn(flush ? "" : "p-6", bodyClassName)}>{children}</div>
     </section>
   );
 }
@@ -141,7 +141,7 @@ export function EvidenceTag({ kind, className }: { kind: EvidenceClass; classNam
     <span
       title={item.hint}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-sm border border-border-subtle px-1.5 py-0.5 text-[11px] leading-4 whitespace-nowrap text-muted-foreground",
+        "inline-flex items-center gap-2 rounded-sm border border-border-subtle px-2 py-0.5 text-[12px] leading-4 whitespace-nowrap text-muted-foreground",
         className,
       )}
     >
@@ -171,20 +171,20 @@ export function Tag({
     positive: "border-status-nominal/50 text-status-nominal",
   } as const;
   return (
-    <span className={cn("inline-flex items-center rounded-sm border px-1.5 py-0.5 text-[11px] leading-4 whitespace-nowrap", tones[tone], className)}>
+    <span className={cn("inline-flex items-center rounded-sm border px-2 py-0.5 text-[12px] leading-4 whitespace-nowrap", tones[tone], className)}>
       {children}
     </span>
   );
 }
 
-const LINK = "inline-flex items-center gap-1 text-ember-text underline-offset-4 hover:underline";
+const LINK = "inline-flex items-center gap-2 text-ember-text underline-offset-4 hover:underline";
 
 /** A link that leaves the site, to a NASA record or a paper. */
 export function ExternalLink({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) {
   return (
     <a href={href} target="_blank" rel="noreferrer" className={cn(LINK, className)}>
       {children}
-      <ArrowUpRight className="size-3.5 shrink-0" aria-hidden="true" />
+      <ArrowUpRight className="size-4 shrink-0" aria-hidden="true" />
     </a>
   );
 }
@@ -194,7 +194,7 @@ export function TextLink({ href, children, className }: { href: string; children
   return (
     <Link href={href} className={cn(LINK, className)}>
       {children}
-      <ArrowRight className="size-3.5 shrink-0" aria-hidden="true" />
+      <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
     </Link>
   );
 }
@@ -223,7 +223,7 @@ export function ActionLink({
 /** The same look for a <button>. */
 export function actionClass(variant: "primary" | "secondary" = "secondary"): string {
   return cn(
-    "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-40",
+    "inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-40",
     variant === "primary"
       ? "bg-primary text-primary-foreground hover:bg-primary/85"
       : "border border-border bg-transparent text-foreground hover:bg-elev-3",
@@ -256,7 +256,7 @@ export const table = {
   root: "w-full border-collapse text-left text-[13px] leading-5",
   head: "bg-elev-2 text-[12px] text-muted-foreground",
   th: "border-b border-border px-3 py-2 font-medium whitespace-nowrap",
-  tr: "border-b border-border-subtle last:border-b-0 hover:bg-elev-2/60",
+  tr: "border-b border-border-subtle last:border-b-0 hover:bg-elev-2/60 focus-within:bg-elev-2",
   td: "px-3 py-2 align-top",
   num: "numeric px-3 py-2 text-right align-top",
 } as const;

@@ -73,7 +73,7 @@ function ModeControl() {
           aria-pressed={mode === item.id}
           onClick={() => navigate(item.id)}
           className={cn(
-            "min-h-9 shrink-0 rounded-[3px] px-3 text-[13px] transition-colors lg:min-h-7",
+            "min-h-9 shrink-0 rounded-sm px-3 text-[13px] transition-colors lg:min-h-8",
             mode === item.id ? "bg-elev-4 text-foreground" : "text-muted-foreground hover:text-foreground",
           )}
         >
@@ -166,7 +166,7 @@ function ViewOptions() {
       <PopoverContent align="start" className="w-64 border border-border bg-popover p-2">
         {cutaway || scenario.missionId !== "gateway-orbit" ? (
           <div role="group" aria-label="Display" className="flex flex-col">
-            <p className="micro px-2 pt-1 pb-1.5 text-text-tertiary">Display</p>
+            <p className="micro px-2 py-2 text-text-tertiary">Display</p>
             {cutaway ? (
               <>
                 <ToggleOption pressed={hideRoof} onClick={() => state.setHideRoof(!hideRoof)}>
@@ -190,7 +190,7 @@ function ViewOptions() {
           </div>
         ) : null}
         <div role="group" aria-label="Camera" className="mt-1 flex flex-col border-t border-border-subtle pt-1">
-          <p className="micro px-2 pt-1 pb-1.5 text-text-tertiary">Camera</p>
+          <p className="micro px-2 py-2 text-text-tertiary">Camera</p>
           <ActionOption onClick={fitSelected}>Fit selected</ActionOption>
           <ActionOption onClick={resetView}>Reset view</ActionOption>
           {cutaway ? <ActionOption onClick={() => state.navigate("orbit")}>Return to exterior</ActionOption> : null}
@@ -201,7 +201,7 @@ function ViewOptions() {
 }
 
 const optionClass =
-  "flex min-h-10 w-full items-center justify-between gap-3 rounded-[3px] px-2 text-left text-[13px] text-foreground hover:bg-elev-4 lg:min-h-8";
+  "flex min-h-10 w-full items-center justify-between gap-3 rounded-sm px-2 text-left text-[13px] text-foreground hover:bg-elev-4 lg:min-h-8";
 
 function ToggleOption({
   pressed,
@@ -224,8 +224,8 @@ function ToggleOption({
       >
         <span
           className={cn(
-            "absolute top-0.5 size-2.5 rounded-full transition-all",
-            pressed ? "left-3.5 bg-primary" : "left-0.5 bg-muted-foreground",
+            "absolute top-0.5 left-0.5 size-2.5 rounded-full transition-[transform,background-color]",
+            pressed ? "translate-x-3 bg-primary" : "bg-muted-foreground",
           )}
         />
       </span>

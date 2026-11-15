@@ -11,7 +11,7 @@ function counts(environment: CrewEnvironment): string[] {
 }
 
 const card =
-  "flex h-full w-full flex-col rounded-md border p-3.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
+  "flex h-full w-full flex-col rounded-lg border p-4 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 /** The five crew environments as selectable cards, plus "all". */
 export function EnvironmentPicker({

@@ -1,5 +1,7 @@
 # Asset attributions
 
+The interface polish follows [Unslop](https://github.com/heydamir/unslop) by [Damir Sokolovsky (@heydamir)](https://x.com/heydamir), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Its guidance was adapted to IGNIS's existing graphite and ember palette, typography, habitat previews, and research interface.
+
 Vendored files load from this site. The app does not request them from a third-party CDN at runtime. NASA insignia, the worm, and flags are not used as endorsements. The Gateway scene stays a conceptual composite even where an official module model is the mesh.
 
 Retrieved 2026-11-12.

@@ -126,7 +126,7 @@ function Sidebar({ pathname }: { pathname: string }) {
       >
         <Wordmark compact />
         <span className="sr-only xl:not-sr-only">
-          <span className="block text-[15px] leading-5 font-semibold tracking-[0.14em] text-foreground">IGNIS</span>
+          <span className="block text-[16px] leading-5 font-medium tracking-[0.04em] text-foreground">IGNIS</span>
           <span className="hidden text-[12px] leading-4 text-muted-foreground xl:block">Spacecraft fire safety research</span>
         </span>
       </Link>
@@ -142,12 +142,12 @@ function Sidebar({ pathname }: { pathname: string }) {
               aria-current={active ? "page" : undefined}
               title={item.label}
               className={cn(
-                "relative flex h-10 items-center justify-center gap-3 rounded-md px-3 text-sm transition-colors xl:justify-start",
+                "relative flex h-9 items-center justify-center gap-3 rounded-md px-3 text-sm transition-colors xl:justify-start",
                 active ? "bg-elev-3 text-foreground" : "text-muted-foreground hover:bg-elev-2 hover:text-foreground",
               )}
             >
-              {active ? <span className="absolute top-2.5 bottom-2.5 left-0 w-0.5 rounded-full bg-primary" aria-hidden="true" /> : null}
-              <Icon className="size-[18px] shrink-0" strokeWidth={1.5} aria-hidden="true" />
+              {active ? <span className="absolute top-2 bottom-2 left-0 w-0.5 rounded-full bg-primary" aria-hidden="true" /> : null}
+              <Icon className="size-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />
               <span className="sr-only xl:not-sr-only">{item.label}</span>
             </Link>
           );
@@ -188,7 +188,7 @@ function MobileNav({ pathname }: { pathname: string }) {
             )}
           >
             {active ? <span className="absolute inset-x-6 top-0 h-0.5 rounded-full bg-primary" aria-hidden="true" /> : null}
-            <Icon className="size-5" strokeWidth={1.5} aria-hidden="true" />
+            <Icon className="size-4" strokeWidth={1.5} aria-hidden="true" />
             {item.label}
           </Link>
         );
@@ -199,10 +199,10 @@ function MobileNav({ pathname }: { pathname: string }) {
 
 function TopBar({ pathname }: { pathname: string }) {
   return (
-    <header className="no-print flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2.5 border-b border-border-subtle bg-elev-1 px-4 py-2.5 md:min-h-16 md:px-6">
-      <Link href={ROUTES.overview} className="order-1 flex min-h-10 items-center gap-2.5 md:hidden">
+    <header className="no-print flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-b border-border-subtle bg-elev-1 px-4 py-2 md:min-h-16 md:px-6 md:py-3">
+      <Link href={ROUTES.overview} className="order-1 flex min-h-11 items-center gap-3 md:hidden">
         <Wordmark compact />
-        <span className="text-[15px] font-semibold tracking-[0.14em]">IGNIS</span>
+        <span className="text-[16px] font-medium tracking-[0.04em]">IGNIS</span>
       </Link>
       <p className="order-1 hidden min-w-0 truncate text-[15px] font-medium text-foreground md:block">
         {sectionLabel(pathname)}
@@ -227,12 +227,14 @@ function CabinConditions() {
   const scenario = useMissionStore((state) => state.scenario);
   return (
     <Popover>
-      <PopoverTrigger className="inline-flex h-10 w-full min-w-0 items-center gap-2 rounded-md border border-border-subtle bg-background px-3 text-[13px] whitespace-nowrap transition-colors hover:border-border hover:bg-elev-2 sm:w-auto md:h-9">
+      <PopoverTrigger className="inline-flex min-h-11 w-full min-w-0 items-center gap-2 rounded-md border border-border-subtle bg-background px-3 py-2 text-[13px] transition-colors hover:border-border hover:bg-elev-2 sm:w-auto md:min-h-9 md:py-1.5">
         <SlidersHorizontal className="size-4 shrink-0 text-muted-foreground" strokeWidth={1.5} aria-hidden="true" />
-        <span className="text-muted-foreground">Cabin</span>
-        <span className="numeric truncate text-foreground">
-          {formatOxygen(scenario.oxygenPct)}% O₂ · {formatPsi(scenario.pressurePsi)} psi · {formatGravity(scenario.gravityG)} g ·{" "}
-          {airflowCmS(scenario.airflowMs)} cm/s
+        <span className="sr-only text-muted-foreground sm:not-sr-only">Cabin</span>
+        <span className="numeric flex min-w-0 flex-wrap gap-x-3 gap-y-1 text-left text-[12px] leading-5 text-foreground sm:text-[13px]">
+          <span className="whitespace-nowrap">{formatOxygen(scenario.oxygenPct)}% O₂</span>{" "}
+          <span className="whitespace-nowrap">{formatPsi(scenario.pressurePsi)} psi</span>{" "}
+          <span className="whitespace-nowrap">{formatGravity(scenario.gravityG)} g</span>{" "}
+          <span className="whitespace-nowrap">{airflowCmS(scenario.airflowMs)} cm/s</span>
         </span>
         <span className="sr-only">, edit</span>
       </PopoverTrigger>

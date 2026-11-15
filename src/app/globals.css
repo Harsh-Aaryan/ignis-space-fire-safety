@@ -9,7 +9,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-plex-sans), "IBM Plex Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --font-cond: var(--font-plex-cond), "IBM Plex Sans Condensed", "Helvetica Neue", sans-serif;
+  --font-cond: var(--font-sans);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -54,13 +54,15 @@
   --color-status-info: var(--status-info);
   --color-status-caution: var(--status-caution);
   --color-status-warning: var(--status-warning);
-  --radius-sm: 2px;
-  --radius-md: 4px;
-  --radius-lg: 4px;
-  --radius-xl: 4px;
-  --radius-2xl: 4px;
-  --radius-3xl: 4px;
-  --radius-4xl: 4px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+  --radius-4xl: 32px;
+  --default-transition-duration: 150ms;
+  --default-transition-timing-function: var(--ease-standard);
 }
 
 /* Ember Instrument. Hex values are the source of truth. */
@@ -84,7 +86,7 @@
   --border: #3A3E44;
   --input: #757679;
   --ring: #E07A3D;
-  --radius: 0.25rem;
+  --radius: 0.5rem;
   --sidebar: #16181C;
   --sidebar-foreground: #EDEAE4;
   --sidebar-primary: #E07A3D;
@@ -95,7 +97,7 @@
   --sidebar-ring: #E07A3D;
   --text-primary: #EDEAE4;
   --text-secondary: #A39E96;
-  --text-tertiary: #847F79;
+  --text-tertiary: #96918A;
   --accent-text: #F0A66A;
   --status-nominal: #3DCC8D;
   --status-info: #6BA3C7;
@@ -118,9 +120,9 @@
   --data-4: #F0E442;
   --data-5: #2484C6;
   --border-subtle: #2A2D32;
-  --duration-fast: 120ms;
+  --duration-fast: 150ms;
   --duration-panel: 200ms;
-  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @layer base {
@@ -131,9 +133,9 @@
     @apply font-sans;
   }
   body {
-    background: #0D0F13;
-    color: #EDEAE4;
-    font-size: 13px;
+    background: var(--background);
+    color: var(--foreground);
+    font-size: 14px;
     line-height: 20px;
   }
 }
@@ -156,26 +158,28 @@
 }
 
 @utility micro {
-  font-family: var(--font-cond);
-  font-size: 11px;
+  font-family: var(--font-sans);
+  font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.08em;
-  line-height: 14px;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  line-height: 16px;
+}
+
+.lucide {
+  stroke-width: 1.5;
 }
 
 .hotspot-label {
   background: rgba(31, 33, 37, 0.92);
   border: 1px solid #3A3E44;
-  border-radius: 2px;
+  border-radius: 4px;
   color: #EDEAE4;
-  font-family: var(--font-cond), "IBM Plex Sans Condensed", sans-serif;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  line-height: 12px;
-  padding: 3px 6px;
-  text-transform: uppercase;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 16px;
+  padding: 4px 8px;
   white-space: nowrap;
 }
 

@@ -93,7 +93,7 @@ export function ScenarioPanel() {
                 aria-pressed={speed === sim.speed}
                 onClick={() => sim.setSpeed(speed)}
                 className={cn(
-                  "numeric min-h-9 rounded-[3px] px-2.5 text-[13px]",
+                  "numeric min-h-9 rounded-sm px-3 text-[13px]",
                   speed === sim.speed ? "bg-elev-4 text-foreground" : "text-muted-foreground hover:text-foreground",
                 )}
               >
@@ -121,7 +121,7 @@ export function ScenarioPanel() {
               onClick={() => setStage(item)}
               aria-current={stage === item ? "step" : undefined}
               className={cn(
-                "flex min-h-10 items-center justify-center gap-1.5 rounded-[3px] px-1 text-[13px] transition-colors",
+                "flex min-h-10 items-center justify-center gap-2 rounded-sm px-1 text-[13px] transition-colors",
                 stage === item ? "bg-elev-4 text-foreground" : "text-muted-foreground hover:text-foreground",
               )}
             >
