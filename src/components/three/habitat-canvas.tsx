@@ -21,6 +21,7 @@ import { MarsHabitat } from "@/components/three/mars-habitat";
 import { MoonHabitat } from "@/components/three/moon-habitat";
 import { useMissionStore } from "@/stores/mission-store";
 import { navigationBounds } from "@/lib/three/navigation-bounds";
+import { LUNAR_EARTH_RADIUS, positionLunarEarth } from "@/lib/three/lunar-sky";
 import type { EquipmentId, MissionId } from "@/types/domain";
 
 type Vec3 = [number, number, number];
@@ -1388,8 +1389,6 @@ function EarthDisc() {
   const camera = useThree((state) => state.camera);
   const invalidate = useThree((state) => state.invalidate);
   const mesh = useRef<THREE.Mesh>(null);
-  const distance = 380;
-  const radius = distance * Math.tan((2 * Math.PI) / 180 / 2);
   useLayoutEffect(() => {
     map.colorSpace = THREE.SRGBColorSpace;
     invalidate();
@@ -1397,19 +1396,14 @@ function EarthDisc() {
   useFrame(() => {
     const node = mesh.current;
     if (!node) return;
-    const offset = new THREE.Vector3(62, 92, -distance);
-    offset.applyQuaternion(camera.quaternion);
-    node.position.copy(camera.position).add(offset);
-    node.quaternion.copy(camera.quaternion);
-    node.rotateY(1.05);
-    node.rotateZ(0.15);
+    positionLunarEarth(node, camera);
   });
   return (
-    <mesh ref={mesh} frustumCulled={false}>
-      <sphereGeometry args={[radius, 32, 24]} />
+    <mesh ref={mesh} name="lunar-earth" frustumCulled={false}>
+      <sphereGeometry args={[LUNAR_EARTH_RADIUS, 32, 24]} />
       <meshBasicMaterial map={map} />
       <mesh frustumCulled={false}>
-        <sphereGeometry args={[radius * 1.045, 24, 16]} />
+        <sphereGeometry args={[LUNAR_EARTH_RADIUS * 1.045, 24, 16]} />
         <meshBasicMaterial color="#7EA4D4" transparent opacity={0.28} side={THREE.BackSide} depthWrite={false} />
       </mesh>
     </mesh>
