@@ -41,7 +41,7 @@ The existing palette, IBM Plex typefaces, real habitat previews, scientific cont
 
 ## Local verification
 
-- `npm test`: 134 tests passed across 14 files
+- `npm test`: 151 tests passed across 15 files
 - `npm run build`: passed compilation, TypeScript checks, and generation of 33 pages
 - Responsive checks passed at 320, 390, 768, 1024, and 1600px; all four cabin values fit without clipping
 - Research, modeling data, detection and suppression, evidence gaps, gravity comparison, and results load at 390 and 1600px without page overflow or uncaught JavaScript errors
@@ -50,17 +50,26 @@ The existing palette, IBM Plex typefaces, real habitat previews, scientific cont
 - New layout regressions passed at 320, 390, 1024, 1280, 1600, and 1920px: all eight telemetry readouts fit, the graph remains centered within 1px, the desktop simulation retains at least 300px of viewport height, and telemetry stays docked at the bottom
 - The overview render fills the workspace, and Ask IGNIS matches the primary action's computed fill and text colors
 - Live 3D capture at 1600px: telemetry width 1360px, scroll width 1360px, graph center within 0.5px of the bar's center, and no uncaught JavaScript errors
-- `npm run test:e2e` with `IGNIS_TEST_URL` set to `http://127.0.0.1:3001`: all 21 tests passed against the production build in Microsoft Edge (5.3 minutes), including the complete Moon, Mars, and Gateway fire lifecycles and the new layout regressions
+- `npm run test:e2e` with `IGNIS_TEST_URL` set to `http://127.0.0.1:3001`: all 22 tests passed against the production build in Microsoft Edge (6.4 minutes), including the complete Moon, Mars, and Gateway fire lifecycles, conversational run explanations, and layout regressions
 - The existing development preview at `http://localhost:3000` returns HTTP 200 and serves the updated overview
 - `git diff --check`: passed
 - Landing overlay revision: production build and all 9 site browser checks passed, including centered text over the image and removal of the statistics row; desktop and mobile captures were visually reviewed
+- Final build smoke checks passed again for the assistant (including “didn’t” follow-ups) and hero after the contraction-normalization update
+
+## Assistant and render update
+
+Ask IGNIS understands requests such as “explain”, “explain my scenario”, “what happened?”, and “explain what this run did and how it worked”. Short follow-ups use the previous question. Run summaries are assembled from the captured phase, heat output, peak, ignition and extinction times, smoke, and alarm readings. Missing values stay unknown. The original model metadata is available under the expandable Run context below each answer.
+
+Broader research answers continue through the configured Groq provider, with instructions for short paragraphs, plain language, and a clear distinction between published experiments and this run. Provider request and response validation are covered with mocked completions; run-summary browser tests exercise the real local API.
+
+The desktop hero fills the first screen beneath the navigation, with a 760px minimum height; mobile uses a 720px minimum. All three habitat stills were recaptured at 3120 × 2222px using the existing high-tier 3D renderer and native 1.5 DPR, replacing the 1160 × 822px captures. Next Image serves them at quality 90. The capture helper releases its browser and graphics buffers between habitats. See [the preview README](public/overview/README.md) for reproduction.
 
 Before and after captures are saved locally under `.qa-baseline/unslop/`, which is ignored by Git. The captures include the desktop overview, mobile overview, and desktop research index. The responsive check also records its results there.
 
 | Screen | Before | After |
 | --- | --- | --- |
-| Desktop overview | [Before](.qa-baseline/unslop/before/overview-desktop.png) | [After](.qa-baseline/unslop/landing-overlay/overview-desktop.png) |
-| Mobile overview | [Before](.qa-baseline/unslop/before/overview-mobile.png) | [After](.qa-baseline/unslop/landing-overlay/overview-mobile.png) |
+| Desktop overview | [Before](.qa-baseline/unslop/before/overview-desktop.png) | [After](.qa-baseline/unslop/conversational-hero/overview-desktop.png) |
+| Mobile overview | [Before](.qa-baseline/unslop/before/overview-mobile.png) | [After](.qa-baseline/unslop/conversational-hero/overview-mobile.png) |
 | Research index | [Before](.qa-baseline/unslop/before/research-desktop.png) | [After](.qa-baseline/unslop/wide-layout/research-desktop.png) |
 
 Simulation captures: [Desktop](.qa-baseline/unslop/wide-layout/simulation-desktop.png), [mobile](.qa-baseline/unslop/wide-layout/simulation-mobile.png).

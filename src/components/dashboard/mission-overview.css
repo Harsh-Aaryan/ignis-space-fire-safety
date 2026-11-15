@@ -9,7 +9,7 @@
   isolation: isolate;
   display: flex;
   min-width: 0;
-  min-height: 640px;
+  min-height: 720px;
   flex-direction: column;
   overflow: hidden;
   background: var(--background);
@@ -73,6 +73,10 @@
 }
 
 @media (min-width: 1024px) {
+  .overview-scene {
+    min-height: max(760px, calc(100svh - 64px));
+  }
+
   .overview-content {
     padding: 64px 40px 32px;
   }

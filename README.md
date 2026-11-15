@@ -59,6 +59,8 @@ Set `IGNIS_TEST_URL` to point the browser tests at another address. They run wit
 
 A scenario assistant available from every page. Without configuration it explains the current run from the model state and the source registry. With `GROQ_API_KEY` set on the server it adds generated answers restricted to the retrieved source extracts; anything that fails validation falls back to the local explanation.
 
+Short requests such as “explain”, “what happened?” and “explain my scenario” refer to the current run. Run summaries use the captured phase, heat output, peak, ignition and extinction times, smoke and alarm readings directly. Short follow-ups use the previous question for context. Generated research explanations use short paragraphs, and the full model metadata is available under “Run context”.
+
 Copy `.env.example` to `.env.local` for local use. On Netlify, add `GROQ_API_KEY` in the project's environment variables with the Functions scope. Never prefix it with `NEXT_PUBLIC_`. `IGNIS_CHAT_PROVIDER=local` disables external calls.
 
 The endpoint (`src/app/api/ask-ignis/route.ts`) bounds input and output size, checks the request origin and limits requests to ten per minute per address within one server instance. Citations identify the source extracts used; they are not independent verification.

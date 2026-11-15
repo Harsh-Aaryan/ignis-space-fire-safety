@@ -4,6 +4,9 @@ import { LEGACY_REDIRECTS } from "./src/lib/routes";
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
+  images: {
+    qualities: [75, 90],
+  },
   turbopack: {
     rules: {
       "*.css": {

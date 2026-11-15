@@ -139,7 +139,7 @@ describe("transport and observed versus modeled behavior",()=>{
   it("answers from a captured scenario and real source IDs",()=>{
     const s=runFire(setup(),{durationS:20}).state;
     const answer=explainScenario("Explain this run",setup(),s);
-    expect(answer.context).toContain("20.0 s");expect(answer.text).toContain("chemical HRR");
+    expect(answer.context).toContain("20.0 s");expect(answer.text).toContain(`${s.chemicalHrrW.toFixed(0)} W`);
     expect(answer.sources.every(id=>FIRE_SOURCES.some(source=>source.id===id))).toBe(true);
     expect(explainScenario("stop ventilation",setup(),s).compareVentilation).toBe(true);
   });

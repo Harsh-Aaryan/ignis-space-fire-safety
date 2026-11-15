@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     if (provider === "groq" && apiKey) {
       return json(await answerWithGroq(parsed, apiKey, process.env.GROQ_MODEL));
     }
-    return json({ ...explainScenario(parsed.message, parsed.input, parsed.snapshot), provider: "local",
+    return json({ ...explainScenario(parsed.message, parsed.input, parsed.snapshot, parsed.history), provider: "local",
       ...(provider === "groq" ? { notice: "AI is not configured. Showing a local explanation." } : {}),
     });
   } catch (error) {

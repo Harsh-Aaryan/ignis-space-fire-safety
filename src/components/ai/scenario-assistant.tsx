@@ -170,7 +170,7 @@ export function ScenarioAssistant() {
       <header className="flex items-start gap-3 border-b border-border-subtle px-5 py-4">
         <div className="min-w-0 flex-1">
           <h2 className="text-[15px] leading-5 font-medium text-foreground">Ask IGNIS</h2>
-          <p className="mt-1 text-[13px] leading-5 text-muted-foreground">Questions about your scenario, answered with sources.</p>
+          <p className="mt-1 text-[13px] leading-5 text-muted-foreground">Work through your run and the science behind it</p>
         </div>
         <button
           type="button"
@@ -184,11 +184,10 @@ export function ScenarioAssistant() {
 
       <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4">
         <p className="text-sm leading-6 text-muted-foreground">
-          Ask about the fire scenario you have set up and the NASA evidence behind it. Each answer uses the scenario as it stands when you ask.
+          Ask what happened, why the flame changed, or how a detector responded. Short follow-up questions work too.
         </p>
         <Note>
-          Answers draw on the cited sources and on the model output at the moment you ask. Model results are estimates; a citation shows
-          where an input came from, not that a prediction is accurate.
+          Answers use your captured run and cited research. Model results are exploratory estimates.
         </Note>
 
         <div className="flex flex-col gap-2">
@@ -208,11 +207,6 @@ export function ScenarioAssistant() {
         {turns.map((turn, i) => (
           <article key={i} className="space-y-2 border-t border-border-subtle pt-4">
             <p className="text-sm font-medium text-foreground">{turn.question}</p>
-            <p className="text-[12px] leading-5 text-text-tertiary">
-              {turn.answer.context}
-              {" · "}
-              {turn.answer.provider === "groq" ? "Generated explanation (Groq)" : "Explanation from local sources"}
-            </p>
             {turn.answer.notice ? <p className="text-[13px] leading-5 text-muted-foreground">{turn.answer.notice}</p> : null}
             <p className="text-sm leading-6 whitespace-pre-line text-foreground">{turn.answer.text}</p>
             <p className="flex flex-wrap gap-2">
@@ -220,6 +214,12 @@ export function ScenarioAssistant() {
                 <Cite key={id} id={id} />
               ))}
             </p>
+            <details className="text-[12px] leading-5 text-text-tertiary">
+              <summary className="cursor-pointer hover:text-foreground">
+                {turn.answer.provider === "groq" ? "Generated explanation (Groq)" : "Based on your run"} · Run context
+              </summary>
+              <p className="mt-1">{turn.answer.context}</p>
+            </details>
             {turn.answer.compareVentilation ? (
               <button type="button" onClick={() => compare(turn.input)} className={actionClass("secondary")}>
                 Compare fan shutdown in a copy

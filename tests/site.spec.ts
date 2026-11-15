@@ -52,8 +52,10 @@ test("overview render spans the workspace and Ask IGNIS shares the primary accen
   expect(Math.abs(render!.x - main!.x)).toBeLessThanOrEqual(1);
   expect(Math.abs(render!.width - main!.width)).toBeLessThanOrEqual(1);
   expect(render!.height).toBeGreaterThanOrEqual(600);
+  expect(render!.height).toBeGreaterThanOrEqual(main!.height);
   expect(Math.abs(render!.y - main!.y)).toBeLessThanOrEqual(1);
   const image = (await page.locator("#habitat-preview img").boundingBox())!;
+  await expect(page.locator("#habitat-preview img")).toHaveAttribute("src", /q=90/);
   expect(Math.abs(image.width - render!.width)).toBeLessThanOrEqual(1);
   expect(Math.abs(image.height - render!.height)).toBeLessThanOrEqual(1);
   const heading = (await page.getByRole("heading", { level: 1 }).boundingBox())!;

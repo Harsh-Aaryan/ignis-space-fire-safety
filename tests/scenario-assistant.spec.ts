@@ -48,7 +48,7 @@ test("guided setup, grounded assistant and review work together", async ({ page 
   await page.getByRole("button",{name:"Explain this run",exact:true}).click();
   const assistant=page.getByRole("complementary",{name:"Ask IGNIS scenario assistant"});
   await assistant.getByRole("button",{name:"Explain this run",exact:true}).click();
-  await expect(assistant).toContainText("chemical HRR");
+  await expect(assistant).toContainText("The fire itself is releasing");
   await expect(assistant.getByRole("link",{name:/NIST CFAST/})).toHaveAttribute("href",/nist/);
   await assistant.getByRole("button",{name:"What changes if I stop ventilation?",exact:true}).click();
   const status=await page.getByTestId("fire-status").textContent();
@@ -64,6 +64,43 @@ test("guided setup, grounded assistant and review work together", async ({ page 
   await page.getByRole("button",{name:"Export this fire run",exact:true}).click();
   expect((await downloadPromise).suggestedFilename()).toBe("ignis-fire-run.json");
   expect(errors).toEqual([]);
+});
+
+test("short requests explain the captured run instead of showing the scope message", async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, type: string, ...args: unknown[]) {
+      if (type.startsWith("webgl")) return null;
+      return original.apply(this, [type, ...args] as never);
+    } as typeof original;
+  });
+  await page.goto("/simulation", { waitUntil: "domcontentloaded" });
+  await expect(page.getByText(/WebGL is unavailable/)).toBeVisible();
+  await page.getByRole("radio", { name: "Gateway, about 0 g", exact: true }).click();
+  await page.getByRole("tab", { name: "Fire scenario", exact: true }).click();
+  await page.getByRole("button", { name: "Acrylic ignition", exact: true }).click();
+  await page.getByRole("button", { name: "60×", exact: true }).click();
+  await page.getByRole("button", { name: "Start scenario", exact: true }).click();
+  await expect(page.getByTestId("fire-status")).toContainText("Flaming");
+  await page.getByRole("button", { name: "Pause", exact: true }).click();
+  await page.getByRole("button", { name: "Ask IGNIS", exact: true }).click();
+  const assistant = page.getByRole("complementary", { name: "Ask IGNIS scenario assistant" });
+  for (const question of ["explain what this run did and how it worked", "explain", "explain my scenario", "Why didn’t this run work?"]) {
+    const sent = page.waitForRequest(request => request.url().endsWith("/api/ask-ignis") && request.method() === "POST");
+    await assistant.getByLabel("Ask IGNIS a question").fill(question);
+    await assistant.getByRole("button", { name: "Send question", exact: true }).click();
+    const captured = (await sent).postDataJSON();
+    const turn = assistant.getByRole("article").last();
+    await expect(turn).toContainText(question);
+    await expect(turn).toContainText(`${Number(captured.snapshot.chemicalHrrW).toFixed(0)} W`);
+    await expect(turn).toContainText(`${Number(captured.snapshot.peakHrrW).toFixed(0)} W`);
+    await expect(turn).toContainText(captured.snapshot.firstAlarmTime === null
+      ? "No detector alarm has been recorded yet."
+      : `The first detector alarm was at ${Number(captured.snapshot.firstAlarmTime).toFixed(1)} s.`);
+    await expect(turn).not.toContainText("I can help with your fire run");
+    await expect(turn.getByText("Based on your run", { exact: false })).toBeVisible();
+    await expect(assistant.getByRole("button", { name: "Send question", exact: true })).toBeDisabled();
+  }
 });
 
 test("Ask IGNIS stays visible and keyboard accessible on mobile",async({page},info)=>{

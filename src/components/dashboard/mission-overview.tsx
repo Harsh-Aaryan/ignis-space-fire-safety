@@ -191,6 +191,7 @@ function HabitatPreview({ children }: { children: React.ReactNode }) {
           src={`/overview/${preview.image}.jpg`}
           alt={preview.alt}
           fill
+          quality={90}
           className="overview-image"
           sizes="(min-width: 1280px) calc(100vw - 240px), (min-width: 768px) calc(100vw - 64px), 100vw"
           loading="eager"

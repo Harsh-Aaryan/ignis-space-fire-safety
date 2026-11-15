@@ -4,14 +4,33 @@ const fs = require('node:fs');
 const path = require('node:path');
 const targets = new Set(process.argv.slice(2));
 const requested = name => !targets.size || targets.has(name);
+const previews = [
+  { name: 'moon', id: 'lunar-habitat', gravity: 0.165, ready: 'shell', zoom: 10, elevate: 30, file: 'moon-exterior' },
+  { name: 'mars', id: 'mars-habitat', gravity: 0.38, ready: 'shell', zoom: 3, file: 'mars-exterior' },
+  { name: 'gateway', id: 'gateway-orbit', gravity: 0, ready: 'living-quarters', zoom: 6, file: 'gateway' },
+];
 (async () => {
-  const browser = await chromium.launch({channel:'msedge',headless:true,args:['--enable-unsafe-swiftshader']});
+  // Release high-resolution framebuffers between habitats, especially on software WebGL.
+  for (const preview of previews.filter(preview => requested(preview.name))) {
+  const browser = await chromium.launch({channel:'msedge',headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
   try {
-    const page = await browser.newPage({viewport:{width:1920,height:1080},deviceScaleFactor:1,reducedMotion:'reduce'});
+    // The high-tier renderer uses 1.5 DPR. Capture at that native density,
+    // rather than stretching the old 1160px stills across the landing page.
+    const page = await browser.newPage({viewport:{width:2880,height:1800},deviceScaleFactor:1.5,reducedMotion:'reduce'});
+    await page.addInitScript(preview => {
+      sessionStorage.setItem('ignis-session', JSON.stringify({ version: 0, state: {
+        scenario: { missionId: preview.id, name: preview.name, gravityG: preview.gravity,
+          oxygenPct: 32, pressurePsi: 10.2, airflowMs: 0.05,
+          fuelCategory: 'solid-polymer', objective: 'habitat-fire-safety' },
+        selectedEquipment: null, selectedRoomId: null, selectedObjectId: null, selectedLevel: null,
+        navigationMode: 'orbit', cutaway: false, exploded: false, hideRoof: true, hideFrontWalls: true,
+      } }));
+    }, preview);
     const pending = new Set();
     page.on('request', r => {if (/\.(glb|wasm|hdr|webp|png|jpe?g)(\?|$)/i.test(r.url())) pending.add(r);});
     page.on('requestfinished',r=>pending.delete(r)); page.on('requestfailed',r=>pending.delete(r));
-    await page.goto((process.env.IGNIS_SCREENSHOT_URL || 'http://127.0.0.1:3000')+'/firetwin',{waitUntil:'domcontentloaded',timeout:120000});
+    await page.goto((process.env.IGNIS_SCREENSHOT_URL || 'http://127.0.0.1:3000')+'/simulation',{waitUntil:'domcontentloaded',timeout:120000});
+    await page.locator('canvas').waitFor({state:'visible',timeout:120000});
     async function settle(id) {
       await page.waitForFunction(id=>Boolean(window.__IGNIS_SCREEN?.[id]),id,{timeout:120000});
       for(let n=0;n<180 && pending.size;n++) await page.waitForTimeout(500);
@@ -42,21 +61,15 @@ const requested = name => !targets.size || targets.has(name);
       });
       const b=await page.locator('canvas').boundingBox();
       await page.mouse.move(5,5);
-      await page.screenshot({path:path.resolve('public/overview/'+name+'.jpg'),type:'jpeg',quality:88,clip:{x:b.x+80,y:b.y+110,width:b.width-160,height:b.height-210},animations:'disabled'});
+      await page.screenshot({path:path.resolve('public/overview/'+name+'.jpg'),type:'jpeg',quality:96,clip:{x:b.x+80,y:b.y+110,width:b.width-160,height:b.height-210},animations:'disabled',timeout:120000});
       await page.evaluate(()=>{for(const [element,value] of window.__overviewHidden)element.style.visibility=value;});
       console.log('Captured '+name);
     }
-    if(requested('moon')) {
-      await settle('shell'); await zoom(10); await elevate(30); await capture('moon-exterior');
-    }
-    if(requested('mars')) {
-      await page.getByRole('radio',{name:'Mars, 0.38 g',exact:true}).click();
-      await settle('shell'); await zoom(3); await capture('mars-exterior');
-    }
-    if(requested('gateway')) {
-      await page.getByRole('radio',{name:'Gateway-inspired lunar orbit habitat, about 0 g, conceptual digital twin',exact:true}).click();
-      await settle('living-quarters'); await zoom(8); await capture('gateway');
-    }
-    console.log(JSON.stringify(fs.readdirSync('public/overview').map(name=>({name,bytes:fs.statSync('public/overview/'+name).size}))));
+    await settle(preview.ready);
+    await zoom(preview.zoom);
+    if (preview.elevate) await elevate(preview.elevate);
+    await capture(preview.file);
   } finally {await browser.close();}
+  }
+  console.log(JSON.stringify(fs.readdirSync('public/overview').map(name=>({name,bytes:fs.statSync('public/overview/'+name).size}))));
 })().catch(error=>{console.error(error);process.exitCode=1;});
