@@ -211,6 +211,7 @@ export function saffireInput(benchmark: SaffireBenchmark): FireInput {
     pressureKpa: benchmark.pressureKpa,
     ambientC: 20,
     ventilationMs: benchmark.flowMs,
+    ventilationSchedule: benchmark.ventilationSchedule,
     // The 30 cm by 45 cm Saffire flow duct.
     ventAreaM2: 0.135,
     roomVolumeM3: benchmark.freeVolumeM3,

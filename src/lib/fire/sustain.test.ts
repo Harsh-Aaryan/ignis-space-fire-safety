@@ -4,7 +4,7 @@ import { genericFireInput } from "@/lib/fire/scenario";
 import { materialById } from "@/data/fire/materials";
 
 /**
- * Model 2.1.0 acceptance cases. Each is anchored to a flight or ground result
+ * Model 3.0.0 acceptance cases (first written for 2.1.0). Each is anchored to a flight or ground result
  * recorded in src/data/fire/sources.ts. They check which fires persist and which
  * go out; they are not a validation of heat-release magnitudes.
  */
@@ -72,15 +72,32 @@ describe("responses still put the fire out", () => {
   });
 });
 
-describe("thin fuel is unchanged", () => {
-  // Totals recorded with model 2.0.0, before the thick-fuel closure changed.
-  it.each([
-    [0.05, 62],
-    [0.2, 125],
-  ])("cotton fabric at 0 g and %s m/s releases the same heat", (airflowMs, referenceKJ) => {
-    const run = burn("sibal", 0, airflowMs);
-    expect(run.state.totalHeatJ / 1000).toBeGreaterThan(referenceKJ * 0.9);
-    expect(run.state.totalHeatJ / 1000).toBeLessThan(referenceKJ * 1.1);
+describe("thin fuel burns out as the Saffire fabric did (model 3.0.0)", () => {
+  // Up to model 2.1.0 these cases pinned 62 kJ (5 cm/s) and 125 kJ (20 cm/s) after 600 s,
+  // i.e. most of the 27.7 g of cotton on a 41 cm × 50 cm sample never burned. Saffire IV-1
+  // consumed that same sample (409 kJ by fuel consumption) in 130 s at 22 % O₂ and 20 cm/s,
+  // so those totals encoded the energy-starved thin-fuel closure that 3.0.0 replaces.
+  const burnTime = (run: ReturnType<typeof burn>) => run.state.extinctionTime! - run.state.ignitionTime!;
+
+  it("cotton fabric at 0 g and 20 cm/s burns out completely in about the Saffire IV-1 time", () => {
+    const run = burn("sibal", 0, 0.2);
+    const inventoryJ = run.state.fuelTotalKg * materialById("sibal").heatOfCombustionMJkg.value * 1e6;
+    expect(run.state.phase).toBe("burned-out");
+    expect(run.state.totalHeatJ / inventoryJ).toBeGreaterThan(0.97);
+    expect(run.state.totalHeatJ / inventoryJ).toBeLessThanOrEqual(1 + 1e-9);
+    // 130 s at 22 % O₂; air (21 %) spreads slightly slower in the model.
+    expect(burnTime(run)).toBeGreaterThan(100);
+    expect(burnTime(run)).toBeLessThan(170);
+  });
+
+  // Spread and burning flux scale with √u, so at 5 cm/s the front is slower and the flame
+  // weaker; near its oxygen limit some vapour escapes unburned.
+  it("burns more slowly and less intensely at 5 cm/s than at 20 cm/s", () => {
+    const slow = burn("sibal", 0, 0.05), fast = burn("sibal", 0, 0.2);
+    expect(slow.state.phase).toBe("burned-out");
+    expect(slow.state.peakHrrW).toBeLessThan(fast.state.peakHrrW);
+    expect(burnTime(slow)).toBeGreaterThan(burnTime(fast));
+    expect(slow.state.totalHeatJ).toBeLessThanOrEqual(fast.state.totalHeatJ + 1);
   });
 
   it("cotton fabric does not ignite in still microgravity air", () => {
@@ -122,18 +139,26 @@ describe("a fire that has gone out is reported as out", () => {
 
 describe("microgravity flame size follows the burning zone", () => {
   // Saffire IV–V: concurrent flames reach a limiting, steady size rather than growing with the distance travelled.
-  it("draws a limiting flame on cotton fabric, comparable with the lunar case", () => {
-    const flameAt = (gravityG: number) => {
+  // Model 3.0.0: the fabric now burns out in about 115–130 s (as Saffire IV-1 did), so the
+  // former check at 120 s compared a burning zero-g sample with a finished lunar one. Both
+  // now carry the Saffire-calibrated 3–4 kW, so the lunar flame follows the buoyant-plume
+  // correlation and is longer than the zero-g burning zone; the former "within 3×" bound
+  // was set when thin-fuel heat release was about four times too low.
+  it("draws a limiting flame on cotton fabric that does not grow with distance travelled", () => {
+    const flameAt = (gravityG: number, seconds: number) => {
       const input = genericFireInput({ gravityG, airflowMs: 0.2, ...AIR }, "sibal", "hot-wire");
       const state = createFireState(input);
-      while (state.t < 120) stepFire(state, input, 0.25);
-      return state.flame.lengthM;
+      while (state.t < seconds) stepFire(state, input, 0.25);
+      return { length: state.flame.lengthM, kind: state.flame.kind, room: input.roomHeightM - input.fireHeightM };
     };
-    const microgravity = flameAt(0);
-    const lunar = flameAt(0.165);
-    expect(microgravity).toBeLessThan(0.2);
-    expect(microgravity / lunar).toBeLessThan(3);
-    expect(lunar / microgravity).toBeLessThan(3);
+    const early = flameAt(0, 30), late = flameAt(0, 90);
+    expect(early.kind).toBe("dome");
+    expect(late.length).toBeLessThan(0.2);
+    expect(Math.abs(late.length - early.length) / early.length).toBeLessThan(0.1);
+    const lunar = flameAt(0.165, 60);
+    expect(lunar.kind).toBe("plume");
+    expect(lunar.length).toBeGreaterThan(late.length);
+    expect(lunar.length).toBeLessThanOrEqual(lunar.room);
   });
 
   it("shows no flame once the fabric is consumed", () => {

@@ -1,3 +1,4 @@
+import { CALIBRATED_COEFFICIENTS as FIT, thinBurnoutFromSaffireII } from "@/data/fire/parameters";
 import { cite, type Cited } from "@/data/fire/sources";
 import type { EquipmentType } from "@/data/habitat-interiors";
 import type { FuelCategory } from "@/types/domain";
@@ -49,10 +50,16 @@ export interface FireMaterial {
   smokeCountMeanUm: Cited<[number, number]>;
   /** Smoke diameter of average mass, µm: [fresh, aged 720 s]. */
   smokeMassMeanUm: Cited<[number, number]>;
-  /** Burning mass flux at 21 % O₂, 101 kPa and 0.2 m/s, g/m²s. */
+  /** Burning mass flux at 21 % O₂, 101.325 kPa and 0.2 m/s, g/m²s. Thin fuels: flux in the
+   * burning zone behind the spreading front (sets the burnout time). Thick fuels: flux
+   * averaged over the involved surface. */
   refMassFluxGm2s: Cited;
-  /** Concurrent spread rate at 22 % O₂, 100 kPa and 0.2 m/s, mm/s. Thin fuels and wires. */
+  /** Concurrent spread rate at 22 % O₂, 101.325 kPa and 0.2 m/s, mm/s. Thin fuels and wires. */
   refSpreadMmS: Cited | null;
+  /** Thick fuels: downstream growth rate of the burning region at 21 % O₂, 101.325 kPa and 0.2 m/s, mm/s. */
+  thickSpreadMmS?: Cited;
+  /** Molar CO/CO₂ ratio of the products in low-flow microgravity burning. Absent: the 1 g yield is used at every gravity. */
+  coCo2LowFlow?: Cited;
   /** Molten, dripping fuel. Matters once there is gravity. */
   drips: boolean;
   /** What NASA testing says about this material. */
@@ -61,14 +68,17 @@ export interface FireMaterial {
 }
 
 const SIBAL_AREAL = 0.1354;
-const SIBAL_SPREAD = 3.85;
+/** Calibrated to the Saffire VI SIBAL burn durations (benchmarks.ts calibrate()). */
+const SIBAL_SPREAD = FIT.sibalSpreadMmS.value;
+/** Derived from the Saffire-II SIBAL strips: burnout time = burn time − length ÷ spread rate. */
+const SIBAL_BURNOUT = thinBurnoutFromSaffireII(SIBAL_AREAL);
 
-/** Thin-fuel spread scales inversely with fuel loading (de Ris). Reference is Saffire IV-1 SIBAL. */
+/** Thin-fuel spread scales inversely with fuel loading (de Ris). Reference is the calibrated SIBAL rate. */
 function spreadFromAreal(arealKgM2: number): Cited {
   return cite(
     Number(((SIBAL_SPREAD * SIBAL_AREAL) / arealKgM2).toFixed(2)),
     "model",
-    "Saffire IV-1 SIBAL spread rate scaled inversely with fuel loading.",
+    "Calibrated SIBAL spread rate scaled inversely with fuel loading.",
   );
 }
 
@@ -93,8 +103,10 @@ export const FIRE_MATERIALS: FireMaterial[] = [
     radiativeFraction: cite(0.31, "sfpe"),
     smokeCountMeanUm: cite([0.2, 0.33], "model", "Not measured in SAME. Set inside the 200–400 nm range SAME-2 reports for most smokes."),
     smokeMassMeanUm: cite([0.3, 0.45], "model", "Not measured in SAME."),
-    refMassFluxGm2s: cite(1.1, "saffire-vi", "Fitted to the VI-3 and VI-4 peak heat release over the limiting flame length."),
+    refMassFluxGm2s: cite(FIT.pmmaFluxGm2s.value, "saffire-vi", "Fitted with the growth rate below to VI-3 and VI-4 peak heat release, total heat and CO₂ rise; averaged over the involved surface.", "calibrated"),
     refSpreadMmS: null,
+    thickSpreadMmS: cite(FIT.pmmaThickSpreadMmS.value, "saffire-vi", "Fitted to VI-3 and VI-4 with the burning flux; scales with u·p·(O₂ fraction)². Checked against the Saffire-II damage length, not fitted to it.", "calibrated"),
+    coCo2LowFlow: cite(FIT.pmmaCoCo2.value, "saffire-vi", "Fitted to the VI-3 and VI-4 CO/CO₂ rise ratio. Checked against BASS-II run-level ratios, not fitted to them.", "calibrated"),
     drips: false,
     nasaFinding:
       "Burned steadily at 13.6 % O₂ in microgravity although it blows off at 16 % in 1 g. On Saffire VI two slabs released 1.5 and 3.1 kW and pushed cabin CO₂ past the 1-hour limit.",
@@ -113,15 +125,19 @@ export const FIRE_MATERIALS: FireMaterial[] = [
     arealFuelKgM2: cite(SIBAL_AREAL, "saffire-vi", "75 % of 18.05 mg/cm²."),
     specificHeatKJkgK: 1.3,
     loc1gPct: cite(18.0, "sfpe", "Handbook oxygen index of cotton. BASS-II burned SIBAL at 18.7 % in microgravity."),
-    lowFlowMarginPct: cite(2.0, "model", "Chosen so the model quenches near 2–4 cm/s at 18.7 % O₂, as BASS-II observed."),
+    lowFlowMarginPct: cite(2.0, "model", "Sets the limit at the 20 cm/s optimum. The low-flow curvature (parameters.ts) places the quench at 3.3 cm/s for 18.7 % O₂, between the burn at 5 cm/s and the quench at 2.2 cm/s that BASS-II observed."),
     co2Yield: cite(1.63, "saffire-vi", "Cellulose stoichiometry. Reproduces the IV-1 and VI-2 CO₂ rise for the 27.7 g of cotton on the sample."),
     coYield1g: cite(0.004, "sfpe"),
     sootYield: cite(0.015, "sfpe"),
     radiativeFraction: cite(0.3, "sfpe"),
     smokeCountMeanUm: cite([0.128, 0.276], "same-2", "Lamp wick (cellulose)."),
     smokeMassMeanUm: cite([0.258, 0.398], "same-2", "Lamp wick (cellulose)."),
-    refMassFluxGm2s: cite(2.4, "model", "Sets the burnout time behind the spreading front."),
-    refSpreadMmS: cite(SIBAL_SPREAD, "saffire-vi", "Derived 50 cm / 130 s travel estimate at 22 percent O2, 100 kPa, 20 cm/s; not a measured front-position history."),
+    refMassFluxGm2s: {
+      ...cite(Number(SIBAL_BURNOUT.fluxGm2s.toFixed(1)), "psi-saffire-ii", `Burning-zone flux from the Saffire-II SIBAL strips: burnout ${SIBAL_BURNOUT.meanBurnoutS.toFixed(1)} s (burn time minus length over spread rate), 13.54 mg/cm² of cotton. Each row is normalized for oxygen and flow; II-6 uses NASA's corrected 25 cm/s (saffire-i-iii-matrix).`, "derived"),
+      uncertainty: `Burnout is a small difference of near-equal times; rounding of the two-figure spread rates alone gives ${SIBAL_BURNOUT.burnoutRangeS[0].toFixed(1)}–${SIBAL_BURNOUT.burnoutRangeS[1].toFixed(1)} s, i.e. ${SIBAL_BURNOUT.fluxRangeGm2s[0].toFixed(0)}–${SIBAL_BURNOUT.fluxRangeGm2s[1].toFixed(0)} g/m²s.`,
+    },
+    refSpreadMmS: cite(SIBAL_SPREAD, "saffire-vi", "Fitted to the IV-1 and VI-2 burn durations; scales with √(u·p) and O₂ fraction. Saffire-I and Saffire-II spread more slowly (see the model check).", "calibrated"),
+    coCo2LowFlow: cite(FIT.sibalCoCo2.value, "saffire-vi", "Fitted to the IV-1 and VI-2 CO/CO₂ rise ratio. Checked against BASS-II SIBAL runs, not fitted to them.", "calibrated"),
     drips: false,
     nasaFinding:
       "Reached a steady spread rate and a limiting flame size in every Saffire flight. Quenched in BASS-II when flow fell from 5 to 2.2 cm/s at 18.7 % O₂.",
@@ -305,11 +321,12 @@ export const FIRE_MATERIALS: FireMaterial[] = [
     lowFlowMarginPct: cite(1.5, "model"),
     co2Yield: cite(1.63, "saffire-vi"),
     coYield1g: cite(0.004, "sfpe"),
+    coCo2LowFlow: cite(FIT.sibalCoCo2.value, "model", "SIBAL (cotton) low-flow ratio transferred to cellulose tissue."),
     sootYield: cite(0.015, "sfpe"),
     radiativeFraction: cite(0.3, "sfpe"),
     smokeCountMeanUm: cite([0.128, 0.276], "same-2", "Lamp wick (cellulose)."),
     smokeMassMeanUm: cite([0.258, 0.398], "same-2", "Lamp wick (cellulose)."),
-    refMassFluxGm2s: cite(2.4, "model"),
+    refMassFluxGm2s: cite(Number(SIBAL_BURNOUT.fluxGm2s.toFixed(1)), "model", "SIBAL burning-zone flux transferred to cellulose tissue."),
     refSpreadMmS: spreadFromAreal(0.02),
     drips: false,
     nasaFinding:

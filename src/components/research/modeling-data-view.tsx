@@ -19,13 +19,15 @@ import {
 } from "@/components/design/kit";
 import { Cite, CitedValue } from "@/components/fire/cite";
 import { fieldClass } from "@/components/research/index-filter-bar";
+import { CfastCrosscheck } from "@/components/research/cfast-crosscheck";
 import { PsiDatasets } from "@/components/research/psi-datasets";
+import { SaffireDetection } from "@/components/research/saffire-detection";
 import { FIRE_MATERIALS, materialById, type FireMaterial } from "@/data/fire/materials";
-import { SAFFIRE_BENCHMARKS, SAME2_TABLE, WSTF_LIMITS } from "@/data/fire/options";
-import { materialParameterRecords } from "@/data/fire/parameters";
+import { SAFFIRE_BENCHMARKS, SAME2_TABLE, WSTF_LIMITS, peakHrrAnalyses } from "@/data/fire/options";
+import { closureParameterRecords, materialParameterRecords } from "@/data/fire/parameters";
 import { FIRE_MODEL_VERSION, FIRE_SOURCES, RETRIEVED_AT, type Cited } from "@/data/fire/sources";
 import { RESEARCH_INDEX_SUMMARY, investigationsForPillar } from "@/data/research/investigations";
-import { compareSaffireSummaries } from "@/lib/fire/benchmarks";
+import { ACCURACY_SUMMARY, EVALUATION_SNAPSHOT, cfastTemperatureGap, peakHrrRangeStatus } from "@/lib/fire/accuracy";
 import { reactionYields } from "@/lib/fire/chemistry";
 import { downloadText } from "@/lib/research/export";
 import { ROUTES } from "@/lib/routes";
@@ -197,7 +199,7 @@ function MaterialProperties() {
   ];
 
   function exportParameters() {
-    const payload = { parameters: materialParameterRecords(material), activeReactionYields: reactionYields(material, 21) };
+    const payload = { parameters: materialParameterRecords(material), closures: closureParameterRecords(), activeReactionYieldsMicrogravity: reactionYields(material, 21, { gravityG: 0 }), activeReactionYields1g: reactionYields(material, 21, { gravityG: 1 }) };
     downloadText(`ignis-${material.id}-parameters.json`, JSON.stringify(payload, null, 2), "application/json");
   }
 
@@ -332,7 +334,10 @@ function Measurements() {
             item.pressureKpa,
             item.freeVolumeM3,
             item.burnDurationS,
-            `${item.peakHeatW ?? item.avgHeatW} ${item.peakHeatW === null ? "mean" : "peak"}`,
+            (() => {
+              const range = peakHrrAnalyses(item.id);
+              return range ? `${item.peakHeatW} peak (${range.lowW}–${range.highW} in two NASA analyses)` : `${item.peakHeatW ?? item.avgHeatW} ${item.peakHeatW === null ? "mean" : "peak"}`;
+            })(),
             item.totalHeatKJ,
             item.co2RisePpm,
             item.coRisePpm,
@@ -341,8 +346,12 @@ function Measurements() {
         <Note className="mt-4">
           Mean and peak heat release are different measurements. Test VI-2 reports 580 kJ by oxygen calorimetry and 409 kJ by fuel
           consumption; both are published and neither is reconciled here. The acrylic tests changed fan settings during the burn.
+          For VI-2, VI-3 and VI-4 the peak heat release comes from two NASA analyses (ICES-2024-365: 3217, 3080 and 1507 W; ICES-2026-577:
+          3376, 3240 and 1487 W). Both are shown as a measured range; the model is fitted to the ICES-2024 values.
         </Note>
       </Panel>
+
+      <SaffireDetection />
 
       <Panel
         title="White Sands: material flammability limits"
@@ -375,29 +384,66 @@ function Measurements() {
   );
 }
 
-function ratio(model: number, measured: number): string {
-  return measured > 0 ? `${((model / measured) * 100).toFixed(0)}%` : "–";
+function ratio(model: number | null, measured: number | null): string {
+  return model !== null && measured !== null && measured > 0 ? `${((model / measured) * 100).toFixed(0)}%` : "–";
+}
+
+type SnapshotRow = (typeof EVALUATION_SNAPSHOT.rows)[number];
+type SnapshotMetrics = SnapshotRow["inSample"];
+
+const CHECK_QUANTITIES: Array<{ label: string; measured: (row: SnapshotRow) => number | null; modeled: (m: SnapshotMetrics) => number | null; digits: number; scale?: number; fuelFixed?: boolean }> = [
+  { label: "Heat release (W)", measured: (row) => row.measured.hrrW, modeled: (m) => m.hrrW, digits: 0, fuelFixed: true },
+  { label: "Total heat (kJ)", measured: (row) => row.measured.heatKJ, modeled: (m) => m.heatKJ, digits: 0, fuelFixed: true },
+  { label: "CO₂ rise (ppm)", measured: (row) => row.measured.co2Ppm, modeled: (m) => m.co2Ppm, digits: 0 },
+  { label: "CO rise (ppm)", measured: (row) => row.measured.coPpm, modeled: (m) => m.coPpm, digits: 0 },
+  { label: "CO/CO₂ (%)", measured: (row) => row.measured.coCo2, modeled: (m) => m.coCo2, digits: 2, scale: 100 },
+  { label: "Burn duration (s)", measured: (row) => row.measured.durationS, modeled: (m) => m.durationS, digits: 0 },
+];
+
+const VERDICT_TONE: Record<string, string> = {
+  agrees: "text-status-nominal",
+  "partly agrees": "text-status-caution",
+  disagrees: "text-status-warning",
+  uninformative: "text-muted-foreground",
+};
+
+function show(value: number | null, digits: number, scale = 1) {
+  return value === null ? <span className="text-text-tertiary">–</span> : (value * scale).toFixed(digits);
+}
+
+/** Beside the peak heat release of VI-2, VI-3 and VI-4: the two-analysis measured range, and whether the model falls inside it. */
+function PeakRangeNote({ row, label, part }: { row: SnapshotRow; label: string; part: "measured" | "inSample" | "heldOut" }) {
+  if (label !== "Heat release (W)" || row.hrrBasis !== "peak") return null;
+  const status = peakHrrRangeStatus([row])[0];
+  if (!status) return null;
+  const text = part === "measured"
+    ? `range ${status.lowW}–${status.highW} (ICES-2024 ${status.ices2024W}, ICES-2026 ${status.ices2026W})`
+    : (part === "inSample" ? status.inSampleInside : status.heldOutInside) ? "inside the range" : "outside the range";
+  return <span className="mt-0.5 block text-[12px] leading-4 text-text-tertiary">{text}</span>;
 }
 
 function ModelCheck() {
-  const rows = useMemo(() => compareSaffireSummaries(), []);
-  const quantities: Array<{ label: string; measured: (row: (typeof rows)[number]) => number; modeled: (row: (typeof rows)[number]) => number }> = [
-    { label: "Heat release (W)", measured: (row) => row.measuredHrrW, modeled: (row) => row.modelHrrW },
-    { label: "Total heat (kJ)", measured: (row) => row.measuredHeatKJ, modeled: (row) => row.modelHeatKJ },
-    { label: "CO₂ rise (ppm)", measured: (row) => row.measuredCo2Ppm, modeled: (row) => row.modelCo2Ppm },
-    { label: "CO rise (ppm)", measured: (row) => row.measuredCoPpm, modeled: (row) => row.modelCoPpm },
-  ];
-
-  const heatRatios = rows.map((row) => (row.modelHrrW / row.measuredHrrW) * 100);
-  const heatLow = Math.min(...heatRatios).toFixed(0);
-  const heatHigh = Math.max(...heatRatios).toFixed(0);
-  const coHigh = Math.max(...rows.map((row) => (row.modelCoPpm / row.measuredCoPpm) * 100)).toFixed(0);
+  const rows = EVALUATION_SNAPSHOT.rows;
+  const consistency = EVALUATION_SNAPSHOT.consistency;
+  const metric = (id: string) => ACCURACY_SUMMARY.find((m) => m.metric === id)!;
+  const hrr = metric("hrr"), heat = metric("heat"), co2 = metric("co2"), co = metric("co");
+  const scored = EVALUATION_SNAPSHOT.independent.filter((c) => c.verdict !== "uninformative" && c.basis !== "in-sample consistency");
+  const peakRanges = peakHrrRangeStatus(rows);
+  const agreeing = scored.filter((c) => c.verdict === "agrees").length;
+  const cfastGap = cfastTemperatureGap();
+  const fixedRows = rows.filter((row) => row.fixedByFuel).map((row) => row.id);
 
   function exportComparison() {
     const payload = {
-      scope: `IGNIS model ${FIRE_MODEL_VERSION} compared with published Saffire summaries; not independent validation`,
-      source: "https://ntrs.nasa.gov/citations/20240002981",
-      rows,
+      scope: `IGNIS model ${FIRE_MODEL_VERSION} compared with published Saffire summaries (in-sample and leave-one-out) and independent NASA flight tables`,
+      sources: [
+        "https://ntrs.nasa.gov/citations/20240002981",
+        "https://psi.nasa.gov/physci/repo/data/investigations/PSI-98",
+        "https://psi.nasa.gov/physci/repo/data/investigations/PSI-99",
+        "https://psi.nasa.gov/physci/repo/data/investigations/PSI-25",
+      ],
+      evaluation: EVALUATION_SNAPSHOT,
+      summary: ACCURACY_SUMMARY,
     };
     downloadText("ignis-saffire-comparison.json", JSON.stringify(payload, null, 2), "application/json");
   }
@@ -406,7 +452,7 @@ function ModelCheck() {
     <div className="flex flex-col gap-5">
       <Panel
         title="The model against four Saffire burns"
-        description={`Model ${FIRE_MODEL_VERSION}, run for each test's reported duration at its reported atmosphere, with constant airflow.`}
+        description="Each test starts at 20 cm/s. VI-3 follows NASA’s published fan changes; VI-4’s complete airflow history is unavailable, so its reproduction remains incomplete. Modeled: fitted to these tests. Held-out: re-fitted without the test being predicted."
         actions={<Cite id="saffire-vi" />}
         flush
       >
@@ -414,59 +460,246 @@ function ModelCheck() {
           <table className={table.root} aria-label="Saffire model comparison">
             <thead className={table.head}>
               <tr>
-                <th scope="col" className={table.th}>
-                  Test
-                </th>
-                <th scope="col" className={table.th}>
-                  Quantity
-                </th>
-                <th scope="col" className={cn(table.th, "text-right")}>
-                  Published
-                </th>
-                <th scope="col" className={cn(table.th, "text-right")}>
-                  Modeled
-                </th>
-                <th scope="col" className={cn(table.th, "text-right")}>
-                  Modeled ÷ published
-                </th>
+                <th scope="col" className={table.th}>Test</th>
+                <th scope="col" className={table.th}>Quantity</th>
+                <th scope="col" className={cn(table.th, "text-right")}>Published</th>
+                <th scope="col" className={cn(table.th, "text-right")}>Modeled</th>
+                <th scope="col" className={cn(table.th, "text-right")}>Modeled ÷ published</th>
+                <th scope="col" className={cn(table.th, "text-right")}>Held-out</th>
+                <th scope="col" className={cn(table.th, "text-right")}>Held-out ÷ published</th>
               </tr>
             </thead>
             <tbody>
-              {rows.flatMap((row) =>
-                quantities.map((quantity, index) => (
+              {rows.flatMap((row) => {
+                const quantities = CHECK_QUANTITIES.filter((q) => q.measured(row) !== null);
+                return quantities.map((quantity, index) => (
                   <tr key={`${row.id}-${quantity.label}`} className={table.tr}>
                     {index === 0 ? (
                       <th scope="rowgroup" rowSpan={quantities.length} className={cn(table.td, "font-medium whitespace-nowrap text-foreground")}>
                         {row.id}
-                        <span className="block text-[12px] font-normal text-text-tertiary">{row.hrrBasis} heat release</span>
+                        <span className="block text-[12px] font-normal text-text-tertiary">
+                          {row.materialId === "sibal" ? "SIBAL" : "PMMA"}, {row.hrrBasis} heat release
+                        </span>
                       </th>
                     ) : null}
-                    <td className={cn(table.td, "text-muted-foreground")}>{quantity.label}</td>
-                    <td className={table.num}>{quantity.measured(row).toFixed(0)}</td>
-                    <td className={table.num}>{quantity.modeled(row).toFixed(0)}</td>
-                    <td className={table.num}>{ratio(quantity.modeled(row), quantity.measured(row))}</td>
+                    <td className={cn(table.td, "text-muted-foreground")}>
+                      {quantity.label}
+                      {row.fixedByFuel && quantity.fuelFixed ? (
+                        <span className="mt-0.5 block text-[12px] leading-4 text-text-tertiary">Fixed by fuel mass and ΔHc, not a test</span>
+                      ) : null}
+                    </td>
+                    <td className={table.num}>
+                      {show(quantity.measured(row), quantity.digits, quantity.scale)}
+                      <PeakRangeNote row={row} label={quantity.label} part="measured" />
+                    </td>
+                    <td className={table.num}>
+                      {show(quantity.modeled(row.inSample), quantity.digits, quantity.scale)}
+                      <PeakRangeNote row={row} label={quantity.label} part="inSample" />
+                    </td>
+                    <td className={table.num}>{ratio(quantity.modeled(row.inSample), quantity.measured(row))}</td>
+                    <td className={table.num}>
+                      {show(quantity.modeled(row.heldOut), quantity.digits, quantity.scale)}
+                      <PeakRangeNote row={row} label={quantity.label} part="heldOut" />
+                    </td>
+                    <td className={table.num}>{ratio(quantity.modeled(row.heldOut), quantity.measured(row))}</td>
                   </tr>
-                )),
-              )}
+                ));
+              })}
             </tbody>
           </table>
         </div>
       </Panel>
 
+      <Panel
+        title="Error summary"
+        description={`Absolute error against the published values: median and worst case over the tests. The data band is how far the published measurements disagree with each other.${fixedRows.length ? ` Heat release and total heat leave out ${fixedRows.join(", ")}, whose published heat is fuel mass × ΔHc from the same table.` : ""}`}
+        flush
+      >
+        {peakRanges.length ? (
+          <Note className="mx-5 mt-4">
+            Heat release errors are against the ICES-2024-365 peak, the value the model is fitted to. NASA&apos;s second analysis (ICES-2026-577) gives
+            a different peak for the same tests, so the measured value is a range. The modeled peak is inside that range for{" "}
+            {peakRanges.filter((r) => r.inSampleInside).length} of {peakRanges.length} tests in-sample and{" "}
+            {peakRanges.filter((r) => r.heldOutInside).length} of {peakRanges.length} held out
+            ({peakRanges.map((r) => `${r.id} ${r.lowW}–${r.highW} W`).join("; ")}). Acceptance thresholds are unchanged.
+          </Note>
+        ) : null}
+        <div className="overflow-x-auto">
+          <table className={table.root} aria-label="Model error summary">
+            <thead className={table.head}>
+              <tr>
+                <th scope="col" className={table.th}>Quantity</th>
+                <th scope="col" className={cn(table.th, "text-right")}>In-sample, median / worst</th>
+                <th scope="col" className={cn(table.th, "text-right")}>Held-out, median / worst</th>
+                <th scope="col" className={cn(table.th, "text-right")}>Tests</th>
+                <th scope="col" className={cn(table.th, "text-right")}>Data band</th>
+                <th scope="col" className={table.th}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ACCURACY_SUMMARY.map((m) => (
+                <tr key={m.metric} className={table.tr}>
+                  <th scope="row" className={cn(table.td, "font-normal text-foreground")} title={m.applicability}>
+                    {m.label}
+                  </th>
+                  <td className={table.num}>
+                    {m.inSample.medianAbs.toFixed(0)} / {m.inSample.maxAbs.toFixed(0)} {m.unit}
+                  </td>
+                  <td className={table.num}>
+                    {m.heldOut.medianAbs.toFixed(0)} / {m.heldOut.maxAbs.toFixed(0)} {m.unit}
+                  </td>
+                  <td className={table.num}>{m.heldOut.n}</td>
+                  <td className={table.num}>{m.dataBand === null ? <span className="text-text-tertiary">–</span> : `±${m.dataBand.toFixed(0)} ${m.unit}`}</td>
+                  <td className={cn(table.td, m.established ? "text-muted-foreground" : "text-status-caution")} title={m.note}>
+                    {!m.established ? "Not established" : m.fitted ? "Fitted" : "Not fitted"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+
+      <Panel
+        title="Independent checks"
+        description="Flight data no coefficient was fitted to: Saffire I and II burns, BASS-II gas measurements, and the Saffire VI temperature, pressure and smoke-alarm readings of ICES-2026-577. Rows marked in-sample consistency compare a quantity the calibration already constrains and are not counted as tests."
+        flush
+      >
+        <Note className="mx-5 mt-4">
+          Cabin temperature accuracy is not established. The far-field rises are 0–5 K point readings against an assumed 20 °C start
+          {cfastGap ? `, and NIST CFAST gives ${cfastGap.low.toFixed(0)}–${cfastGap.high.toFixed(0)} times the IGNIS cabin rise on identical heat release` : ""}.
+        </Note>
+        <div className="overflow-x-auto">
+          <table className={table.root} aria-label="Independent model checks">
+            <thead className={table.head}>
+              <tr>
+                <th scope="col" className={table.th}>Check</th>
+                <th scope="col" className={table.th}>Quantity</th>
+                <th scope="col" className={cn(table.th, "text-right")}>Measured</th>
+                <th scope="col" className={cn(table.th, "text-right")}>Model</th>
+                <th scope="col" className={table.th}>Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              {EVALUATION_SNAPSHOT.independent.map((check) => (
+                <tr key={check.id} className={table.tr}>
+                  <th scope="row" className={cn(table.td, "font-normal whitespace-nowrap text-foreground")}>
+                    {check.id}
+                  </th>
+                  <td className={cn(table.td, "min-w-56 text-muted-foreground")}>
+                    {check.quantity}
+                    {check.unit ? ` (${check.unit})` : ""}
+                    {check.basis ? <span className="ml-2 text-[12px] text-text-tertiary">{check.basis === "held-out" ? "held out" : check.basis}</span> : null}
+                    <span className="mt-1 block text-[12px] leading-4 text-text-tertiary">{check.note}</span>
+                  </td>
+                  <td className={cn(table.num, "whitespace-nowrap")}>{check.measured}</td>
+                  <td className={cn(table.num, "whitespace-nowrap")}>{check.model}</td>
+                  <td className={cn(table.td, "whitespace-nowrap", VERDICT_TONE[check.verdict])}>
+                    {check.verdict}
+                    {check.errorPct !== null ? (
+                      <span className="block text-[12px] text-text-tertiary">
+                        {check.errorPct > 0 ? "+" : ""}
+                        {check.errorPct.toFixed(0)}%
+                      </span>
+                    ) : null}
+                  </td>
+                </tr>
+              ))}
+              {rows.map((row) => {
+                const outletRatio = row.inSample.outletRiseK / row.measured.outletRiseK;
+                return (
+                  <tr key={`${row.id}-temperature`} className={table.tr}>
+                    <th scope="row" className={cn(table.td, "font-normal whitespace-nowrap text-foreground")}>
+                      {row.id} temperatures
+                    </th>
+                    <td className={cn(table.td, "min-w-56 text-muted-foreground")}>
+                      Duct outlet rise / cabin far-field rise (K)
+                      <span className="mt-1 block text-[12px] leading-4 text-text-tertiary">
+                        Outlet: source and bypass air mixed after modeled heat losses, using the current fan speed. Duct and sensor geometry remain unresolved. Both rises assume a 20 °C start.
+                      </span>
+                    </td>
+                    <td className={cn(table.num, "whitespace-nowrap")}>
+                      {row.measured.outletRiseK.toFixed(0)} / {row.measured.farFieldRiseK.toFixed(0)}
+                    </td>
+                    <td className={cn(table.num, "whitespace-nowrap")}>
+                      {row.inSample.outletRiseK.toFixed(0)} / {row.inSample.farFieldRiseK.toFixed(1)}
+                    </td>
+                    <td className={cn(table.td, "whitespace-nowrap", outletRatio > 1.5 || outletRatio < 0.5 ? VERDICT_TONE.disagrees : VERDICT_TONE["partly agrees"])}>
+                      {outletRatio > 1.5 ? "outlet too hot" : outletRatio < 0.5 ? "outlet too cool" : "outlet partly agrees"}
+                      <span className="block text-[12px] text-text-tertiary">
+                        far field {Math.abs(row.inSample.farFieldRiseK - row.measured.farFieldRiseK).toFixed(1)} K off
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+
+      <Panel title="The published data disagree with themselves">
+        <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+          Heat release can be estimated two ways from the same paper: the published value, and a carbon balance on the published CO₂ and CO
+          rises. They differ by {consistency.heatRangePct[0].toFixed(0)}% to {consistency.heatRangePct[1].toFixed(0)}%, median{" "}
+          {consistency.heatBandPct.toFixed(0)}%. That median is the data band used above for heat release, heat and CO₂.
+        </p>
+        <div className={cn(table.wrap, "mt-4")}>
+          <table className={table.root} aria-label="Saffire heat release consistency">
+            <thead className={table.head}>
+              <tr>
+                <th scope="col" className={table.th}>Test</th>
+                <th scope="col" className={cn(table.th, "text-right")}>Published heat (kJ)</th>
+                <th scope="col" className={cn(table.th, "text-right")}>From CO₂ and CO (kJ)</th>
+                <th scope="col" className={cn(table.th, "text-right")}>Ratio</th>
+                <th scope="col" className={cn(table.th, "text-right")}>CO₂ per kJ (ppm)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {consistency.rows.map((row) => (
+                <tr key={row.id} className={table.tr}>
+                  <th scope="row" className={cn(table.td, "font-normal text-foreground")}>
+                    {row.id}
+                  </th>
+                  <td className={cn(table.num, "whitespace-nowrap")}>
+                    {row.publishedHeatKJ}
+                    {row.id === "VI-2" ? ` (${consistency.vi2FuelConsumptionKJ} by fuel use)` : ""}
+                  </td>
+                  <td className={table.num}>{row.carbonHeatKJ.toFixed(0)}</td>
+                  <td className={table.num}>{row.ratio.toFixed(2)}</td>
+                  <td className={table.num}>{row.co2PpmPerKJ.toFixed(1)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <Note className="mt-4">
+          VI-3 and VI-4 burned the same acrylic in nearly the same cabin, yet released 6.7 and 9.8 ppm of CO₂ per kJ. No single model can
+          match both heat and CO₂ for those tests; the fit splits the difference.
+        </Note>
+      </Panel>
+
       <Panel title="How to read this">
         <div className="max-w-3xl space-y-3 text-sm leading-6 text-muted-foreground">
           <p>
-            <span className="text-foreground">The model underpredicts these fires.</span> Its heat release is {heatLow}% to{" "}
-            {heatHigh}% of the published values, and its carbon monoxide at most {coHigh}%. It has not been tuned to close those
-            gaps.
+            <span className="text-foreground">
+              On held-out Saffire VI tests, heat release is within {hrr.heldOut.medianAbs.toFixed(0)}% (median; worst {hrr.heldOut.maxAbs.toFixed(0)}%, {hrr.heldOut.n} tests).
+            </span>{" "}
+            {fixedRows.length ? `${fixedRows.join(", ")} is left out of the heat statistics because its published heat is simply fuel mass × ΔHc. ` : ""}
+            Total heat and CO₂ are off by {heat.heldOut.medianAbs.toFixed(0)}% and {co2.heldOut.medianAbs.toFixed(0)}% (median); the two published
+            estimates of the same heat differ by {consistency.heatBandPct.toFixed(0)}% (median), and no model can match both. CO is within{" "}
+            {co.heldOut.medianAbs.toFixed(0)}% (median) using a CO/CO₂ ratio fitted to the four Saffire VI tests, rather than Earth handbook yields;
+            BASS-II glovebox runs agree with that ratio independently.
           </p>
           <p>
-            These are comparisons with summary values from one publication, not an independent validation. The flights changed
-            fan settings during the burns and the model holds airflow constant, so the histories differ as well as the totals.
+            The independent checks are weaker: {agreeing} of {scored.length} agree. Saffire I and II spread more slowly over the same fabric than
+            the Saffire VI tests imply, and the model grows acrylic fires faster at 22 % O₂ than Saffire II saw. Outlet mixing accounts for modeled heat losses,
+            but outlet and cabin temperature accuracy remain unestablished. VI-4’s incomplete airflow history limits the heat comparison.
           </p>
           <p>
-            What the model does reproduce is which fires persist and which go out: acrylic burning at low airflow, a flame that
-            dies when the fans stop, no ignition in still microgravity air. A closer match needs the full flight time histories.
+            Every comparison is at 0 g. The held-out error applies in the interface only to runs close to one Saffire VI test (same material
+            and sample size, oxygen within 1 point and pressure within 5 % of that test, matching concurrent airflow history). Lunar and Martian results use
+            the same coefficients with assumed scaling and are extrapolated.
           </p>
         </div>
         <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -477,6 +710,8 @@ function ModelCheck() {
           <ExternalLink href="https://ntrs.nasa.gov/citations/20240002981">Saffire VI paper on NTRS</ExternalLink>
         </div>
       </Panel>
+
+      <CfastCrosscheck />
     </div>
   );
 }

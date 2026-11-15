@@ -158,7 +158,7 @@ function EquipmentDetail({ object, room }: { object: InteriorEquipment; room: Ha
                 className="block rounded-md border border-border-subtle p-3 transition-colors hover:border-border hover:bg-elev-3"
               >
                 <span className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-medium text-ember-text">{record.name}</span>
+                  <span className="text-sm font-medium text-foreground">{record.name}</span>
                   <Tag>{KIND_LABEL[record.kind]}</Tag>
                 </span>
                 <span className="mt-1 block text-[13px] leading-5 text-muted-foreground">{record.summary}</span>

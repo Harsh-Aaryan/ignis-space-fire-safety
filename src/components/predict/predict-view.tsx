@@ -11,7 +11,6 @@ export function PredictView() {
     <div>
       <RouteTabs tabs={SIMULATION_TABS} label="Simulation views" className="mb-6" />
       <PageHeader
-        eyebrow="Simulation"
         title="Compare gravity"
         description="Run one fire at orbital, lunar and Martian gravity. Buoyancy is the only thing that changes: it decides how air reaches the flame and where the smoke goes."
       />

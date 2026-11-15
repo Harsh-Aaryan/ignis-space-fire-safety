@@ -1,7 +1,7 @@
 import { ActionLink, EvidenceTag, Note, Panel, SectionHeading, TextLink, table } from "@/components/design/kit";
 import { Cite, evidenceClass } from "@/components/fire/cite";
 import { KindTag } from "@/components/research/record-meta";
-import { FIRE_SENSORS, SUPPRESSION_ACTIONS } from "@/data/fire/options";
+import { FIRE_SENSORS, HAZARD_LIMITS, SAFFIRE_IV_VI_EMISSION, SAFFIRE_IV_VI_EMISSION_META, SUPPRESSION_ACTIONS } from "@/data/fire/options";
 import { GRAVITY_REGIMES, TOPICS, type InvestigationRecord } from "@/data/research/investigations";
 import { controlRecords, partialGravityGaps, type ControlGroupId } from "@/lib/research/coverage";
 import { ROUTES } from "@/lib/routes";
@@ -46,6 +46,7 @@ export function ControlsView() {
           <SectionHeading id={`${group.id}-heading`} title={group.title} description={group.description} className="mb-4" />
           <div className="flex flex-col gap-5">
             <Implications records={controlRecords(group.id)} />
+            {group.id === "detection" ? <AlarmTiming /> : null}
             {group.id === "detection" ? <SensorTable /> : null}
             {group.id === "suppression" ? <ActionTable /> : null}
             <NotCovered group={group.id} />
@@ -66,8 +67,8 @@ function Implications({ records }: { records: InvestigationRecord[] }) {
             <div className="min-w-0">
               <ul className="space-y-2">
                 {record.controlsUse.map((statement) => (
-                  <li key={statement} className="flex gap-3 text-sm leading-6 text-foreground">
-                    <span className="mt-2.5 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+                  <li key={statement} className="flex max-w-[62ch] gap-3 text-sm leading-6 text-foreground">
+                    <span className="mt-2.5 size-1.5 shrink-0 rounded-full bg-text-tertiary" aria-hidden="true" />
                     {statement}
                   </li>
                 ))}
@@ -80,13 +81,44 @@ function Implications({ records }: { records: InvestigationRecord[] }) {
                 </TextLink>
                 <KindTag record={record} />
               </p>
-              <p className="mt-1.5 text-[13px] leading-5 text-muted-foreground">
+              <p className="mt-1.5 max-w-[62ch] text-[13px] leading-5 text-muted-foreground">
                 {record.findings[0].text} {record.findings[0].sourceId ? <Cite id={record.findings[0].sourceId} compact /> : null}
               </p>
             </div>
           </li>
         ))}
       </ul>
+    </Panel>
+  );
+}
+
+/** The Saffire IV–VI alarm-timing result: what a 2 mg/m³ far-field threshold did. */
+function AlarmTiming() {
+  const alarm = SAFFIRE_IV_VI_EMISSION_META.alarmThresholdMgM3.value;
+  const co24h = HAZARD_LIMITS.co24hPpm.value;
+  const acrylic = SAFFIRE_IV_VI_EMISSION.filter((test) => test.id === "VI-3" || test.id === "VI-4");
+  return (
+    <Panel
+      title="Smoke alarm timing in Saffire IV–VI"
+      description="Total particulate at the far-field detector, alarm reference of 2 mg/m³, in seven flight tests."
+      actions={<Cite id="saffire-iv-vi-emission" />}
+    >
+      <ul className="space-y-2">
+        <li className="flex max-w-[62ch] gap-3 text-sm leading-6 text-foreground">
+          <span className="mt-2.5 size-1.5 shrink-0 rounded-full bg-text-tertiary" aria-hidden="true" />
+          A {alarm} mg/m³ threshold detected both Saffire VI acrylic fires only after the CO rise passed the {co24h} ppm 24-hour limit
+          ({acrylic.map((test) => `${test.id}: ${test.coRiseAtAlarmPpm} ppm`).join(", ")} at alarm). The authors conclude that this spacecraft would need a lower threshold or more
+          detectors to shorten transport time.
+        </li>
+        <li className="flex max-w-[62ch] gap-3 text-sm leading-6 text-foreground">
+          <span className="mt-2.5 size-1.5 shrink-0 rounded-full bg-text-tertiary" aria-hidden="true" />
+          The detector sat on a direct path from the fire, so detection in Cygnus was likely quicker than it would be on the ISS, where mixing is more extensive.
+        </li>
+      </ul>
+      <Note className="mt-4">
+        The simulator&apos;s alarm thresholds stay at the values in the table below. {alarm} mg/m³ is the reference NASA used for these tests; the ICES-2024-365 paper used 1 mg/m³.{" "}
+        <TextLink href={`${ROUTES.modelingData}?view=measurements`}>Per-test alarm times and gas rises</TextLink>
+      </Note>
     </Panel>
   );
 }

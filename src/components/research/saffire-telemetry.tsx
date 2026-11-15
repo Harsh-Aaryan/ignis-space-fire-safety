@@ -5,7 +5,7 @@ import { EvidenceTag, ExternalLink, Note, Panel } from "@/components/design/kit"
 import { fieldClass } from "@/components/research/index-filter-bar";
 import type { ObservedSensorHistory } from "@/lib/fire/psi-data";
 
-const downloadLink = "text-ember-text underline underline-offset-4 hover:text-foreground";
+const downloadLink = "text-foreground underline decoration-foreground/25 underline-offset-4 hover:decoration-foreground";
 
 /** Sensor readings recorded during Saffire I, plotted exactly as extracted from the NASA workbook. */
 export function SaffireTelemetry() {
@@ -133,7 +133,7 @@ export function SaffireTelemetry() {
         <summary className="flex min-h-10 cursor-pointer items-center px-3 text-sm text-foreground">Extraction method and provenance</summary>
         <div className="space-y-2 border-t border-border-subtle px-3 py-3 text-[13px] leading-5 text-muted-foreground">
           <p>{history.method}</p>
-          <p className="numeric text-[11px] break-all text-text-tertiary">Workbook SHA-256 {history.workbookSha256}</p>
+          <p className="numeric text-[12px] break-all text-text-tertiary">Workbook SHA-256 {history.workbookSha256}</p>
         </div>
       </details>
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { ExternalLink, PageHeader, Panel, Tag, TextLink, table } from "@/components/design/kit";
 import { Cite } from "@/components/fire/cite";
+import { CompareToggle } from "@/components/research/compare-tray";
 import { BasisTag, GravityChips, KindTag, formatRange } from "@/components/research/record-meta";
 import { FIRE_SOURCES } from "@/data/fire/sources";
 import {
@@ -29,7 +30,12 @@ export function InvestigationDetail({ record }: { record: InvestigationRecord })
         All investigations
       </Link>
 
-      <PageHeader eyebrow={`${record.organization} · ${record.period}`} title={record.name} description={record.summary} />
+      <PageHeader
+        meta={`${record.organization} · ${record.period}`}
+        title={record.name}
+        description={record.summary}
+        actions={<CompareToggle id={record.id} name={record.name} />}
+      />
 
       <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
         <KindTag record={record} />
@@ -42,8 +48,8 @@ export function InvestigationDetail({ record }: { record: InvestigationRecord })
           <Panel title="Key findings" description={record.title}>
             <ul className="space-y-3">
               {record.findings.map((finding) => (
-                <li key={finding.text} className="flex gap-3 text-sm leading-6">
-                  <span className="mt-2.5 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+                <li key={finding.text} className="flex max-w-[62ch] gap-3 text-sm leading-6">
+                  <span className="mt-2.5 size-1.5 shrink-0 rounded-full bg-text-tertiary" aria-hidden="true" />
                   <span>
                     {finding.text} {finding.sourceId ? <Cite id={finding.sourceId} /> : null}
                   </span>
@@ -171,7 +177,7 @@ function UseList({ items, empty }: { items: string[]; empty: string }) {
   return (
     <ul className="space-y-2.5">
       {items.map((item) => (
-        <li key={item} className="flex gap-3 text-sm leading-6 text-foreground">
+        <li key={item} className="flex max-w-[62ch] gap-3 text-sm leading-6 text-foreground">
           <span className="mt-2.5 size-1.5 shrink-0 rounded-full bg-border" aria-hidden="true" />
           {item}
         </li>

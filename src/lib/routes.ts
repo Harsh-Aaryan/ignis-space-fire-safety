@@ -5,6 +5,7 @@ export const ROUTES = {
   compare: "/simulation/compare",
   research: "/research",
   investigation: (id: string) => `/research/${id}`,
+  researchCompare: "/research/compare",
   modelingData: "/research/data",
   controls: "/research/controls",
   gaps: "/research/gaps",
@@ -36,6 +37,7 @@ export const SIMULATION_TABS = [
 /** One tab per question the challenge asks of the research, plus the gaps they leave. */
 export const RESEARCH_TABS = [
   { href: ROUTES.research, label: "Investigations" },
+  { href: ROUTES.researchCompare, label: "Compare" },
   { href: ROUTES.modelingData, label: "Modeling data" },
   { href: ROUTES.controls, label: "Detection and suppression" },
   { href: ROUTES.gaps, label: "Evidence gaps" },
@@ -55,4 +57,9 @@ export function isTabActive(pathname: string, href: string, tabs: ReadonlyArray<
   if (pathname === href) return true;
   const deeper = tabs.some((tab) => tab.href !== href && tab.href.startsWith(href) && pathname.startsWith(tab.href));
   return !deeper && pathname.startsWith(`${href}/`);
+}
+
+/** The research comparison for up to three investigation ids. */
+export function researchCompareHref(ids: string[]): string {
+  return ids.length ? `${ROUTES.researchCompare}?ids=${ids.map(encodeURIComponent).join(",")}` : ROUTES.researchCompare;
 }

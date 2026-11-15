@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { MessageCircle, Send, X } from "lucide-react";
 import { Cite } from "@/components/fire/cite";
-import { Note, TextLink, actionClass } from "@/components/design/kit";
+import { ExternalLink, Note, Tag, TextLink, actionClass } from "@/components/design/kit";
 import { objectById, roomById } from "@/data/habitat-interiors";
 import { runFire, type FireInput } from "@/lib/fire/model";
 import { buildFireInput } from "@/lib/fire/scenario";
@@ -30,13 +31,84 @@ export function AskIgnisButton({ prompt, label = "Ask IGNIS" }: { prompt?: strin
   );
 }
 
-const PROMPTS = [
+const RUN_PROMPTS = [
   "Explain this run",
   "Why hasn't the smoke detector alarmed?",
   "What changes if I stop ventilation?",
   "Which NASA experiment supports this?",
   "Which parts are assumptions?",
 ];
+
+/** Research questions need no run. Shown until a scenario is selected. */
+const RESEARCH_PROMPTS = [
+  "Which investigations matter most for lunar habitat fire detection?",
+  "What is known about smoke particle size in microgravity?",
+  "Which fire conditions have not been tested at Martian gravity?",
+];
+
+const SUBHEAD = "text-[12px] leading-4 font-medium text-text-tertiary";
+
+function answerBasis(answer: ScenarioAnswer): string {
+  if (answer.provider === "groq") return "Generated explanation (Groq)";
+  if (answer.mode === "research") return "From the research index";
+  if (answer.mode === "no-run") return "No run selected";
+  return "Based on your run";
+}
+
+/** Records, untested conditions and NASA PSI passages behind a research answer. */
+function ResearchEvidence({ answer }: { answer: ScenarioAnswer }) {
+  const records = (answer.records ?? []).filter((r) => r.href.startsWith("/research/"));
+  const gaps = answer.gaps ?? [];
+  const passages = (answer.passages ?? []).filter((p) => p.href.startsWith("https://"));
+  if (!records.length && !gaps.length && !passages.length) return null;
+  return (
+    <div className="space-y-3 rounded-md border border-border-subtle px-3 py-3">
+      {records.length ? (
+        <section aria-label="Relevant records" className="space-y-2">
+          <h3 className={SUBHEAD}>Relevant records</h3>
+          <ul className="space-y-2">
+            {records.map((record) => (
+              <li key={record.id} className="space-y-0.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link href={record.href} className="text-sm text-foreground underline decoration-foreground/25 underline-offset-4 hover:decoration-foreground">
+                    {record.name}
+                  </Link>
+                  <Tag>{record.evidence}</Tag>
+                </div>
+                <p className="text-[13px] leading-5 text-muted-foreground">{record.why}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      {gaps.length ? (
+        <section aria-label="Not yet tested" className="space-y-1">
+          <h3 className={SUBHEAD}>Not yet tested</h3>
+          <ul className="list-disc space-y-1 pl-4 text-[13px] leading-5 text-muted-foreground">
+            {gaps.map((gap) => (
+              <li key={gap}>{gap}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      {passages.length ? (
+        <section aria-label="NASA PSI records" className="space-y-1">
+          <h3 className={SUBHEAD}>NASA PSI records</h3>
+          <ul className="space-y-1">
+            {passages.map((passage) => (
+              <li key={passage.id} className="text-[13px] leading-5">
+                <ExternalLink href={passage.href} className="gap-1 text-[13px]">
+                  {passage.citationLabel}
+                </ExternalLink>
+                <span className="block text-text-tertiary">{passage.title}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+    </div>
+  );
+}
 
 type Turn = { question: string; answer: ScenarioAnswer; input: FireInput | null };
 
@@ -170,7 +242,7 @@ export function ScenarioAssistant() {
       <header className="flex items-start gap-3 border-b border-border-subtle px-5 py-4">
         <div className="min-w-0 flex-1">
           <h2 className="text-[15px] leading-5 font-medium text-foreground">Ask IGNIS</h2>
-          <p className="mt-1 text-[13px] leading-5 text-muted-foreground">Work through your run and the science behind it</p>
+          <p className="mt-1 text-[13px] leading-5 text-muted-foreground">Work through your run and the research behind it</p>
         </div>
         <button
           type="button"
@@ -184,14 +256,18 @@ export function ScenarioAssistant() {
 
       <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4">
         <p className="text-sm leading-6 text-muted-foreground">
-          Ask what happened, why the flame changed, or how a detector responded. Short follow-up questions work too.
+          {input
+            ? "Ask what happened, why the flame changed, or how a detector responded. Research questions and short follow-ups work too."
+            : "Ask which NASA investigations bear on a habitat or fire topic, what is known, or what has not been tested. No run is needed."}
         </p>
         <Note>
-          Answers use your captured run and cited research. Model results are exploratory estimates.
+          {input
+            ? "Answers use your captured run and cited research. Model results are exploratory estimates."
+            : "Answers cite records in the IGNIS research index and NASA PSI investigation records, and name the conditions no indexed test covers."}
         </Note>
 
         <div className="flex flex-col gap-2">
-          {PROMPTS.map((prompt) => (
+          {(input ? RUN_PROMPTS : RESEARCH_PROMPTS).map((prompt) => (
             <button
               key={prompt}
               type="button"
@@ -214,9 +290,10 @@ export function ScenarioAssistant() {
                 <Cite key={id} id={id} />
               ))}
             </p>
+            <ResearchEvidence answer={turn.answer} />
             <details className="text-[12px] leading-5 text-text-tertiary">
               <summary className="cursor-pointer hover:text-foreground">
-                {turn.answer.provider === "groq" ? "Generated explanation (Groq)" : "Based on your run"} · Run context
+                {answerBasis(turn.answer)} · {turn.answer.mode === "research" ? "Context" : "Run context"}
               </summary>
               <p className="mt-1">{turn.answer.context}</p>
             </details>
@@ -231,7 +308,7 @@ export function ScenarioAssistant() {
         {pendingQuestion ? (
           <div role="status" className="space-y-1 border-t border-border-subtle pt-4">
             <p className="text-sm font-medium text-foreground">{pendingQuestion}</p>
-            <p className="text-sm text-muted-foreground">Checking the scenario and sources…</p>
+            <p className="text-sm text-muted-foreground">Checking the scenario, research index and sources…</p>
           </div>
         ) : null}
         {error ? (
@@ -265,7 +342,7 @@ export function ScenarioAssistant() {
           disabled={!!pendingQuestion}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
-          placeholder="Ask about this scenario"
+          placeholder={input ? "Ask about this scenario" : "Ask about the research or a run"}
           className="min-h-10 min-w-0 flex-1 rounded-md border border-border bg-background px-3 text-sm placeholder:text-text-tertiary"
         />
         <button

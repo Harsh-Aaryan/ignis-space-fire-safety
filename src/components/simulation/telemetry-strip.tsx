@@ -2,12 +2,13 @@
 
 import { roomById } from "@/data/habitat-interiors";
 import { formatGravity } from "@/lib/format";
+import { accuracyCue, significantFigures, type AccuracyCue, type CueQuantity } from "@/lib/fire/accuracy";
 import { ventilationCfm } from "@/lib/fire/scenario";
 import type { FireSample } from "@/lib/fire/model";
 import { cn } from "@/lib/utils";
-import { useFireSimStore } from "@/stores/fire-sim-store";
+import { fireRuntime, useFireSimStore } from "@/stores/fire-sim-store";
 import { useMissionStore } from "@/stores/mission-store";
-import { PHASE_LABEL, PHASE_TONE, clock, formatPower } from "./format";
+import { PHASE_LABEL, PHASE_TONE, clock, formatPower, formatSignificant } from "./format";
 import "./telemetry-strip.css";
 
 /** Live readouts, docked along the bottom edge of the viewport so the scene stays clear. */
@@ -22,6 +23,11 @@ export function TelemetryStrip({ className }: { className?: string }) {
   const room = roomById(activeRoomId ?? selectedRoomId);
   const speedMs = snapshot ? snapshot.uForcedMs : scenario.airflowMs;
   const cfm = room ? ventilationCfm(speedMs, room) : null;
+  // Accuracy against Saffire for the running scenario; readings carry matching significant figures.
+  const input = snapshot ? fireRuntime.input : null;
+  const cue = (quantity: CueQuantity) => (input ? accuracyCue(quantity, input) : null);
+  const hrrCue = cue("hrr"), tempCue = cue("temperature"), coCue = cue("co"), co2Cue = cue("co2");
+  const sig = (c: AccuracyCue | null) => significantFigures(c?.relative ?? null);
 
   const runState =
     status === "running"
@@ -43,8 +49,9 @@ export function TelemetryStrip({ className }: { className?: string }) {
           <Readout
             label="Heat release"
             abbr="HRR"
-            value={snapshot ? formatPower(snapshot.hrrW) : "0 W"}
-            note={snapshot ? `Peak ${formatPower(snapshot.peakHrrW)}` : undefined}
+            value={snapshot ? formatPower(snapshot.hrrW, sig(hrrCue)) : "0 W"}
+            note={snapshot ? `Peak ${formatPower(snapshot.peakHrrW, sig(hrrCue))}` : undefined}
+            cue={hrrCue}
           />
           <Readout
             label="Oxygen"
@@ -54,9 +61,10 @@ export function TelemetryStrip({ className }: { className?: string }) {
           />
           <Readout
             label="Cabin temperature"
-            value={(snapshot?.tempC ?? 22).toFixed(1)}
+            value={snapshot ? snapshot.tempC.toFixed(0) : "22"}
             unit="°C"
             note={snapshot ? `Near fire ${snapshot.nearFireTempC.toFixed(0)} °C` : undefined}
+            cue={tempCue}
           />
           <Readout
             label="Ventilation"
@@ -82,12 +90,19 @@ export function TelemetryStrip({ className }: { className?: string }) {
             unit="g"
             note={snapshot ? `Buoyant flow ${(snapshot.uBuoyantMs * 100).toFixed(0)} cm/s` : undefined}
           />
-          <Readout label="Carbon monoxide" abbr="CO" value={(snapshot?.coPpm ?? 0).toFixed(0)} unit="ppm" />
+          <Readout
+            label="Carbon monoxide"
+            abbr="CO"
+            value={snapshot ? formatSignificant(snapshot.coPpm, sig(coCue)) : "0"}
+            unit="ppm"
+            cue={coCue}
+          />
           <Readout
             label="CO₂ rise"
-            value={(snapshot?.co2RiseMmHg ?? 0).toFixed(2)}
+            value={snapshot ? formatSignificant(snapshot.co2RiseMmHg, sig(co2Cue)) : "0"}
             unit="mmHg"
             note={snapshot ? `Total ${snapshot.co2TotalMmHg.toFixed(2)} mmHg` : "400 ppm baseline assumed"}
+            cue={co2Cue}
           />
           <Readout
             label="Smoke"
@@ -98,7 +113,7 @@ export function TelemetryStrip({ className }: { className?: string }) {
         </dl>
       </div>
       <p className="border-t border-border-subtle px-3 py-1 text-[12px] leading-4 text-text-tertiary">
-        Gas values are instantaneous readings; exposure averages are not calculated.
+        Instantaneous readings; exposure averages are not calculated. ± is the held-out error against Saffire flight tests.
       </p>
     </section>
   );
@@ -110,12 +125,15 @@ function Readout({
   value,
   unit,
   note,
+  cue,
 }: {
   label: string;
   abbr?: string;
   value: string;
   unit?: string;
   note?: string;
+  /** Accuracy against Saffire, shown after the note. */
+  cue?: AccuracyCue | null;
 }) {
   return (
     <div className="telemetry-readout">
@@ -127,7 +145,20 @@ function Readout({
         <span>{value}</span>
         {unit ? <span className="font-sans text-[12px] text-muted-foreground">{unit}</span> : null}
       </dd>
-      {note ? <p className="text-[12px] leading-4 text-text-tertiary">{note}</p> : null}
+      {note || cue ? (
+        <p className="text-[12px] leading-4 text-text-tertiary">
+          {note}
+          {cue ? (
+            <>
+              {note ? " · " : null}
+              <span className={cue.tested ? undefined : "text-status-caution"} title={cue.long}>
+                {cue.short}
+              </span>
+              <span className="sr-only">. {cue.long}</span>
+            </>
+          ) : null}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -45,8 +45,23 @@ export function clock(seconds: number): string {
   return `${String(minutes).padStart(2, "0")}:${String(whole % 60).padStart(2, "0")}`;
 }
 
-export function formatPower(watts: number): string {
+/** Power with a unit. Without `significant` the output is unchanged from earlier releases
+ * (scenario panel, forecast); with it the number carries only that many significant figures. */
+export function formatPower(watts: number, significant?: number): string {
+  if (significant !== undefined) return watts >= 1000 ? `${formatSignificant(watts / 1000, significant)} kW` : `${formatSignificant(watts, significant)} W`;
   return watts >= 1000 ? `${(watts / 1000).toFixed(2)} kW` : `${watts.toFixed(0)} W`;
+}
+
+/** A number rounded to `significant` figures, without exponent notation or trailing noise.
+ * Integer digits beyond the significant ones are kept as zeros (3417 at 2 → "3400"). */
+export function formatSignificant(value: number, significant: number): string {
+  if (!Number.isFinite(value)) return "–";
+  if (value === 0) return "0";
+  const magnitude = Math.floor(Math.log10(Math.abs(value)));
+  const decimals = Math.max(0, significant - 1 - magnitude);
+  const factor = 10 ** (magnitude - significant + 1);
+  const rounded = Math.round(value / factor) * factor;
+  return rounded.toFixed(decimals);
 }
 
 export function habitatName(missionId: MissionId): string {

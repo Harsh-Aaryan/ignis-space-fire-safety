@@ -1,0 +1,42 @@
+{
+ "schemaVersion": 1,
+ "generatedAt": "2026-11-15T20:49:07.657Z",
+ "ignisModelVersion": "3.0.1",
+ "cases": [
+  {
+   "id": "saffire-IV-1",
+   "file": "saffire-IV-1.json",
+   "kind": "saffire"
+  },
+  {
+   "id": "saffire-VI-2",
+   "file": "saffire-VI-2.json",
+   "kind": "saffire"
+  },
+  {
+   "id": "saffire-VI-3",
+   "file": "saffire-VI-3.json",
+   "kind": "saffire"
+  },
+  {
+   "id": "saffire-VI-4",
+   "file": "saffire-VI-4.json",
+   "kind": "saffire"
+  },
+  {
+   "id": "moon-lab",
+   "file": "moon-lab.json",
+   "kind": "habitat"
+  },
+  {
+   "id": "mars-lab",
+   "file": "mars-lab.json",
+   "kind": "habitat"
+  },
+  {
+   "id": "gateway-ihab",
+   "file": "gateway-ihab.json",
+   "kind": "habitat"
+  }
+ ]
+}

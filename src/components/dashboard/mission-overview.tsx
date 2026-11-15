@@ -1,23 +1,24 @@
 "use client";
 
+import Form from "next/form";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-import { ArrowRight, Flame } from "lucide-react";
-import { ActionLink, ExternalLink, SectionHeading, Tag, TextLink } from "@/components/design/kit";
+import { ArrowRight, Flame, Search } from "lucide-react";
+import { FeaturedFinding } from "@/components/dashboard/featured-finding";
+import { ActionLink, ExternalLink, LINK, SectionHeading, TextLink, actionClass } from "@/components/design/kit";
 import { FIRE_MATERIALS } from "@/data/fire/materials";
+import { EXAMPLE_QUESTIONS, type ExampleQuestion } from "@/data/research/featured-findings";
 import {
   CREW_ENVIRONMENTS,
   INVESTIGATIONS,
-  KIND_LABEL,
   PILLARS,
   RESEARCH_INDEX_SUMMARY,
-  investigationById,
   investigationsForEnvironment,
   investigationsForPillar,
   type CrewEnvironment,
   type Pillar,
 } from "@/data/research/investigations";
+import { NO_FILTERS, filtersToQuery } from "@/lib/research/filter";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { useFireSimStore } from "@/stores/fire-sim-store";
@@ -40,6 +41,8 @@ const HABITAT_PREVIEWS: Array<{
   alt: string;
   caption: string;
   credit: string;
+  /** Where the wide hero crops the render, so the habitat stays in frame. */
+  position: string;
 }> = [
   {
     id: "lunar-habitat",
@@ -49,6 +52,7 @@ const HABITAT_PREVIEWS: Array<{
     alt: "Rendered exterior of the conceptual Moon habitat beneath its protective shell.",
     caption: "A lunar surface habitat beneath a protective shell. Open it to walk its rooms and set a fire scenario at lunar gravity.",
     credit: "Conceptual habitat after Foster + Partners / ESA",
+    position: "center 18%",
   },
   {
     id: "mars-habitat",
@@ -58,6 +62,7 @@ const HABITAT_PREVIEWS: Array<{
     alt: "Rendered exterior of the conceptual four-floor Mars habitat.",
     caption: "A four-floor habitat on the Martian surface. Open it to inspect its interior systems at Martian gravity.",
     credit: "Conceptual habitat after AI SpaceFactory MARSHA",
+    position: "center 42%",
   },
   {
     id: "gateway-orbit",
@@ -67,6 +72,7 @@ const HABITAT_PREVIEWS: Array<{
     alt: "Rendered exterior of the Gateway-inspired orbital habitat with its solar arrays extended.",
     caption: "A station in lunar orbit. Open it to inspect conceptual module interiors in microgravity.",
     credit: "Exterior after NASA Gateway; interiors are conceptual",
+    position: "center 52%",
   },
 ];
 
@@ -109,27 +115,17 @@ function pillarFacts(pillar: Pillar): { href: string; linkLabel: string; facts: 
   };
 }
 
-/* ------------------------------------------------------------------ */
-/* Findings: text is read from the research index by position.         */
-/* `text` overrides only shorten or normalize units of that sentence.  */
-/* ------------------------------------------------------------------ */
-
-const FINDINGS: Array<{ id: string; finding: number; implication: number; text?: string }> = [
-  {
-    id: "bass-ii",
-    finding: 0,
-    implication: 0,
-    text: "An acrylic rod spread flame steadily at 13.6% O₂ in microgravity, although it blows off at 16% O₂ in Earth gravity.",
-  },
-  { id: "saffire-vi", finding: 1, implication: 0 },
-  {
-    id: "saffire-iv-v",
-    finding: 1,
-    implication: 0,
-    text: "Thick samples kept burning after the flow was reduced, so extinguishment of thick or charring fuels cannot be assumed to be rapid.",
-  },
-  { id: "lunar-martian-flammability", finding: 2, implication: 0 },
-];
+/** Investigations opened with the filters an example question names. */
+function exampleHref(question: ExampleQuestion): string {
+  const query = filtersToQuery({
+    ...NO_FILTERS,
+    environment: question.environment ?? null,
+    topic: question.topic ?? null,
+    gravity: question.gravity ?? null,
+    query: question.query ?? "",
+  });
+  return query ? `${ROUTES.research}?${query}` : ROUTES.research;
+}
 
 const ENVIRONMENT_ORDER: CrewEnvironment[] = ["spacecraft", "station", "lunar-base", "mars-base", "rover"];
 
@@ -137,11 +133,11 @@ const ENVIRONMENT_ORDER: CrewEnvironment[] = ["spacecraft", "station", "lunar-ba
 
 export function MissionOverview() {
   return (
-    <div className="flex flex-col gap-16 md:gap-20">
+    <div className="flex flex-col">
       <Hero />
-      <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-16 px-4 pb-8 md:gap-20 md:px-6 xl:px-10">
+      <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-16 px-4 pt-8 pb-8 md:gap-20 md:px-6 xl:px-10">
+        <StartFromEvidence />
         <ResearchQuestions />
-        <Findings />
         <Environments />
         <OverviewFooter />
       </div>
@@ -149,95 +145,160 @@ export function MissionOverview() {
   );
 }
 
+/**
+ * The opening screen: the habitat render fills the hero edge to edge, and what IGNIS is
+ * and the two ways in sit on its calm side. The selection is the shared mission in the
+ * store, so the scene always matches the habitat switcher in the top bar. The store hook
+ * renders the unhydrated default on the server and during hydration, then the session's
+ * saved habitat, so the markup never disagrees with the server's.
+ */
 function Hero() {
+  const missionId = useMissionStore((state) => state.scenario.missionId);
+  const selectMission = useMissionStore((state) => state.selectMission);
+  const preview = HABITAT_PREVIEWS.find((habitat) => habitat.id === missionId) ?? HABITAT_PREVIEWS[0];
+  const choose = (id: MissionId) => {
+    if (id !== missionId) selectMission(id);
+  };
+
   return (
     <section aria-labelledby="overview-title" className="overview-hero">
-      <HabitatPreview>
-        <div className="overview-copy">
-          <p className="micro text-muted-foreground">Spacecraft fire safety research</p>
+      <div id="habitat-preview" data-habitat={preview.image} className="overview-scene">
+        <div className="overview-frame">
+          <Image
+            src={`/overview/${preview.image}.jpg`}
+            alt={preview.alt}
+            fill
+            quality={90}
+            sizes="(min-width: 1024px) 75vw, 100vw"
+            preload
+            className="overview-image"
+            style={{ objectPosition: preview.position }}
+          />
+        </div>
+        <div className="overview-shade" aria-hidden="true" />
+      </div>
+
+      <div className="overview-content">
+        <div className="overview-intro">
           <h1
             id="overview-title"
-            className="mt-3 text-[36px] leading-10 font-normal text-foreground md:text-[44px] md:leading-[48px] md:tracking-[-0.02em]"
+            className="text-[32px] leading-10 font-normal text-foreground md:text-[44px] md:leading-[52px] md:tracking-[-0.02em]"
           >
             Fire behaves differently off Earth
           </h1>
-          <p className="mt-4 text-[16px] leading-7 text-muted-foreground md:text-[18px]">
-            Explore NASA&apos;s flight fire experiments and model a fire inside a crewed habitat. Compare microgravity, Moon and Mars scenarios,
-            and see where the evidence stops.
+          <p className="mt-3 max-w-[46ch] text-[15px] leading-6 text-foreground/80 md:mt-4 md:text-[17px] md:leading-7">
+            IGNIS indexes NASA&apos;s fire-safety investigations by the crew environments they bear on, and models a fire inside a Moon, Mars
+            or orbital habitat.
           </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <div className="mt-6 flex flex-wrap gap-3 md:mt-8">
             <ActionLink href={ROUTES.simulation} variant="primary" onClick={() => useFireSimStore.getState().setOpen(true)}>
               <Flame className="size-4" aria-hidden="true" />
               Run a fire scenario
             </ActionLink>
-            <ActionLink href={ROUTES.research}>Browse the research</ActionLink>
+            <ActionLink href={ROUTES.research} className="bg-background/70 hover:bg-elev-3">
+              Browse the research
+            </ActionLink>
           </div>
         </div>
-      </HabitatPreview>
+
+        <div className="overview-caption">
+          <div className="min-w-0 max-w-[52ch]">
+            <p className="text-[13px] leading-5 text-foreground/80" aria-live="polite">
+              {preview.caption}
+            </p>
+            <p className="mt-1 text-[12px] leading-4 text-muted-foreground">{preview.credit}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <div role="group" aria-label="Preview a habitat" className="flex rounded-md border border-border-subtle bg-background/85 p-0.5">
+              {HABITAT_PREVIEWS.map((habitat) => {
+                const active = habitat.id === preview.id;
+                return (
+                  <button
+                    key={habitat.id}
+                    type="button"
+                    aria-pressed={active}
+                    aria-controls="habitat-preview"
+                    onClick={() => choose(habitat.id)}
+                    className={cn(
+                      "min-h-11 rounded-sm px-3 text-left text-[13px] leading-4 transition-colors",
+                      active ? "bg-elev-3 text-foreground" : "text-muted-foreground hover:bg-elev-2 hover:text-foreground",
+                    )}
+                  >
+                    <span className="block">{habitat.name}</span>
+                    <span className="numeric block text-[12px] text-text-tertiary">{habitat.gravity}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <Link
+              href={ROUTES.simulation}
+              onClick={() => choose(preview.id)}
+              aria-label={`Open the ${preview.name} habitat in the simulation`}
+              className={cn(LINK, "min-h-10 gap-1.5 text-sm")}
+            >
+              Open habitat
+              <ArrowRight className="size-4 text-muted-foreground" aria-hidden="true" />
+            </Link>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
 
-function HabitatPreview({ children }: { children: React.ReactNode }) {
-  const [index, setIndex] = useState(() => HABITAT_PREVIEWS.findIndex((habitat) => habitat.id === "gateway-orbit"));
-  const selectMission = useMissionStore((state) => state.selectMission);
-  const preview = HABITAT_PREVIEWS[index];
-
+/** Directly under the hero: one sourced finding, and a research question to start from. */
+function StartFromEvidence() {
   return (
-    <figure className="overview-scene">
-      <div className="overview-content">{children}</div>
-      <div id="habitat-preview" data-habitat={preview.image} className="overview-render">
-        <Image
-          src={`/overview/${preview.image}.jpg`}
-          alt={preview.alt}
-          fill
-          quality={90}
-          className="overview-image"
-          sizes="(min-width: 1280px) calc(100vw - 240px), (min-width: 768px) calc(100vw - 64px), 100vw"
-          loading="eager"
-          fetchPriority="high"
+    <section aria-label="Start from the evidence" className="overview-evidence">
+      <FeaturedFinding />
+      <ResearchQuestionBox />
+    </section>
+  );
+}
+
+/** A question opens the investigations with it as the search text. */
+function ResearchQuestionBox() {
+  return (
+    <Form
+      action={ROUTES.research}
+      role="search"
+      aria-label="Search the investigations"
+      className="flex flex-col rounded-lg border border-border-subtle bg-card p-4 md:p-5"
+    >
+      <label htmlFor="overview-question" className="block text-[15px] leading-6 font-medium text-foreground">
+        Start from a research question
+      </label>
+      <div className="mt-3 flex gap-2">
+        <input
+          id="overview-question"
+          name="q"
+          type="search"
+          required
+          autoComplete="off"
+          enterKeyHint="search"
+          placeholder="Smoke detector placement in microgravity"
+          className="h-11 min-w-0 flex-1 rounded-md border border-border bg-background px-3 text-[14px] text-foreground transition-colors placeholder:text-text-tertiary hover:border-input"
         />
+        <button type="submit" className={cn(actionClass("secondary"), "shrink-0 px-3 sm:px-4")}>
+          <Search className="size-4" aria-hidden="true" />
+          <span className="sr-only sm:not-sr-only">Search</span>
+        </button>
       </div>
-      <div aria-hidden="true" className="overview-shade" />
-      <figcaption className="overview-caption">
-        <div className="overview-controls">
-          <div role="group" aria-label="Preview a habitat" className="flex rounded-md border border-border-subtle bg-background p-0.5">
-            {HABITAT_PREVIEWS.map((habitat, i) => {
-              const active = i === index;
-              return (
-                <button
-                  key={habitat.id}
-                  type="button"
-                  aria-pressed={active}
-                  aria-controls="habitat-preview"
-                  onClick={() => setIndex(i)}
-                  className={cn(
-                    "min-h-11 rounded-sm px-3 text-left text-[13px] leading-4 transition-colors",
-                    active ? "bg-elev-3 text-foreground" : "text-muted-foreground hover:bg-elev-2 hover:text-foreground",
-                  )}
-                >
-                  <span className="block">{habitat.name}</span>
-                  <span className="numeric block text-[12px] text-text-tertiary">{habitat.gravity}</span>
-                </button>
-              );
-            })}
-          </div>
-          <Link
-            href={ROUTES.simulation}
-            onClick={() => selectMission(preview.id)}
-            aria-label={`Open the ${preview.name} habitat in the simulation`}
-            className="inline-flex min-h-10 items-center gap-1.5 text-sm text-ember-text underline-offset-4 hover:underline"
-          >
-            Open habitat
-            <ArrowRight className="size-4" aria-hidden="true" />
-          </Link>
-        </div>
-        <p className={cn("overview-description", "text-sm leading-6 text-muted-foreground")} aria-live="polite">
-          {preview.caption}
-        </p>
-        <p className={cn("overview-credit", "text-[12px] leading-4 text-text-tertiary")}>{preview.credit}</p>
-      </figcaption>
-    </figure>
+      <p className="mt-5 text-[12px] leading-4 text-text-tertiary">For example</p>
+      <ul className="mt-1">
+        {EXAMPLE_QUESTIONS.map((question) => (
+          <li key={question.label} className="border-b border-border-subtle last:border-b-0">
+            <Link
+              href={exampleHref(question)}
+              className="flex min-h-11 items-center justify-between gap-3 text-[14px] leading-5 text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {question.label}
+              <ArrowRight className="size-4 shrink-0 text-text-tertiary" aria-hidden="true" />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </Form>
   );
 }
 
@@ -287,51 +348,6 @@ function ResearchQuestions() {
   );
 }
 
-function Findings() {
-  const items = FINDINGS.flatMap((entry) => {
-    const record = investigationById(entry.id);
-    if (!record) return [];
-    return [
-      {
-        record,
-        text: entry.text ?? record.findings[entry.finding]?.text ?? "",
-        implication: record.controlsUse[entry.implication] ?? null,
-      },
-    ];
-  });
-
-  return (
-    <section aria-labelledby="findings-heading">
-      <SectionHeading
-        id="findings-heading"
-        title="What the experiments show"
-        description="Four findings from the research index, with links to the records and their implications for fire safety"
-        className="mb-6"
-      />
-      <ul className="grid gap-4 md:grid-cols-2">
-        {items.map(({ record, text, implication }) => (
-          <li key={record.id} className="flex flex-col rounded-lg border border-border-subtle bg-card p-6">
-            <p className="text-[15px] leading-6 text-foreground">{text}</p>
-            {implication ? (
-              <p className="mt-3 text-[13px] leading-5 text-muted-foreground">
-                <span className="text-foreground">Why it matters. </span>
-                {implication}
-              </p>
-            ) : null}
-            <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-2 pt-5">
-              <TextLink href={ROUTES.investigation(record.id)} className="text-sm font-medium">
-                {record.name}
-              </TextLink>
-              <Tag>{KIND_LABEL[record.kind]}</Tag>
-              <span className="text-[12px] leading-4 text-text-tertiary">{record.period}</span>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
 function Environments() {
   return (
     <section aria-labelledby="environments-heading">
@@ -365,7 +381,7 @@ function Environments() {
               <div className="min-w-0">
                 <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <span className="text-[15px] font-medium text-foreground">{env.label}</span>
-                  <span className="numeric text-[13px] text-ember-text">{env.gravityLabel}</span>
+                  <span className="numeric text-[13px] text-muted-foreground">{env.gravityLabel}</span>
                 </p>
                 <p className="mt-1 text-[13px] leading-5 text-muted-foreground">{env.note}</p>
               </div>

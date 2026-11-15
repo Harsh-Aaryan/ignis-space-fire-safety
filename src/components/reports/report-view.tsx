@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Download, Printer, Upload } from "lucide-react";
 import { ActionLink, PageHeader, Panel, Stat, actionClass } from "@/components/design/kit";
 import { RunReview } from "@/components/fire/run-review";
+import { EvidenceBrief, EvidenceBriefPrompt } from "@/components/reports/evidence-brief";
+import { useSelectedIds } from "@/components/research/compare-tray";
 import { fieldClass } from "@/components/research/index-filter-bar";
 import { INVESTIGATIONS } from "@/data/research/investigations";
 import { formatGravity, formatNumber, formatOxygen, formatPsi } from "@/lib/format";
@@ -13,7 +15,7 @@ import { ROUTES } from "@/lib/routes";
 import { useFireSimStore } from "@/stores/fire-sim-store";
 import { useMissionStore } from "@/stores/mission-store";
 
-/** Results: the latest fire run, the cabin it ran in, and saved cabin scenarios. */
+/** Results: the evidence brief for the picked investigations, the latest fire run, the cabin it ran in, and saved cabin scenarios. */
 export function ReportView() {
   const scenario = useMissionStore((state) => state.scenario);
   const saved = useMissionStore((state) => state.savedScenarios);
@@ -23,6 +25,7 @@ export function ReportView() {
   const importScenarios = useMissionStore((state) => state.importScenarios);
   const notify = useMissionStore((state) => state.notify);
   const hasRun = useFireSimStore((store) => store.snapshot !== null);
+  const hasBrief = useSelectedIds().length > 0;
   const [name, setName] = useState(`${scenario.name} scenario`);
   const partial = oxygenPartialPressurePsi(scenario.oxygenPct, scenario.pressurePsi);
 
@@ -52,9 +55,8 @@ export function ReportView() {
   return (
     <div className="flex min-w-0 flex-col">
       <PageHeader
-        eyebrow="Results"
         title="Results and saved scenarios"
-        description="Review the latest fire run, export it, and keep the cabin setups you want to return to."
+        description="Export an evidence brief for your research question, review the latest fire run, and keep the cabin setups you want to return to."
         actions={
           <>
             <button type="button" className={`${actionClass("secondary")} no-print`} onClick={() => window.print()}>
@@ -70,6 +72,8 @@ export function ReportView() {
       />
 
       <div className="flex flex-col gap-5">
+        {hasBrief ? <EvidenceBrief /> : null}
+
         <Panel title="Cabin" description={scenario.name} className="report-sheet">
           <dl className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3 lg:grid-cols-5">
             <Stat label="Gravity" value={formatGravity(scenario.gravityG)} unit="g" />
@@ -143,6 +147,8 @@ export function ReportView() {
             </ul>
           )}
         </Panel>
+
+        {hasBrief ? null : <EvidenceBriefPrompt />}
       </div>
     </div>
   );

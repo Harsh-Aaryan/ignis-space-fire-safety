@@ -9,7 +9,7 @@
  */
 
 export const RETRIEVED_AT = "2026-11-14";
-export const FIRE_MODEL_VERSION = "2.1.0";
+export const FIRE_MODEL_VERSION = "3.0.1";
 
 export type SourceKind = "nasa" | "peer-reviewed" | "handbook" | "assumption";
 
@@ -27,6 +27,8 @@ export interface FireSource {
 }
 
 export const FIRE_SOURCES: FireSource[] = [
+  { id: "saffire-i-iii-matrix", short: "Saffire I–III test matrix", kind: "nasa", title: "Saffire: A Novel Approach to Study of Spacecraft Fire Safety Using Un-manned Spacecraft", authors: "Urban, Ferkul, Olson, Ruff, Easton", year: 2017, venue: "ASGSR, slides 23 and 30–31", url: "https://ntrs.nasa.gov/citations/20180005168", extracted: ["I-2 uses approximately 10 cm of remaining SIBAL, with a 70 s burn; the original sheet was 94 cm long.", "II-6 airflow is 25 cm/s, whereas II-5 is 20 cm/s. The bundled PSI summary gives 20 cm/s for both; original CSVs are preserved."] },
+  { id: "saffire-vi-timeline", short: "Saffire VI fan timeline", kind: "nasa", title: "Preliminary Results from the Saffire VI Experiment (presentation)", authors: "Urban et al.", year: 2024, venue: "ICES-2024, slides 16–18", url: "https://ntrs.nasa.gov/citations/20240007488", extracted: ["VI-3 ignition at 637 s, airflow reduced from 20 to 5 cm/s at 1120 s and stopped at 1420 s: commands at 483 and 783 s after ignition.", "VI-4 also used reduced flow, but its command times are not given in this presentation. Its constant-flow reproduction remains incomplete."] },
   { id: "nist-cfast", short: "NIST CFAST equations", kind: "handbook", title: "CFAST Version 7 Volume 1: Technical Reference Guide", authors: "Peacock, McGrattan, Forney, Reneke", year: 2015, venue: "NIST TN 1889v1, chapters 2–5", url: "https://nvlpubs.nist.gov/nistpubs/TechnicalNotes/NIST.TN.1889v1.pdf", extracted: ["Conservation of mass/energy, ideal-gas control volumes, mass and enthalpy exchange.", "Buoyant plume correlations have a terrestrial validation domain; partial-gravity application is an extrapolation."] },
   { id: "nist-smoke", short: "NIST smoke transport", kind: "peer-reviewed", title: "Generation and Transport of Smoke Components", authors: "Butler, Mulholland", year: 2004, venue: "Fire Technology 40, 149–176, equations 5–7", url: "https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=861149", extracted: ["Stokes–Einstein particle diffusion with Cunningham slip correction; settling differs from gas diffusion."] },
   { id: "nasa-std-3001", short: "NASA-STD-3001 Vol 2 F", kind: "nasa", title: "NASA Spaceflight Human-System Standard Volume 2", authors: "NASA OCHMO", year: 2026, venue: "Revision F, V2 6004", url: "https://standards.nasa.gov/standard/NASA/NASA-STD-3001_VOL_2", extracted: ["Nominal average one-hour TOTAL CO₂ partial pressure ≤3 mmHg; not an instantaneous fire emergency threshold."] },
@@ -68,6 +70,37 @@ export const FIRE_SOURCES: FireSource[] = [
     ],
   },
   {
+    id: "saffire-iv-vi-emission",
+    short: "Saffire IV–VI emission (ICES-2026-577)",
+    kind: "nasa",
+    title: "Heat and Smoke Emission from Tests on the SAFFIRE IV-VI Experiments",
+    authors: "Urban, Ruff, Ferkul, Easton, Owens, Olson, Fortenberry, Graf, George, Toth, Meyer, Eigenbrod, T’ien, Liao, Fernandez-Pello, Legros, Guibaud, Smirnov, Fujita, Rojas Alva, Jomaas",
+    year: 2026,
+    venue: "55th International Conference on Environmental Systems, ICES-2026-577, 12–16 July 2026",
+    url: "https://ntrs.nasa.gov/citations/20260001992",
+    extracted: [
+      "Table 1: seven flight tests (PMMA IV-2, V-3, VI-3, VI-4; SIBAL IV-1, VI-2; cotton V-2). Pressure 541–1000 mbar, O₂ 0.22–0.31 mole fraction, free volume 16.7–19 m³. All samples 40 cm wide in 20 cm/s flow; PMMA 18 cm long (5 mm thick one-sided, 10 mm thick two-sided), preheated 10 min at low igniter power; SIBAL and cotton 50 cm long.",
+      "Table 1 also gives ignition duration, duration of initial flow, flame length growth rate (PMMA, 0.22–0.38 mm/s), thin-fuel flame spread rate (SIBAL and cotton, 3.4–4.05 mm/s), maximum flame length (PMMA, 89.9–118 mm), peak heat release (VI-3 3240 W, VI-4 1487 W, VI-2 3376 W; not measured on flights IV and V), and the rises at the Far Field Diagnostics (FFD) in CO₂, CO, pressure and temperature.",
+      "Gas concentrations and temperatures are at the FFD, next to the Cygnus air-circulation intake. There is no CO removal on board and only limited CO₂ removal, so CO and CO₂ are reported as rises above a pre-existing baseline, not absolute levels.",
+      "Table 1 times to alarm are for 2 mg/m³ total particulate (DustTrak DRX at the FFD): 1083 s (IV-2), 1117 s (V-3), 1037 s (VI-3), 1603 s (VI-4), 92 s (IV-1), 146 s (V-2), 201 s (VI-2). They are referenced to the experiment timeline start, about 10 minutes before ignition, not to ignition.",
+      "At alarm, CO rise was 63.2, 28.1, 105, 283, 7.9, 11.9 and 57.1 ppm (same order); CO₂ rise 1.28, 0.49, 1.43, 3.09, 0.00, 0.00 and 0.04 mmHg; heat release 2500 W (VI-3), 623 W (VI-4) and 3180 W (VI-2).",
+      "Limits used: CO 24-hour SMAC 100 ppm and 1-hour SMAC 425 ppm (JSC 20584); CO₂ 3 mmHg, 1-hour average (NASA-STD-3001). The maximum rise exceeded the CO₂ 1-hour limit and the CO 24-hour SMAC for both VI PMMA tests, and the CO 24-hour SMAC for IV-2 (PMMA) and VI-2 (SIBAL); the paper attributes the high VI levels to the higher oxygen.",
+      "At the 2 mg/m³ alarm, CO already exceeded the 24-hour SMAC in both VI PMMA tests (105 and 283 ppm), with the one-sided VI-4 approaching the 1-hour SMAC and the CO rise worse for the one-sided sample. The IV PMMA and VI SIBAL fires were detected before reaching hazardous CO.",
+      "Conclusion on detection: a 2 mg/m³ threshold was not low enough to detect the fires before some cases exceeded the 24-hour CO SMAC. A lower threshold or additional detectors to reduce transport time would be needed for this spacecraft configuration.",
+      "Smoke aerosol at the FFD tracked the flame length with a minor delay because of the direct path from the flow unit to the FFD, without the extensive mixing seen on the ISS. Detection here is therefore likely quicker than in many spacecraft.",
+      "Flat PMMA flames did not spread: they stayed anchored at the leading edge and grew as the material regressed, with intervals of linear growth lasting several minutes, 0.22–0.38 mm/s. This is faster than the Saffire II 5 cm wide sample, which grew at less than 0.1 mm/s in air. Thin SIBAL samples also spread linearly. Low-gravity flame growth can be expected to be linear or less, and may reach a limiting size.",
+      "One-sided PMMA samples began to plateau near 380 s (Saffire V) and 420 s (Saffire VI); two-sided samples were still growing at the end of the test (about 500 s). Whether two-sided samples would plateau is unknown.",
+      "Two-sided PMMA growth rate rose 73 % for a 0.08 mole-fraction oxygen increase despite a 45 % pressure decrease; one-sided growth rate was unchanged for a 0.03 mole-fraction oxygen increase with a 27 % pressure decrease.",
+      "One-sided back side: 0.1 mm mica (diffusivity about 0.6 mm²/s) on 0.8 mm aluminium (about 97 mm²/s), adding under 1 % to the thermal resistance. Thermal penetration time of 5 mm PMMA (0.11 mm²/s) is about 220 s. Two-sided results are a conservative upper bound on the growth rate of one-sided applications.",
+      "Temperature: the peak heat release was about 3 kW, yet the FFD temperature rose only 0.04–0.50 °C and pressure 0.25–1.31 mbar. The flow unit outlet reached 77 °C, which fell quickly through mixing and heat loss. Smoke products were more hazardous than heat.",
+      "Discrepancy 1: the Table 1 caption says opposed flow. ICES-2024-365 and this paper's text (flames anchored at the leading edge, growing as the material regresses) describe concurrent flow. IGNIS records the tests as concurrent.",
+      "Discrepancy 2: peak heat release differs from ICES-2024-365 Table 2 (VI-3 3240 W here against 3080 W; VI-4 1487 against 1507 W; VI-2 3376 against 3217 W). The CO and CO₂ maxima here are FFD far-field maxima and also differ. The two sets are kept separate; the ICES-2024-365 values are the model calibration set.",
+      "Discrepancy 3: ICES-2024-365 used a 1 mg/m³ alarm threshold (981 s); this paper uses 2 mg/m³.",
+      "IV-1 conditions differ between papers: 980 mbar and 0.23 O₂ mole fraction here, against 100.0 kPa and 22.0 % O₂ in ICES-2024-365 Table 1. The other shared tests (VI-2, VI-3, VI-4) agree within 0.2 kPa and 0.5 percentage points of O₂.",
+      "V-3 oxygen is 0.26 mole fraction in Table 1, whereas ICES-2021-266 gives 25.4 % O₂ for the same test.",
+    ],
+  },
+  {
     id: "saffire-poster",
     short: "Saffire overview (NTRS 20150000894)",
     kind: "nasa",
@@ -97,6 +130,67 @@ export const FIRE_SOURCES: FireSource[] = [
       "0.1 mm PMMA film: radiative quenching below 2 cm/s, blowoff as flow crosses 40 cm/s.",
       "PMMA rods (0.25–0.5 in): 54 opposed spread rates between roughly 0.005 and 0.025 cm/s at 16–21 % O₂, 0.4–4 cm/s.",
       "Tunnel flow range 0–55 cm/s; oxygen 21 % and below.",
+    ],
+  },
+  {
+    id: "psi-saffire-i",
+    short: "Saffire-I table (NASA PSI-98)",
+    kind: "nasa",
+    title: "Spacecraft Fire Safety Experiment-I: experimental table and telemetry",
+    authors: "NASA Glenn Research Center, Saffire team",
+    year: 2016,
+    venue: "NASA Physical Sciences Informatics, DOI 10.60555/0t15-1z43",
+    url: "https://psi.nasa.gov/physci/repo/data/investigations/PSI-98",
+    extracted: [
+      "S1: SIBAL fabric, 20 cm/s concurrent flow, 21.5–21.7 % O₂, 182 W igniter for 8 s, burn time 420 s.",
+      "S2: same sample in opposed flow, about 21.5 % O₂, burn time 70 s. The table does not say whether this marks extinction or a partial burn.",
+      "The length and width cells read 40.6 cm and 94 cm; the Saffire overview and the Saffire-III table give the same sample as 94 cm long and 40.6 cm wide, so the cells are read as swapped.",
+      "Thickness is given as 0.37 cm; the Saffire-II table gives SIBAL as 0.37 mm, which matches the 18.05 mg/cm² areal density of the fabric. The centimetre unit is read as a typing error.",
+      "Cabin pressure telemetry (PCM) reads 14.47–14.54 psi (99.8–100.2 kPa) across the record.",
+    ],
+  },
+  {
+    id: "psi-saffire-ii",
+    short: "Saffire-II table (NASA PSI-99)",
+    kind: "nasa",
+    title: "Spacecraft Fire Safety Experiment-II: experimental table",
+    authors: "NASA Glenn Research Center, Saffire team",
+    year: 2016,
+    venue: "NASA Physical Sciences Informatics, DOI 10.60555/2chp-m469",
+    url: "https://psi.nasa.gov/physci/repo/data/investigations/PSI-99",
+    extracted: [
+      "Samples 5 cm wide and 29 cm long at 20 cm/s; oxygen about 21.5–22.1 % (derived from measured CO₂ production).",
+      "2-5 and 2-6, SIBAL, concurrent: burned the full 29 cm in 145 s and 115 s; spread rates 2.1 and 2.6 mm/s.",
+      "2-1 to 2-4, silicone 0.27–1.03 mm: microgravity burn insignificant, burn length about 0.",
+      "2-8 and 2-9, PMMA: about 10 cm of visibly damaged fuel after 600 s and 900 s; flames anchored at the sample base with a regression rate of 0.01–0.04 mm/s.",
+    ],
+  },
+  {
+    id: "psi-saffire-iii",
+    short: "Saffire-III table (NASA PSI-100)",
+    kind: "nasa",
+    title: "Spacecraft Fire Safety Experiment-III: experimental table",
+    authors: "NASA Glenn Research Center, Saffire team",
+    year: 2017,
+    venue: "NASA Physical Sciences Informatics, DOI 10.60555/040q-4h36",
+    url: "https://psi.nasa.gov/physci/repo/data/investigations/PSI-100",
+    extracted: [
+      "S1 and S2: SIBAL, 94 cm × 40.6 cm, 30 cm/s, concurrent and opposed. The table reports conditions only; no burn time or spread rate, so it supplies no check.",
+    ],
+  },
+  {
+    id: "psi-bass-ii",
+    short: "BASS-II table (NASA PSI-25)",
+    kind: "nasa",
+    title: "Burning and Suppression of Solids - II: experimental table",
+    authors: "Ferkul, Bhattacharjee, Fernandez-Pello, Miller, Olson, T'ien et al.",
+    year: 2014,
+    venue: "NASA Physical Sciences Informatics, DOI 10.60555/4qc4-de67",
+    url: "https://psi.nasa.gov/physci/repo/data/investigations/PSI-25",
+    extracted: [
+      "Per run: calibrated initial and final O₂ (vol %), initial and final CO₂ (vol %), initial and final CO (ppm) in the Microgravity Science Glovebox working volume.",
+      "The change over a run gives a run-level CO/CO₂ molar ratio for PMMA slabs, PMMA rods and SIBAL. The chamber volume is not needed for the ratio.",
+      "Runs are small samples (1–2 cm wide) at flows up to about 40 cm/s and 14–22 % O₂ near 1 atm.",
     ],
   },
   {
@@ -289,8 +383,12 @@ export interface Cited<T = number> {
   uncertainty?: string;
 }
 
-export function cite<T>(value: T, source: string, note?: string): Cited<T> {
-  const evidence = source === "model" || source === "sfpe" ? "assumed" : /fitted|scaled|sets |chosen/i.test(note ?? "") ? "calibrated" : /stoich| at .*kg|from the|per burning/i.test(note ?? "") ? "derived" : "measured";
+export type EvidenceKind = NonNullable<Cited["evidence"]>;
+
+/** A cited value. The evidence class is inferred from the source and note unless
+ * it is given explicitly, which every model 3.0.0 calibrated or derived value does. */
+export function cite<T>(value: T, source: string, note?: string, explicit?: EvidenceKind): Cited<T> {
+  const evidence = explicit ?? (source === "model" || source === "sfpe" ? "assumed" : /fitted|scaled|sets |chosen/i.test(note ?? "") ? "calibrated" : /stoich| at .*kg|from the|per burning/i.test(note ?? "") ? "derived" : "measured");
   return { value, source, ...(note ? { note } : {}), evidence,
     uncertainty: "Not quantified for this application",
     locator: source === "sfpe" ? "Exact handbook table not verified; retained exploratory value" : note ?? "See source registry; specimen match required" };

@@ -1,0 +1,5 @@
+# Python interface to NIST CFAST (pure Python; the CFAST solver itself is installed separately).
+pycfast==0.2.2
+f90nml==1.5.0
+numpy>=2.0
+pandas>=2.2

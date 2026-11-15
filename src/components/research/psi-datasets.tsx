@@ -8,7 +8,7 @@ import { parsePsiCsv, type PsiManifest } from "@/lib/fire/psi-data";
 
 const PAGE_SIZE = 20;
 
-const downloadLink = "text-ember-text underline underline-offset-4 hover:text-foreground";
+const downloadLink = "text-foreground underline decoration-foreground/25 underline-offset-4 hover:decoration-foreground";
 
 /** The NASA PSI experiment tables held here, shown cell for cell as published. */
 export function PsiDatasets({ initialId = "PSI-25" }: { initialId?: string }) {
@@ -122,7 +122,7 @@ export function PsiDatasets({ initialId = "PSI-25" }: { initialId?: string }) {
                 Provenance manifest
               </a>
             </p>
-            {source ? <p className="numeric text-[11px] break-all text-text-tertiary">SHA-256 {source.sha256}</p> : null}
+            {source ? <p className="numeric text-[12px] break-all text-text-tertiary">SHA-256 {source.sha256}</p> : null}
           </div>
         ) : null}
 

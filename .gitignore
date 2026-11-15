@@ -50,3 +50,16 @@ next-env.d.ts
 /.qa-baseline/
 
 /docs*
+# NIST CFAST cross-check (local solver and generated cases)
+/tools/
+/scripts/cfast/build/
+/scripts/cfast/__pycache__/
+
+# Agent / skill files and working notes (not needed for deployment)
+/.claude/
+/.impeccable/
+/AGENTS.md
+/CLAUDE.md
+/SCIENCE-UX-PLAN.md
+/UNSLOP-REPORT.md
+/public/**/README.md

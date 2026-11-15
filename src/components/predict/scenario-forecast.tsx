@@ -85,7 +85,7 @@ export function ScenarioForecast() {
           locked ? (
             <>
               A run in the habitat is using this setup.{" "}
-              <button type="button" onClick={sim.reset} className="text-ember-text underline underline-offset-4">
+              <button type="button" onClick={sim.reset} className="text-foreground underline decoration-foreground/25 underline-offset-4 hover:decoration-foreground">
                 Reset the run to edit it
               </button>
             </>

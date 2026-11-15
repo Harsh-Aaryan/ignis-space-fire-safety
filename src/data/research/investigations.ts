@@ -197,6 +197,7 @@ export const INVESTIGATIONS: InvestigationRecord[] = [
       { text: "A far-field smoke alarm threshold of 1 mg/m³ was reached at 981 s, after most of the hazardous gas had been released.", sourceId: "saffire-vi" },
       { text: "Two acrylic slabs raised cabin CO₂ by more than 8,000 ppm and CO by more than 300 ppm.", sourceId: "saffire-vi" },
       { text: "Heat release from oxygen consumption used 13.1 kJ per gram of O₂.", sourceId: "saffire-vi" },
+      { text: "With a 2 mg/m³ far-field alarm threshold, both acrylic tests already had a CO rise above the 100 ppm 24-hour limit at alarm (105 and 283 ppm); the one-sided slab approached the 425 ppm one-hour limit. The paper concludes that a lower threshold or additional detectors would be needed.", sourceId: "saffire-iv-vi-emission" },
     ],
     pillars: ["crew-environments", "predictive-modeling", "controls"],
     topics: ["cabin-scale-fire", "flame-spread", "detection"],
@@ -221,7 +222,7 @@ export const INVESTIGATIONS: InvestigationRecord[] = [
       "CO and CO₂ rises set the scale of post-fire atmosphere cleanup.",
     ],
     holdings: [{ kind: "summary", label: "Test conditions and results, Tables 1–2" }],
-    links: { psi: [], ntrs: ["20240002981"], sources: ["saffire-vi"] },
+    links: { psi: [], ntrs: ["20240002981", "20260001992"], sources: ["saffire-vi", "saffire-iv-vi-emission"] },
   },
   {
     id: "saffire-iv-v",
@@ -230,17 +231,22 @@ export const INVESTIGATIONS: InvestigationRecord[] = [
     kind: "flight-experiment",
     organization: "NASA Glenn Research Center",
     platform: "Cygnus cargo vehicle, after departure from the ISS",
-    period: "Results reported 2021",
+    period: "Results reported 2021 and 2026",
     summary:
-      "Large-scale burns of thin and thick fuels in concurrent flow, including what happens when the airflow is reduced or stopped.",
+      "Large-scale burns of thin and thick fuels in concurrent flow, including what happens when the airflow is reduced or stopped, and the smoke and gas the fires released at a far-field detector.",
     findings: [
       { text: "Concurrent flames reached a limiting, steady size on thin and thick fuels, unlike upward spread in Earth gravity.", sourceId: "saffire-iv-v" },
       { text: "Thick samples kept burning after the flow was reduced. Extinguishment of thick or charring fuels cannot be assumed to be rapid.", sourceId: "saffire-iv-v" },
       { text: "One acrylic test extinguished quickly once flow was stopped after 300 s at 5 cm/s.", sourceId: "saffire-iv-v" },
       { text: "Fuel vapor accumulates in low gravity: two samples ignited as small deflagrations.", sourceId: "saffire-iv-v" },
+      { text: "Flames on flat acrylic stayed anchored at the leading edge and grew only as the material regressed, linearly at 0.22–0.38 mm/s for several minutes. That is faster than the less than 0.1 mm/s of the 5 cm wide Saffire II strip in air, and not accelerating as upward spread is in Earth gravity.", sourceId: "saffire-iv-vi-emission" },
+      { text: "One-sided acrylic flames began to plateau near 380 s (Saffire V) and 420 s (Saffire VI); two-sided flames were still growing at about 500 s. Whether they would plateau is unknown.", sourceId: "saffire-iv-vi-emission" },
+      { text: "Two-sided growth rate rose 73% for 0.08 more oxygen mole fraction despite a 45% lower pressure; one-sided growth was unchanged for 0.03 more oxygen mole fraction at a 27% lower pressure.", sourceId: "saffire-iv-vi-emission" },
+      { text: "Time for far-field smoke to reach 2 mg/m³ was 92–201 s for the three thin-fabric tests and 1037–1603 s for the four acrylic tests, timed from about 10 minutes before ignition. Smoke reached the detector with little delay because of the direct path from the flow unit.", sourceId: "saffire-iv-vi-emission" },
+      { text: "Heat release reached about 3 kW, yet the far-field temperature rose by at most 0.5 °C. The flow unit outlet reached 77 °C, which fell quickly through mixing and heat loss. Smoke products were the larger hazard.", sourceId: "saffire-iv-vi-emission" },
     ],
     pillars: ["crew-environments", "predictive-modeling", "controls"],
-    topics: ["cabin-scale-fire", "flame-spread", "suppression"],
+    topics: ["cabin-scale-fire", "flame-spread", "suppression", "detection", "smoke"],
     gravity: ["0g"],
     conditions: {
       flowCmS: [5, 20],
@@ -255,9 +261,13 @@ export const INVESTIGATIONS: InvestigationRecord[] = [
     controlsUse: [
       "Stopping ventilation is not a guaranteed extinguishing action for thick fuels.",
       "Re-ignition by residual flamelets argues for monitoring after flame-out.",
+      "A 2 mg/m³ smoke threshold at the far-field detector did not detect every fire before the CO rise passed the 24-hour limit. The authors point to a lower threshold or additional detectors to cut transport time.",
     ],
-    holdings: [{ kind: "summary", label: "Published observations" }],
-    links: { psi: [], ntrs: [], sources: ["saffire-iv-v"] },
+    holdings: [
+      { kind: "summary", label: "Published observations" },
+      { kind: "summary", label: "Test conditions, smoke alarm times and gas rises for IV-2, V-2 and V-3, Table 1 of ICES-2026-577" },
+    ],
+    links: { psi: [], ntrs: ["20260001992"], sources: ["saffire-iv-v", "saffire-iv-vi-emission"] },
   },
   {
     id: "saffire-i-iii",

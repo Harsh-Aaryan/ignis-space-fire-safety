@@ -8,14 +8,15 @@ import { cn } from "@/lib/utils";
  * server and client components.
  */
 
+/** Page title. `meta` is a quiet line under the title, such as who ran a test and when. */
 export function PageHeader({
-  eyebrow,
+  meta,
   title,
   description,
   actions,
   className,
 }: {
-  eyebrow?: string;
+  meta?: string;
   title: string;
   description?: React.ReactNode;
   actions?: React.ReactNode;
@@ -24,9 +25,9 @@ export function PageHeader({
   return (
     <header className={cn("mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-4", className)}>
       <div className="max-w-3xl">
-        {eyebrow ? <p className="micro text-muted-foreground">{eyebrow}</p> : null}
-        <h1 className="mt-2 text-[28px] leading-8 font-normal text-foreground md:text-[32px] md:leading-10">{title}</h1>
-        {description ? <p className="mt-2 text-[15px] leading-6 text-muted-foreground">{description}</p> : null}
+        <h1 className="text-[28px] leading-8 font-normal text-foreground md:text-[32px] md:leading-10">{title}</h1>
+        {meta ? <p className="mt-1 text-[13px] leading-5 text-muted-foreground">{meta}</p> : null}
+        {description ? <p className="mt-2 max-w-[62ch] text-[15px] leading-6 text-muted-foreground">{description}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
     </header>
@@ -52,7 +53,7 @@ export function SectionHeading({
         <h2 id={id} className="text-[20px] leading-7 font-medium text-foreground">
           {title}
         </h2>
-        {description ? <p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p> : null}
+        {description ? <p className="mt-1 max-w-[62ch] text-sm leading-6 text-muted-foreground">{description}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
     </div>
@@ -85,7 +86,7 @@ export function Panel({
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border-subtle px-6 py-4">
           <div className="min-w-0">
             {title ? <h2 className="text-[15px] leading-5 font-medium text-foreground">{title}</h2> : null}
-            {description ? <p className="mt-1 text-[13px] leading-5 text-muted-foreground">{description}</p> : null}
+            {description ? <p className="mt-1 max-w-[62ch] text-[13px] leading-5 text-muted-foreground">{description}</p> : null}
           </div>
           {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
         </div>
@@ -167,7 +168,7 @@ export function Tag({
 }) {
   const tones = {
     neutral: "border-border-subtle text-muted-foreground",
-    accent: "border-ember/50 text-ember-text",
+    accent: "border-border text-foreground",
     positive: "border-status-nominal/50 text-status-nominal",
   } as const;
   return (
@@ -177,14 +178,20 @@ export function Tag({
   );
 }
 
-const LINK = "inline-flex items-center gap-2 text-ember-text underline-offset-4 hover:underline";
+/**
+ * Links read as primary text with a quiet underline. The ember accent is kept
+ * for the one main action and the current selection, so links never compete with them.
+ */
+export const LINK =
+  "inline-flex items-center gap-2 text-foreground underline decoration-foreground/25 underline-offset-4 transition-colors hover:decoration-foreground";
+const LINK_ICON = "size-4 shrink-0 text-muted-foreground";
 
 /** A link that leaves the site, to a NASA record or a paper. */
 export function ExternalLink({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) {
   return (
     <a href={href} target="_blank" rel="noreferrer" className={cn(LINK, className)}>
       {children}
-      <ArrowUpRight className="size-4 shrink-0" aria-hidden="true" />
+      <ArrowUpRight className={LINK_ICON} aria-hidden="true" />
     </a>
   );
 }
@@ -194,7 +201,7 @@ export function TextLink({ href, children, className }: { href: string; children
   return (
     <Link href={href} className={cn(LINK, className)}>
       {children}
-      <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
+      <ArrowRight className={LINK_ICON} aria-hidden="true" />
     </Link>
   );
 }
@@ -243,7 +250,7 @@ export function EmptyState({ title, body, action }: { title: string; body?: Reac
 /** A plain statement of a limit or caveat. One per view, in words, instead of warning badges. */
 export function Note({ title, children, className }: { title?: string; children: React.ReactNode; className?: string }) {
   return (
-    <aside className={cn("border-l-2 border-border py-0.5 pl-3 text-[13px] leading-5 text-muted-foreground", className)}>
+    <aside className={cn("max-w-[62ch] border-l border-border py-0.5 pl-3 text-[13px] leading-5 text-muted-foreground", className)}>
       {title ? <span className="font-medium text-foreground">{title} </span> : null}
       {children}
     </aside>

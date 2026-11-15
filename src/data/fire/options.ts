@@ -254,6 +254,9 @@ export const HAZARD_LIMITS = {
   o2LowKpa: cite(16, "model"),
 } as const;
 
+/** A prescribed fan command, timed from flame ignition rather than heater start. */
+export interface VentilationStep { afterIgnitionS: number; speedMs: number; }
+
 /** Measured Saffire tests the model is checked against. */
 export interface SaffireBenchmark {
   id: string;
@@ -263,6 +266,7 @@ export interface SaffireBenchmark {
   widthM: number;
   lengthM: number;
   flowMs: number;
+  ventilationSchedule?: readonly VentilationStep[];
   pressureKpa: number;
   oxygenPct: number;
   freeVolumeM3: number;
@@ -280,9 +284,173 @@ export interface SaffireBenchmark {
 export const SAFFIRE_BENCHMARKS: SaffireBenchmark[] = [
   { id: "IV-1", material: "SIBAL cloth", materialId: "sibal", sides: 2, widthM: 0.41, lengthM: 0.5, flowMs: 0.2, pressureKpa: 100.0, oxygenPct: 22.0, freeVolumeM3: 17.9, burnDurationS: 130, peakHeatW: null, avgHeatW: 3150, totalHeatKJ: 409, co2RisePpm: 1390, coRisePpm: 80, maxOutletC: 45, maxFarFieldC: 25 },
   { id: "VI-2", material: "SIBAL cloth", materialId: "sibal", sides: 2, widthM: 0.41, lengthM: 0.5, flowMs: 0.2, pressureKpa: 54.1, oxygenPct: 31.0, freeVolumeM3: 16.7, burnDurationS: 112, peakHeatW: 3217, avgHeatW: 3650, totalHeatKJ: 580, co2RisePpm: 2800, coRisePpm: 120, maxOutletC: 48, maxFarFieldC: 20 },
-  { id: "VI-3", material: "Two-sided PMMA, 1 cm", materialId: "pmma", sides: 2, widthM: 0.41, lengthM: 0.18, flowMs: 0.2, pressureKpa: 54.6, oxygenPct: 30.3, freeVolumeM3: 16.7, burnDurationS: 780, peakHeatW: 3080, avgHeatW: null, totalHeatKJ: 1280, co2RisePpm: 8539, coRisePpm: 308, maxOutletC: 77, maxFarFieldC: 21 },
+  // NASA ICES-2024 presentation, slides 16–18: ignition 637 s, flow reduction
+  // 1120 s, stop 1420 s. Table 2 rounds the burn duration to 780 s.
+  { id: "VI-3", material: "Two-sided PMMA, 1 cm", materialId: "pmma", sides: 2, widthM: 0.41, lengthM: 0.18, flowMs: 0.2, ventilationSchedule: [{ afterIgnitionS: 483, speedMs: 0.05 }, { afterIgnitionS: 783, speedMs: 0 }], pressureKpa: 54.6, oxygenPct: 30.3, freeVolumeM3: 16.7, burnDurationS: 780, peakHeatW: 3080, avgHeatW: null, totalHeatKJ: 1280, co2RisePpm: 8539, coRisePpm: 308, maxOutletC: 77, maxFarFieldC: 21 },
   { id: "VI-4", material: "One-sided PMMA, 0.5 cm", materialId: "pmma", sides: 1, widthM: 0.41, lengthM: 0.18, flowMs: 0.2, pressureKpa: 55.2, oxygenPct: 28.8, freeVolumeM3: 16.7, burnDurationS: 1200, peakHeatW: 1507, avgHeatW: null, totalHeatKJ: 830, co2RisePpm: 8117, coRisePpm: 320, maxOutletC: 57, maxFarFieldC: 21 },
 ];
+
+/**
+ * Table 1 of ICES-2026-577, "Heat and Smoke Emission from Tests on the SAFFIRE IV-VI Experiments".
+ *
+ * Units are kept as published (mbar, mole fraction, mmHg, ppm, °C, s, mm, W). null means the paper
+ * prints NA; nothing is estimated. This is a separate dataset from SAFFIRE_BENCHMARKS and must stay
+ * separate: SAFFIRE_BENCHMARKS is the ICES-2024-365 set the model coefficients were fitted to, and
+ * the two papers disagree for the same tests (peak heat release; CO and CO₂ maxima, which here are
+ * maxima at the Far Field Diagnostics). saffire-emission.test.ts records the differences.
+ *
+ * Gas and temperature values are rises above a pre-existing baseline (no CO removal on board), not
+ * absolute levels. Times to alarm are referenced to the experiment timeline start, about 10 minutes
+ * before ignition, not to ignition.
+ */
+export interface SaffireEmissionTest {
+  /** Flight and test, as printed in the table header. */
+  id: "IV-2" | "V-3" | "VI-3" | "VI-4" | "IV-1" | "V-2" | "VI-2";
+  /** Material as printed. */
+  material: "PMMA" | "SIBAL" | "Cotton";
+  /** Material profile in src/data/fire/materials.ts, or null where none is the same material. Cotton t-shirt fabric is not SIBAL (a cotton/fiberglass blend). */
+  materialId: "pmma" | "sibal" | null;
+  sidesBurning: 1 | 2;
+  pressureMbar: number;
+  /** Mole fraction, not percent. */
+  oxygenMolFraction: number;
+  freeVolumeM3: number;
+  ignitionDurationS: number;
+  initialFlowDurationS: number;
+  /** PMMA only. */
+  flameGrowthRateMmS: number | null;
+  /** Thin fuels only. */
+  flameSpreadRateMmS: number | null;
+  /** PMMA only. */
+  maxFlameLengthMm: number | null;
+  /** Not measured on flights IV and V. */
+  peakHrrW: number | null;
+  /** Maximum rise at the FFD. */
+  maxCo2RiseMmHg: number;
+  maxCoRisePpm: number;
+  pressureRiseMbar: number;
+  maxTemperatureRiseC: number;
+  /** Time at which total particulate at the FFD reached 2 mg/m³, s. See timeReference. */
+  timeToAlarmS: number;
+  flameLengthAtAlarmMm: number | null;
+  hrrAtAlarmW: number | null;
+  co2RiseAtAlarmMmHg: number;
+  coRiseAtAlarmPpm: number;
+}
+
+export const SAFFIRE_IV_VI_EMISSION: readonly SaffireEmissionTest[] = [
+  { id: "IV-2", material: "PMMA", materialId: "pmma", sidesBurning: 2, pressureMbar: 1000, oxygenMolFraction: 0.22, freeVolumeM3: 17.9, ignitionDurationS: 60, initialFlowDurationS: 535, flameGrowthRateMmS: 0.22, flameSpreadRateMmS: null, maxFlameLengthMm: 90.8, peakHrrW: null, maxCo2RiseMmHg: 1.78, maxCoRisePpm: 110, pressureRiseMbar: 1.31, maxTemperatureRiseC: 0.23, timeToAlarmS: 1083, flameLengthAtAlarmMm: 74, hrrAtAlarmW: null, co2RiseAtAlarmMmHg: 1.28, coRiseAtAlarmPpm: 63.2 },
+  { id: "V-3", material: "PMMA", materialId: "pmma", sidesBurning: 1, pressureMbar: 745, oxygenMolFraction: 0.26, freeVolumeM3: 19, ignitionDurationS: 120, initialFlowDurationS: 480, flameGrowthRateMmS: 0.26, flameSpreadRateMmS: null, maxFlameLengthMm: 118, peakHrrW: null, maxCo2RiseMmHg: 0.78, maxCoRisePpm: 55.5, pressureRiseMbar: 0.25, maxTemperatureRiseC: 0.04, timeToAlarmS: 1117, flameLengthAtAlarmMm: 114, hrrAtAlarmW: null, co2RiseAtAlarmMmHg: 0.49, coRiseAtAlarmPpm: 28.1 },
+  { id: "VI-3", material: "PMMA", materialId: "pmma", sidesBurning: 2, pressureMbar: 544, oxygenMolFraction: 0.30, freeVolumeM3: 16.7, ignitionDurationS: 60, initialFlowDurationS: 480, flameGrowthRateMmS: 0.38, flameSpreadRateMmS: null, maxFlameLengthMm: 89.9, peakHrrW: 3240, maxCo2RiseMmHg: 3.66, maxCoRisePpm: 338, pressureRiseMbar: 0.34, maxTemperatureRiseC: 0.50, timeToAlarmS: 1037, flameLengthAtAlarmMm: 73.95, hrrAtAlarmW: 2500, co2RiseAtAlarmMmHg: 1.43, coRiseAtAlarmPpm: 105 },
+  { id: "VI-4", material: "PMMA", materialId: "pmma", sidesBurning: 1, pressureMbar: 550, oxygenMolFraction: 0.29, freeVolumeM3: 16.7, ignitionDurationS: 120, initialFlowDurationS: 900, flameGrowthRateMmS: 0.27, flameSpreadRateMmS: null, maxFlameLengthMm: 93.3, peakHrrW: 1487, maxCo2RiseMmHg: 3.39, maxCoRisePpm: 309, pressureRiseMbar: 0.25, maxTemperatureRiseC: 0.25, timeToAlarmS: 1603, flameLengthAtAlarmMm: 66.9, hrrAtAlarmW: 623, co2RiseAtAlarmMmHg: 3.09, coRiseAtAlarmPpm: 283 },
+  { id: "IV-1", material: "SIBAL", materialId: "sibal", sidesBurning: 2, pressureMbar: 980, oxygenMolFraction: 0.23, freeVolumeM3: 17.9, ignitionDurationS: 8, initialFlowDurationS: 200, flameGrowthRateMmS: null, flameSpreadRateMmS: 3.6, maxFlameLengthMm: null, peakHrrW: null, maxCo2RiseMmHg: 0.97, maxCoRisePpm: 77.4, pressureRiseMbar: 0.33, maxTemperatureRiseC: 0.25, timeToAlarmS: 92, flameLengthAtAlarmMm: null, hrrAtAlarmW: null, co2RiseAtAlarmMmHg: 0.00, coRiseAtAlarmPpm: 7.9 },
+  { id: "V-2", material: "Cotton", materialId: null, sidesBurning: 2, pressureMbar: 741, oxygenMolFraction: 0.28, freeVolumeM3: 19, ignitionDurationS: 8, initialFlowDurationS: 200, flameGrowthRateMmS: null, flameSpreadRateMmS: 3.4, maxFlameLengthMm: null, peakHrrW: null, maxCo2RiseMmHg: 0.81, maxCoRisePpm: 74.3, pressureRiseMbar: 0.30, maxTemperatureRiseC: 0.25, timeToAlarmS: 146, flameLengthAtAlarmMm: null, hrrAtAlarmW: null, co2RiseAtAlarmMmHg: 0.00, coRiseAtAlarmPpm: 11.9 },
+  { id: "VI-2", material: "SIBAL", materialId: "sibal", sidesBurning: 2, pressureMbar: 541, oxygenMolFraction: 0.31, freeVolumeM3: 16.7, ignitionDurationS: 8, initialFlowDurationS: 300, flameGrowthRateMmS: null, flameSpreadRateMmS: 4.05, maxFlameLengthMm: null, peakHrrW: 3376, maxCo2RiseMmHg: 1.46, maxCoRisePpm: 122, pressureRiseMbar: 0.31, maxTemperatureRiseC: 0.29, timeToAlarmS: 201, flameLengthAtAlarmMm: null, hrrAtAlarmW: 3180, co2RiseAtAlarmMmHg: 0.04, coRiseAtAlarmPpm: 57.1 },
+];
+
+/** Provenance and caveats of SAFFIRE_IV_VI_EMISSION. */
+export const SAFFIRE_IV_VI_EMISSION_META = {
+  source: "saffire-iv-vi-emission",
+  /** Reference for every time in the table. Not ignition. */
+  timeReference: "Experiment timeline start, about 10 minutes before ignition",
+  /** Alarm criterion used by the paper: total particulate at the FFD (DustTrak DRX). */
+  alarmThresholdMgM3: cite(2, "saffire-iv-vi-emission", "Total particulate matter at the Far Field Diagnostics. ICES-2024-365 used 1 mg/m³."),
+  /** The Table 1 caption says "opposed flow"; ICES-2024-365 and the paper's own text describe concurrent flow. IGNIS records concurrent. */
+  flow: { direction: "Concurrent", captionSays: "opposed", speedCmS: 20, widthCm: 40 },
+  pmmaLengthCm: 18,
+  pmmaThicknessMm: { oneSided: 5, twoSided: 10 },
+  thinFuelLengthCm: 50,
+  gasBasis: "Rise above a pre-existing baseline at the Far Field Diagnostics; no CO removal on board.",
+} as const;
+
+/**
+ * Peak heat release of one test as reported by the two NASA analyses: ICES-2024-365 (the calibration
+ * value, SAFFIRE_BENCHMARKS) and ICES-2026-577 (SAFFIRE_IV_VI_EMISSION). Null where either analysis
+ * has no peak (flights IV and V did not measure heat release). Neither is declared the true peak.
+ */
+export function peakHrrAnalyses(id: string): { ices2024W: number; ices2026W: number; lowW: number; highW: number } | null {
+  const a = SAFFIRE_BENCHMARKS.find((row) => row.id === id)?.peakHeatW ?? null;
+  const b = SAFFIRE_IV_VI_EMISSION.find((row) => row.id === id)?.peakHrrW ?? null;
+  if (a === null || b === null) return null;
+  return { ices2024W: a, ices2026W: b, lowW: Math.min(a, b), highW: Math.max(a, b) };
+}
+
+/**
+ * Saffire VI-3 smoke timeline on the experiment clock. Ignition at 637 s is from the NASA ICES-2024
+ * presentation (source saffire-vi-timeline, slides 16–18); 981 s is the 1 mg/m³ far-field alarm of
+ * ICES-2024-365 (saffire-vi); 1037 s is the 2 mg/m³ alarm of ICES-2026-577 Table 1
+ * (saffire-iv-vi-emission). Offsets from ignition are not published for IV-2, V-3 or VI-4, so none is
+ * given for them.
+ */
+export const SAFFIRE_VI3_SMOKE_TIMELINE = { test: "VI-3", ignitionS: 637, alarm1MgM3S: 981, alarm2MgM3S: 1037 } as const;
+
+/**
+ * Independent flight observations from the NASA PSI tables (model 3.0.0). None
+ * of these rows is used to fit the Saffire VI calibration; where a row informs
+ * another closure, `use` says so. Cells are transcribed from the original CSVs in
+ * public/data/nasa-psi; `src/lib/fire/benchmarks.test.ts` re-reads those files and
+ * checks every value here.
+ */
+export interface FlightObservation {
+  id: string;
+  source: string;
+  materialId: "sibal" | "pmma" | "silicone";
+  flow: "concurrent" | "opposed";
+  /** Along the flow, m. */
+  lengthM: number;
+  /** Across the flow, m. */
+  widthM: number;
+  flowMs: number;
+  oxygenPct: number;
+  pressureKpa: number;
+  /** "assumed" where the table gives no pressure. */
+  pressureEvidence: "measured" | "assumed";
+  /** Reported burn time, s, or null when the table gives none. */
+  burnTimeS: number | null;
+  /** Reported concurrent spread rate, mm/s. */
+  spreadMmS: number | null;
+  /** Reported length of fuel with significant visible damage, m. */
+  damagedLengthM: number | null;
+  /** Reported microgravity burn length, m (0 for "~ 0"). */
+  burnLengthM: number | null;
+  use: "held-out" | "derives the thin-fuel burnout flux; spread rate held out" | "qualitative";
+  /** Corrections from the investigators' test matrix; the PSI transcription stays intact. */
+  reproduction?: { source: string; lengthM?: number; flowMs?: number; note: string };
+  note: string;
+}
+
+export const FLIGHT_OBSERVATIONS: FlightObservation[] = [
+  { id: "Saffire-I S1", source: "psi-saffire-i", materialId: "sibal", flow: "concurrent", lengthM: 0.94, widthM: 0.406, flowMs: 0.2, oxygenPct: 21.6, pressureKpa: 99.8, pressureEvidence: "measured", burnTimeS: 420, spreadMmS: null, damagedLengthM: null, burnLengthM: null, use: "held-out", note: "O₂ 21.5–21.7 % (midpoint used). Length and width cells read as swapped (see source). Pressure from the PCM cabin telemetry." },
+  { id: "Saffire-I S2", source: "psi-saffire-i", materialId: "sibal", flow: "opposed", lengthM: 0.94, widthM: 0.406, flowMs: 0.2, oxygenPct: 21.5, pressureKpa: 99.8, pressureEvidence: "measured", burnTimeS: 70, spreadMmS: null, damagedLengthM: null, burnLengthM: null, use: "held-out", reproduction: { source: "saffire-i-iii-matrix", lengthM: 0.10, note: "The investigators' test matrix gives approximately 10 cm of remaining fuel for I-2, rather than the original 94 cm sheet." }, note: "PSI lists the original sheet dimensions; the second ignition burned the remaining approximately 10 cm (NASA test matrix, slides 30–31)." },
+  { id: "Saffire-II 2-5", source: "psi-saffire-ii", materialId: "sibal", flow: "concurrent", lengthM: 0.29, widthM: 0.05, flowMs: 0.2, oxygenPct: 22.1, pressureKpa: 101.325, pressureEvidence: "assumed", burnTimeS: 145, spreadMmS: 2.1, damagedLengthM: null, burnLengthM: 0.29, use: "derives the thin-fuel burnout flux; spread rate held out", note: "5 cm wide strip; edge losses can slow spread relative to the 41 cm Saffire VI samples." },
+  { id: "Saffire-II 2-6", source: "psi-saffire-ii", materialId: "sibal", flow: "concurrent", lengthM: 0.29, widthM: 0.05, flowMs: 0.2, oxygenPct: 22.1, pressureKpa: 101.325, pressureEvidence: "assumed", burnTimeS: 115, spreadMmS: 2.6, damagedLengthM: null, burnLengthM: 0.29, use: "derives the thin-fuel burnout flux; spread rate held out", reproduction: { source: "saffire-i-iii-matrix", flowMs: 0.25, note: "NASA's test matrix and slide 23 give 25 cm/s for II-6; the PSI summary lists 20 cm/s for both strips." }, note: "5 cm wide strip. Reproduction uses the investigators' 25 cm/s airflow; the original PSI cell is retained here." },
+  { id: "Saffire-II 2-8", source: "psi-saffire-ii", materialId: "pmma", flow: "concurrent", lengthM: 0.29, widthM: 0.05, flowMs: 0.2, oxygenPct: 22.05, pressureKpa: 101.325, pressureEvidence: "assumed", burnTimeS: 600, spreadMmS: null, damagedLengthM: 0.1, burnLengthM: null, use: "held-out", note: "O₂ 22.1 to 22.0 %. Thickness given only as a figure reference. Damage length is approximate (\"~ 10 cm\")." },
+  { id: "Saffire-II 2-9", source: "psi-saffire-ii", materialId: "pmma", flow: "concurrent", lengthM: 0.29, widthM: 0.05, flowMs: 0.2, oxygenPct: 21.95, pressureKpa: 101.325, pressureEvidence: "assumed", burnTimeS: 900, spreadMmS: null, damagedLengthM: 0.1, burnLengthM: null, use: "held-out", note: "1 cm thick. O₂ 22.0 to 21.9 %. Damage length is approximate (\"~ 10 cm\")." },
+  { id: "Saffire-II 2-1 to 2-4", source: "psi-saffire-ii", materialId: "silicone", flow: "concurrent", lengthM: 0.29, widthM: 0.05, flowMs: 0.2, oxygenPct: 21.9, pressureKpa: 101.325, pressureEvidence: "assumed", burnTimeS: null, spreadMmS: null, damagedLengthM: null, burnLengthM: 0, use: "qualitative", note: "Silicone 0.27–1.03 mm; 2-4 was opposed flow. Microgravity burn \"insignificant\", burn length \"~ 0\"; in 1 g two of the four burned completely." },
+];
+
+/** Saffire-II note 4: regression rate at the anchored base of the PMMA flames, mm/s. */
+export const SAFFIRE_II_PMMA_BASE_REGRESSION_MMS: Cited<[number, number]> = cite([0.01, 0.04], "psi-saffire-ii", "Note 4 of the Saffire-II table.", "measured");
+
+/**
+ * BASS-II run-level CO/CO₂ molar ratios: (final − initial CO, ppm) ÷ (final −
+ * initial CO₂, ppm) for each run in the PSI-25 table. Rule: PMMA slabs, films and
+ * rods (spherical sections excluded) or SIBAL; all six gas cells numeric; CO rise
+ * not negative; CO₂ rise at least 3000 ppm for PMMA and 500 ppm for SIBAL (30 and
+ * 5 times the 0.01 vol % CO₂ resolution). Reproduced from the CSV in
+ * src/lib/fire/benchmarks.test.ts.
+ */
+export const BASS_II_CO_RATIOS = {
+  source: "psi-bass-ii",
+  pmmaHighOxygen: { label: "PMMA, initial O₂ ≥ 20.5 %", runs: 11, oxygenRange: [20.7, 22.2] as [number, number], median: 0.0340, q1: 0.0312, q3: 0.0367 },
+  pmmaLowOxygen: { label: "PMMA, initial O₂ ≤ 17.5 %", runs: 20, oxygenRange: [15.1, 17.5] as [number, number], medianOxygenPct: 16.15, median: 0.0508, q1: 0.0282, q3: 0.0597 },
+  sibal: { label: "SIBAL, all valid runs", runs: 4, oxygenRange: [18.5, 20.8] as [number, number], median: 0.0583, q1: 0.0464, q3: 0.0695 },
+  caveats: [
+    "Small samples (1–2 cm wide) in the glovebox wind tunnel, not cabin-scale fires.",
+    "The low-oxygen PMMA runs are almost all rods, the high-oxygen runs mostly slabs, so geometry and oxygen are confounded.",
+    "SIBAL CO₂ rises are only 500–700 ppm, so each SIBAL ratio carries about ±15–20 % quantisation error.",
+  ],
+} as const;
 
 /** SAME-2 Table 1, micrometres. */
 export const SAME2_TABLE = [

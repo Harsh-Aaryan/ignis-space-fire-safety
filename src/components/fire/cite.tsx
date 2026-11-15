@@ -6,9 +6,9 @@ import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
 const TONE = {
-  nasa: "border-status-info/50 text-status-info",
-  "peer-reviewed": "border-status-info/50 text-status-info",
-  handbook: "border-border text-muted-foreground",
+  nasa: "border-border-subtle text-muted-foreground hover:text-foreground",
+  "peer-reviewed": "border-border-subtle text-muted-foreground hover:text-foreground",
+  handbook: "border-border-subtle text-muted-foreground hover:text-foreground",
   assumption: "border-dashed border-border text-muted-foreground",
 } as const;
 
@@ -20,7 +20,7 @@ const KIND_LABEL = {
 } as const;
 
 const chip =
-  "inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 align-baseline text-[11px] leading-4 whitespace-nowrap transition-colors hover:bg-elev-3";
+  "inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 align-baseline text-[12px] leading-4 whitespace-nowrap transition-colors hover:bg-elev-3";
 
 /** A source chip. NASA and journal sources open the record; the rest open the source list. */
 export function Cite({ id, compact = false }: { id: string; compact?: boolean }) {

@@ -15,7 +15,7 @@ export default function Page() {
         title="Investigations"
         description="Which experiments, tests and standards bear on fire safety where crews live: spacecraft, space stations, lunar and Martian surface habitats, and pressurized rovers."
       />
-      <Suspense fallback={<ResearchExplorer />}>
+      <Suspense fallback={<ResearchExplorer pending />}>
         <ResearchExplorerFromQuery />
       </Suspense>
     </>

@@ -97,7 +97,7 @@
   --sidebar-ring: #E07A3D;
   --text-primary: #EDEAE4;
   --text-secondary: #A39E96;
-  --text-tertiary: #96918A;
+  --text-tertiary: #9A958E;
   --accent-text: #F0A66A;
   --status-nominal: #3DCC8D;
   --status-info: #6BA3C7;
@@ -137,6 +137,17 @@
     color: var(--foreground);
     font-size: 14px;
     line-height: 20px;
+    caret-color: var(--primary);
+  }
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+  p, li, dd, figcaption {
+    text-wrap: pretty;
+  }
+  ::selection {
+    background: rgb(224 122 61 / 0.32);
+    color: var(--foreground);
   }
 }
 
@@ -182,33 +193,6 @@
   padding: 4px 8px;
   white-space: nowrap;
 }
-
-.status-chip {
-  align-items: center;
-  border-radius: 2px;
-  display: inline-flex;
-  font-family: var(--font-cond), "IBM Plex Sans Condensed", sans-serif;
-  font-size: 10px;
-  font-weight: 600;
-  gap: 5px;
-  height: 18px;
-  letter-spacing: 0.1em;
-  line-height: 12px;
-  padding: 0 6px;
-  text-transform: uppercase;
-}
-.status-mark { display: inline-block; }
-.status-nominal { border: 1px solid #3DCC8D; color: #3DCC8D; }
-.status-nominal .status-mark { border-bottom: 2px solid currentColor; border-left: 2px solid currentColor; height: 5px; transform: rotate(-45deg); width: 8px; }
-.status-info { border: 1px solid #6BA3C7; color: #6BA3C7; }
-.status-info .status-mark { border: 1.5px solid currentColor; border-radius: 50%; height: 7px; width: 7px; }
-.status-caution { background: #E8C15A; color: #140C08; }
-.status-caution .status-mark { border-bottom: 7px solid currentColor; border-left: 4px solid transparent; border-right: 4px solid transparent; height: 0; width: 0; }
-.status-warning { border: 1px solid #F67A6C; color: #F67A6C; }
-.status-warning .status-mark { border-bottom: 7px solid currentColor; border-left: 4px solid transparent; border-right: 4px solid transparent; height: 0; width: 0; }
-.status-critical { background: #6F221C; color: #EDEAE4; }
-.status-critical .status-mark { background: currentColor; height: 7px; width: 7px; }
-.status-category { border: 1px solid #3A3E44; color: #EDEAE4; }
 
 [data-slot="slider-thumb"] {
   background: #EDEAE4 !important;

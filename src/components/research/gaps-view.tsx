@@ -1,15 +1,33 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { Check, Minus, X } from "lucide-react";
 import { Note, Panel, Tag, TextLink, table } from "@/components/design/kit";
 import { GRAVITY_REGIMES, TOPICS, type GravityRegime, type Topic } from "@/data/research/investigations";
 import { formatGravity, formatOxygen, formatPsi } from "@/lib/format";
 import { KPA_PER_PSI } from "@/lib/physics/atmosphere";
 import { GRAVITY_ORDER, coverageMatrix, isCellEmpty } from "@/lib/research/coverage";
-import { compareCabinWithIndex, gravityRegimeFor, type RangeCheck } from "@/lib/research/envelope";
+import { fieldClass } from "@/components/research/index-filter-bar";
+import { Cite } from "@/components/fire/cite";
+import { FIRE_MATERIALS } from "@/data/fire/materials";
+import { EVALUATION_SNAPSHOT } from "@/lib/fire/accuracy";
+import {
+  EVIDENCE_MATCH_HINT,
+  EVIDENCE_MATCH_LABEL,
+  EVIDENCE_MATCH_ORDER,
+  RUN_TOLERANCE_TEXT,
+  countByStatus,
+  gravityRegimeFor,
+  matchCabinWithIndex,
+  type CabinSpecimen,
+  type EvidenceMatchStatus,
+  type RangeCheck,
+} from "@/lib/research/envelope";
+import { materialForFireMaterial } from "@/lib/research/materials";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
+import { useFireSimStore } from "@/stores/fire-sim-store";
 import { useMissionStore } from "@/stores/mission-store";
 
 /** Open questions, shown only while the coverage cell they come from is empty. */
@@ -51,6 +69,7 @@ export function GapsView() {
       <CoverageMatrix />
       <CabinComparison />
       <OpenQuestions />
+      <ModelGaps />
     </div>
   );
 }
@@ -90,7 +109,7 @@ function CoverageMatrix() {
                       <ul className="space-y-1">
                         {cell.records.map((record) => (
                           <li key={record.id}>
-                            <Link href={ROUTES.investigation(record.id)} className="text-ember-text underline-offset-4 hover:underline">
+                            <Link href={ROUTES.investigation(record.id)} className="text-foreground underline-offset-4 hover:underline">
                               {record.name}
                             </Link>
                           </li>
@@ -145,17 +164,43 @@ function RangeCell({ check, unit }: { check: RangeCheck; unit: string }) {
   );
 }
 
+const STATUS_TONE: Record<EvidenceMatchStatus, string> = {
+  "matching-run": "border-status-nominal/50 text-status-nominal",
+  "within-ranges": "border-status-info/50 text-status-info",
+  insufficient: "border-dashed border-border text-muted-foreground",
+  outside: "border-status-warning/50 text-status-warning",
+};
+
+/** One of the four evidence statuses, as a quiet chip. */
+export function EvidenceMatchTag({ status, className }: { status: EvidenceMatchStatus; className?: string }) {
+  return (
+    <span
+      title={EVIDENCE_MATCH_HINT[status]}
+      className={cn("inline-flex items-center rounded-sm border px-2 py-0.5 text-[12px] leading-4 whitespace-nowrap", STATUS_TONE[status], className)}
+    >
+      {EVIDENCE_MATCH_LABEL[status]}
+    </span>
+  );
+}
+
 function CabinComparison() {
   const scenario = useMissionStore((state) => state.scenario);
+  const simMaterial = useFireSimStore((state) => state.config.materialId);
+  const [chosen, setChosen] = useState<string | null | undefined>(undefined);
+  const fireMaterialId = chosen === undefined ? simMaterial : chosen;
+  const fireMaterial = fireMaterialId ? FIRE_MATERIALS.find((item) => item.id === fireMaterialId) ?? null : null;
+  const specimen: CabinSpecimen | undefined = fireMaterial
+    ? { materialId: materialForFireMaterial(fireMaterial.id)?.id ?? null, geometry: fireMaterial.form }
+    : undefined;
   const cabin = {
     oxygenPct: scenario.oxygenPct,
     pressureKpa: scenario.pressurePsi * KPA_PER_PSI,
     flowCmS: scenario.airflowMs * 100,
     gravityG: scenario.gravityG,
   };
-  const comparisons = compareCabinWithIndex(cabin);
+  const rows = matchCabinWithIndex(cabin, specimen);
+  const counts = countByStatus(rows.map((row) => row.match));
   const regime = gravityRegimeFor(cabin.gravityG);
-  const matching = comparisons.filter((item) => item.comparison.outside.length === 0);
 
   return (
     <Panel
@@ -167,33 +212,63 @@ function CabinComparison() {
             {formatPsi(scenario.pressurePsi)} psi ({cabin.pressureKpa.toFixed(1)} kPa)
           </span>
           , <span className="numeric text-foreground">{cabin.flowCmS.toFixed(1)} cm/s</span>,{" "}
-          <span className="numeric text-foreground">{formatGravity(scenario.gravityG)} g</span>. Each row is a record that tabulates
-          at least one range.
+          <span className="numeric text-foreground">{formatGravity(scenario.gravityG)} g</span>. Each row is a record that tabulates at least one
+          condition or holds a table of individual runs.
         </>
       }
       flush
     >
-      <p className="border-b border-border-subtle px-5 py-3 text-sm leading-6" role="status">
-        {matching.length ? (
-          <>
-            <span className="font-medium text-foreground">
-              {matching.length} of {comparisons.length} records tested conditions that include this cabin
-            </span>{" "}
-            in every dimension they tabulate.
-          </>
-        ) : (
-          <>
-            <span className="font-medium text-foreground">No indexed record tested this combination.</span> Every record below
-            differs from this cabin in at least one dimension, so model results for it are extrapolations.
-          </>
-        )}
-      </p>
+      <div className="flex flex-wrap items-end gap-x-6 gap-y-3 border-b border-border-subtle px-5 py-3">
+        <label className="flex min-w-0 flex-1 basis-56 flex-col gap-1 text-[12px] text-muted-foreground sm:max-w-xs">
+          Material burning in the cabin
+          <select
+            className={fieldClass}
+            value={fireMaterialId ?? ""}
+            onChange={(event) => setChosen(event.target.value || null)}
+          >
+            <option value="">Not specified</option>
+            {FIRE_MATERIALS.map((material) => (
+              <option key={material.id} value={material.id}>
+                {material.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <p className="min-w-0 max-w-[62ch] flex-1 basis-64 text-[13px] leading-5 text-muted-foreground" role="status">
+          {counts["matching-run"] ? (
+            <>
+              <span className="font-medium text-foreground">
+                {counts["matching-run"]} of {rows.length} records hold a tabulated run that matches this cabin.
+              </span>{" "}
+            </>
+          ) : (
+            <>
+              <span className="font-medium text-foreground">No tabulated run matches this combination.</span> Model results for this cabin are
+              extrapolations.{" "}
+            </>
+          )}
+          {EVIDENCE_MATCH_ORDER.filter((status) => status !== "matching-run")
+            .map((status) => `${counts[status]} ${EVIDENCE_MATCH_LABEL[status].toLowerCase()}`)
+            .join(" · ")}
+          .
+        </p>
+      </div>
+      <dl className="grid gap-x-6 gap-y-2 border-b border-border-subtle px-5 py-3 text-[12px] leading-4 sm:grid-cols-2">
+        {EVIDENCE_MATCH_ORDER.map((status) => (
+          <div key={status} className="flex min-w-0 items-start gap-2">
+            <dt className="shrink-0">
+              <EvidenceMatchTag status={status} />
+            </dt>
+            <dd className="min-w-0 text-text-tertiary">{EVIDENCE_MATCH_HINT[status]}</dd>
+          </div>
+        ))}
+      </dl>
       <div className="overflow-x-auto">
         <table className={cn(table.root, "min-w-[760px]")} aria-label="Cabin conditions compared with tested conditions">
           <thead className={table.head}>
             <tr>
               <th scope="col" className={table.th}>
-                Record
+                Record and evidence status
               </th>
               <th scope="col" className={table.th}>
                 Gravity
@@ -210,58 +285,122 @@ function CabinComparison() {
             </tr>
           </thead>
           <tbody>
-            {comparisons.map(({ record, comparison }) => (
-              <tr key={record.id} className={table.tr}>
-                <th scope="row" className={cn(table.td, "min-w-44 font-normal")}>
-                  <Link href={ROUTES.investigation(record.id)} className="font-medium text-ember-text underline-offset-4 hover:underline">
-                    {record.name}
-                  </Link>
-                  {comparison.outside.length === 0 ? (
-                    <Tag tone="positive" className="ml-2">
-                      Includes this cabin
-                    </Tag>
-                  ) : null}
-                </th>
-                <td className={table.td}>
-                  <span className="inline-flex items-start gap-1.5">
-                    {comparison.gravity.tested ? (
-                      <Check className="mt-0.5 size-3.5 shrink-0 text-status-nominal" aria-hidden="true" />
-                    ) : (
-                      <X className="mt-0.5 size-3.5 shrink-0 text-status-warning" aria-hidden="true" />
-                    )}
-                    <span>
-                      <span className={comparison.gravity.tested ? "text-foreground" : "text-status-warning"}>
-                        {comparison.gravity.tested ? "Tested" : "Not tested"}
-                      </span>
-                      <span className="block text-[12px] text-text-tertiary">
-                        {record.gravity.map((gravity: GravityRegime) => GRAVITY_REGIMES[gravity].label).join("; ")}
+            {rows.map(({ record, match }) => {
+              const comparison = match.comparison;
+              return (
+                <tr key={record.id} className={table.tr}>
+                  <th scope="row" className={cn(table.td, "w-[34%] min-w-60 font-normal")}>
+                    <Link href={ROUTES.investigation(record.id)} className="font-medium text-foreground underline-offset-4 hover:underline">
+                      {record.name}
+                    </Link>
+                    <span className="mt-1 flex flex-wrap gap-1.5">
+                      <EvidenceMatchTag status={match.status} />
+                      {match.material ? (
+                        <Tag tone={match.material.status === "same" ? "positive" : "neutral"} className={match.material.status === "same" ? "" : "border-dashed"}>
+                          {match.material.status === "same" ? "Same material" : match.material.status === "different" ? "Different material" : "Materials not itemized"}
+                        </Tag>
+                      ) : null}
+                      {match.geometry && match.geometry.status !== "same" ? (
+                        <Tag className="border-dashed">{match.geometry.status === "different" ? "Different geometry" : "Geometry not stated"}</Tag>
+                      ) : null}
+                    </span>
+                    <ul className="mt-1.5 space-y-1 text-[12px] leading-4 text-muted-foreground">
+                      {match.reasons.map((reason) => (
+                        <li key={reason}>{reason}</li>
+                      ))}
+                    </ul>
+                  </th>
+                  <td className={table.td}>
+                    <span className="inline-flex items-start gap-1.5">
+                      {comparison.gravity.tested ? (
+                        <Check className="mt-0.5 size-3.5 shrink-0 text-status-nominal" aria-hidden="true" />
+                      ) : (
+                        <X className="mt-0.5 size-3.5 shrink-0 text-status-warning" aria-hidden="true" />
+                      )}
+                      <span>
+                        <span className={comparison.gravity.tested ? "text-foreground" : "text-status-warning"}>
+                          {comparison.gravity.tested ? "Tested" : "Not tested"}
+                        </span>
+                        <span className="block text-[12px] text-text-tertiary">
+                          {record.gravity.map((gravity: GravityRegime) => GRAVITY_REGIMES[gravity].label).join("; ")}
+                        </span>
                       </span>
                     </span>
-                  </span>
-                </td>
-                <td className={table.td}>
-                  <RangeCell check={comparison.oxygen} unit="% O₂" />
-                </td>
-                <td className={table.td}>
-                  <RangeCell check={comparison.pressure} unit="kPa" />
-                </td>
-                <td className={table.td}>
-                  <RangeCell check={comparison.airflow} unit="cm/s" />
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td className={table.td}>
+                    <RangeCell check={comparison.oxygen} unit="% O₂" />
+                  </td>
+                  <td className={table.td}>
+                    <RangeCell check={comparison.pressure} unit="kPa" />
+                  </td>
+                  <td className={table.td}>
+                    <RangeCell check={comparison.airflow} unit="cm/s" />
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
-      <div className="border-t border-border-subtle px-5 py-3">
+      <div className="space-y-2 border-t border-border-subtle px-5 py-3">
         <Note>
           {regime
             ? `This cabin is at ${GRAVITY_REGIMES[regime].label.toLowerCase()}.`
             : "This cabin's gravity lies between the indexed regimes."}{" "}
-          Change the habitat or the cabin conditions in the top bar to compare another case. No score is computed: a record either
-          tested a condition or it did not.
+          The per-condition columns check each published range on its own; that alone does not show the combination was tested. The status uses
+          the tabulated runs: {RUN_TOLERANCE_TEXT} Material and geometry are reported beside the status and do not change it. Change the
+          habitat or the cabin conditions in the top bar to compare another case.
         </Note>
       </div>
+    </Panel>
+  );
+}
+
+/** Where the simulator's output and NASA's flight measurements differ, from the committed model evaluation. */
+function ModelGaps() {
+  const growth = EVALUATION_SNAPSHOT.thickGrowth;
+  const check = (id: string) => EVALUATION_SNAPSHOT.independent.find((item) => item.id === id);
+  const smoke = check("VI-3 smoke alarm 2 mg/m³"), pressure = check("IV-1 / VI-2 / VI-3 / VI-4 pressure rise"), temperature = check("IV-1 / VI-2 / VI-3 / VI-4 temperature rise");
+  return (
+    <Panel
+      title="Model notes against Saffire IV–VI"
+      description="Quantities from the Saffire IV–VI flights that the model was not fitted to, recorded for future calibration."
+      actions={<Cite id="saffire-iv-vi-emission" />}
+    >
+      <ul className="grid gap-4 md:grid-cols-2">
+        <li className="flex flex-col rounded-md border border-border-subtle p-4">
+          <p className="text-[12px] leading-4 text-text-tertiary">Thick acrylic · growth of the burning length</p>
+          <h3 className="mt-1.5 text-[15px] leading-6 font-medium text-foreground">Linear, non-accelerating growth in flight and in the model</h3>
+          <p className="mt-2 text-[13px] leading-5 text-muted-foreground">
+            Flight flames on flat acrylic grew linearly at 0.22–0.38 mm/s and the one-sided samples levelled off. The model&apos;s burning length also grows without accelerating
+            (second-half rate ÷ first-half rate {growth.map((g) => `${g.accelerationRatio.toFixed(2)} for ${g.id}`).join(", ")}), at{" "}
+            {growth.map((g) => `${g.modelRateMmS.toFixed(2)} mm/s for ${g.id}`).join(" and ")} against {growth.map((g) => `${g.measuredGrowthMmS.toFixed(2)} mm/s`).join(" and ")} measured.
+            The model tracks the length of burning surface and NASA the visible flame, and the model growth rate is fitted to heat release rather than to flame length.
+            The modeled burning length keeps growing until it reaches the end of the 180 mm sample, {growth.map((g) => g.reachesSampleEndS === null ? "never" : `${g.reachesSampleEndS.toFixed(0)} s`).join(" and ")} after ignition,
+            with no earlier plateau; the measured flames peaked at {growth.map((g) => `${g.measuredMaxFlameLengthMm} mm`).join(" and ")}.
+          </p>
+        </li>
+        {smoke ? (
+          <li className="flex flex-col rounded-md border border-border-subtle p-4">
+            <p className="text-[12px] leading-4 text-text-tertiary">Smoke detection time · VI-3</p>
+            <h3 className="mt-1.5 text-[15px] leading-6 font-medium text-foreground">Far-field smoke arrival</h3>
+            <p className="mt-2 text-[13px] leading-5 text-muted-foreground">
+              The far-field detector reached 2 mg/m³ {smoke.measured} s after ignition; the model reaches it at {smoke.model} s. The soot yield is a handbook value not yet fitted to
+              a flight test, so modeled detection times are earlier than measured.
+            </p>
+          </li>
+        ) : null}
+        {pressure && temperature ? (
+          <li className="flex flex-col rounded-md border border-border-subtle p-4 md:col-span-2">
+            <p className="text-[12px] leading-4 text-text-tertiary">Cabin pressure and temperature · IV-1, VI-2, VI-3, VI-4</p>
+            <h3 className="mt-1.5 text-[15px] leading-6 font-medium text-foreground">Cabin-wide pressure and temperature response</h3>
+            <p className="mt-2 max-w-[62ch] text-[13px] leading-5 text-muted-foreground">
+              Measured pressure rise {pressure.measured} mbar against {pressure.model} mbar modeled; far-field temperature rise {temperature.measured} K against {temperature.model} K modeled
+              (tests in that order). The flight cabin held cargo bags and trash that may absorb heat; the model&apos;s only heat sink is an assumed lumped wall, and the flight temperature is a point reading beside the air intake.
+            </p>
+          </li>
+        ) : null}
+      </ul>
     </Panel>
   );
 }

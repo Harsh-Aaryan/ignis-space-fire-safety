@@ -1,5 +1,7 @@
 /* Reproducible, read-only source audit. Uses the installed TypeScript compiler;
- * writes reports only under .qa-baseline. No application coefficients are fitted.
+ * writes reports only under .qa-baseline. No coefficients are fitted here: the calibrated
+ * coefficients and their held-out errors come from the committed snapshot in
+ * src/lib/fire/accuracy.ts, which src/lib/fire/benchmarks.test.ts re-derives.
  */
 const fs = require("node:fs");
 const path = require("node:path");
@@ -26,7 +28,9 @@ const { genericFireInput } = load("src/lib/fire/scenario.ts");
 const { runFire } = load("src/lib/fire/model.ts");
 const { makeZone, exchangeGas, equaliseGas, gasEnergy } = load("src/lib/fire/transport.ts");
 const { FIRE_MODEL_VERSION } = load("src/data/fire/sources.ts");
-const a = makeZone(10, 101.325, 21, 350), b = makeZone(10, 101.325, 21, 295.15);
+const { ACCURACY_SUMMARY, EVALUATION_SNAPSHOT } = load("src/lib/fire/accuracy.ts");
+const { STORED_COEFFICIENTS } = load("src/lib/fire/benchmarks.ts");
+const a =makeZone(10, 101.325, 21, 350), b = makeZone(10, 101.325, 21, 295.15);
 const before = gasEnergy(a) + gasEnergy(b);
 exchangeGas(a, b, .1, .25); equaliseGas(a, b);
 const after = gasEnergy(a) + gasEnergy(b);
@@ -43,7 +47,7 @@ const agentCases = ["co2", "water-mist", "halon"].map(id => {
   const s = runFire(input, { durationS: 300, actions: [{ t: 150, id: "power-off" }, { t: 150, id }] }).state;
   return { id, phase: s.phase, flameOutS: s.extinctionTime, residualSurfaceC: s.surfaceTempC, coPpm: s.coPpm, co2TotalMmHg: s.co2TotalMmHg, delivered: s.agent };
 });
-const report = { modelVersion: FIRE_MODEL_VERSION, generatedAt: new Date().toISOString(), interpretation: "Software verification and comparison; no independent predictive validation. Constant initial Saffire flow is not the complete flight fan history.", exchange: { beforeJ: before, afterJ: after, residualJ: after - before }, integration: steps, comparisons, agentCases };
+const report = { modelVersion: FIRE_MODEL_VERSION, generatedAt: new Date().toISOString(), interpretation: "Software verification plus comparison with published Saffire summaries using the stored calibrated coefficients. Held-out errors and independent checks come from the committed evaluation snapshot. Constant initial Saffire flow is not the complete flight fan history.", exchange: { beforeJ: before, afterJ: after, residualJ: after - before }, integration: steps, storedCoefficients: STORED_COEFFICIENTS, comparisons, accuracy: ACCURACY_SUMMARY, independentChecks: EVALUATION_SNAPSHOT.independent, agentCases };
 fs.mkdirSync(path.join(root, ".qa-baseline"), { recursive: true });
-fs.writeFileSync(path.join(root, ".qa-baseline", "v2-physics-audit.json"), JSON.stringify(report, null, 2) + "\n");
+fs.writeFileSync(path.join(root, ".qa-baseline", "v3-physics-audit.json"), JSON.stringify(report, null, 2) + "\n");
 console.log(JSON.stringify(report, null, 2));

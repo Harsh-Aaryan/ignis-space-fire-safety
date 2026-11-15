@@ -1,19 +1,19 @@
-import { CREW_ENVIRONMENTS, INVESTIGATIONS, investigationsForEnvironment, type CrewEnvironment } from "@/data/research/investigations";
+import { CREW_ENVIRONMENTS, investigationsForEnvironment, type CrewEnvironment } from "@/data/research/investigations";
 import { cn } from "@/lib/utils";
 
 const ENVIRONMENTS = Object.entries(CREW_ENVIRONMENTS) as Array<[CrewEnvironment, (typeof CREW_ENVIRONMENTS)[CrewEnvironment]]>;
 
-function counts(environment: CrewEnvironment): string[] {
+function counts(environment: CrewEnvironment): string {
   const tested = investigationsForEnvironment(environment, "tested").length;
   const applies = investigationsForEnvironment(environment, "applies").length;
   const transferable = investigationsForEnvironment(environment, "transferable").length;
-  return [`${tested} tested`, applies ? `${applies} apply directly` : null, `${transferable} transferable`].filter((item): item is string => item !== null);
+  return [`${tested} tested`, applies ? `${applies} apply directly` : null, `${transferable} transferable`].filter(Boolean).join(" · ");
 }
 
-const card =
-  "flex h-full w-full flex-col rounded-lg border p-4 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
+const chip =
+  "inline-flex min-h-10 items-center gap-2 rounded-md border px-3 text-left text-[13px] leading-5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
-/** The five crew environments as selectable cards, plus "all". */
+/** The five crew environments, plus "all", as one compact row of toggles. The choice ranks the index; it hides nothing. */
 export function EnvironmentPicker({
   selected,
   onSelect,
@@ -21,51 +21,51 @@ export function EnvironmentPicker({
   selected: CrewEnvironment | null;
   onSelect: (environment: CrewEnvironment | null) => void;
 }) {
+  const current = selected ? CREW_ENVIRONMENTS[selected] : null;
   return (
-    <section aria-labelledby="environment-heading">
-      <h2 id="environment-heading" className="text-[17px] leading-6 font-medium text-foreground">
+    <section aria-labelledby="environment-heading" className="min-w-0">
+      <h2 id="environment-heading" className="text-[12px] leading-4 text-muted-foreground">
         Crew environment
       </h2>
-      <p className="mt-1 mb-3 max-w-3xl text-sm leading-6 text-muted-foreground">
-        Choose where a crew lives to see which records bear on it, and on what basis.
-      </p>
-      <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <li>
-          <button
-            type="button"
-            aria-pressed={selected === null}
-            onClick={() => onSelect(null)}
-            className={cn(card, selected === null ? "border-primary bg-elev-2" : "border-border-subtle bg-card hover:bg-elev-2")}
-          >
-            <span className="text-sm font-medium text-foreground">All environments</span>
-            <span className="mt-1 text-[12px] text-muted-foreground">Every gravity regime</span>
-            <span className="mt-2 text-[13px] leading-5 text-muted-foreground">The whole index, without an environment filter.</span>
-            <span className="mt-auto pt-3 text-[12px] leading-5 text-text-tertiary">{INVESTIGATIONS.length} records</span>
-          </button>
-        </li>
+      {/* One scrollable row on phones so the ranked results stay near the top; wraps on wider screens. */}
+      <div
+        role="group"
+        aria-labelledby="environment-heading"
+        className="-mx-4 mt-1.5 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:thin] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&>button]:shrink-0 [&>button]:whitespace-nowrap"
+      >
+        <button
+          type="button"
+          aria-pressed={selected === null}
+          onClick={() => onSelect(null)}
+          className={cn(chip, selected === null ? "border-primary bg-elev-3 text-foreground" : "border-border-subtle bg-card text-muted-foreground hover:bg-elev-2")}
+        >
+          All environments
+        </button>
         {ENVIRONMENTS.map(([id, environment]) => {
           const isSelected = selected === id;
           return (
-            <li key={id}>
-              <button
-                type="button"
-                aria-pressed={isSelected}
-                onClick={() => onSelect(isSelected ? null : id)}
-                className={cn(card, isSelected ? "border-primary bg-elev-2" : "border-border-subtle bg-card hover:bg-elev-2")}
-              >
-                <span className="text-sm font-medium text-foreground">{environment.label}</span>
-                <span className="mt-1 text-[12px] text-muted-foreground">{environment.gravityLabel}</span>
-                <span className="mt-2 text-[13px] leading-5 text-muted-foreground">{environment.note}</span>
-                <span className="mt-auto flex flex-col pt-3 text-[12px] leading-5 text-text-tertiary">
-                  {counts(id).map((line) => (
-                    <span key={line}>{line}</span>
-                  ))}
-                </span>
-              </button>
-            </li>
+            <button
+              key={id}
+              type="button"
+              aria-pressed={isSelected}
+              onClick={() => onSelect(isSelected ? null : id)}
+              className={cn(chip, isSelected ? "border-primary bg-elev-3 text-foreground" : "border-border-subtle bg-card text-muted-foreground hover:bg-elev-2")}
+            >
+              {environment.label}
+              <span className="numeric text-[12px] text-text-tertiary">{environment.gravityLabel}</span>
+            </button>
           );
         })}
-      </ul>
+      </div>
+      <p className="mt-2 text-[12px] leading-5 text-text-tertiary" aria-live="polite">
+        {current && selected ? (
+          <>
+            <span className="text-muted-foreground">{current.note}</span> {counts(selected)}.
+          </>
+        ) : (
+          "Choose where a crew lives to rank records by how directly they bear on it."
+        )}
+      </p>
     </section>
   );
 }

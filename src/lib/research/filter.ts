@@ -11,6 +11,9 @@ import {
   type RecordKind,
   type Topic,
 } from "@/data/research/investigations";
+import type { CabinConditions } from "@/lib/research/envelope";
+import { GEOMETRY_LABEL, materialTerm, type SpecimenGeometry } from "@/lib/research/materials";
+import type { ResearchQuestion } from "@/lib/research/rank";
 
 export interface IndexFilters {
   environment: CrewEnvironment | null;
@@ -103,4 +106,76 @@ export function filtersToQuery(filters: IndexFilters): string {
   if (filters.gravity) params.set("gravity", filters.gravity);
   if (filters.query.trim()) params.set("q", filters.query.trim());
   return params.toString();
+}
+
+/* ------------------------------------------------------------------ */
+/* Explorer state: ranking criteria plus the hard filters               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * What the Investigations view holds. Environment, topic, material, geometry and the question text
+ * rank the index; record type and gravity tested narrow it.
+ */
+export interface ExplorerState {
+  filters: IndexFilters;
+  material: string | null;
+  geometry: SpecimenGeometry | null;
+  /** Rank against the cabin set in the top bar. */
+  matchCabin: boolean;
+}
+
+export const NO_EXPLORER_STATE: ExplorerState = { filters: NO_FILTERS, material: null, geometry: null, matchCabin: false };
+
+export function isSpecimenGeometry(value: string | null | undefined): value is SpecimenGeometry {
+  return !!value && value in GEOMETRY_LABEL;
+}
+
+export function isMaterialId(value: string | null | undefined): value is string {
+  return !!value && materialTerm(value) !== null;
+}
+
+export function explorerStateFromQuery(params: { get(name: string): string | null }): ExplorerState {
+  const material = params.get("material");
+  const geometry = params.get("geometry");
+  return {
+    filters: filtersFromQuery(params),
+    material: isMaterialId(material) ? material : null,
+    geometry: isSpecimenGeometry(geometry) ? geometry : null,
+    matchCabin: params.get("cabin") === "1",
+  };
+}
+
+export function explorerStateToQuery(state: ExplorerState): string {
+  const params = new URLSearchParams(filtersToQuery(state.filters));
+  if (state.material) params.set("material", state.material);
+  if (state.geometry) params.set("geometry", state.geometry);
+  if (state.matchCabin) params.set("cabin", "1");
+  return params.toString();
+}
+
+/** Whether a URL carries any explorer parameter. */
+export function hasExplorerQuery(params: { get(name: string): string | null }): boolean {
+  return ["environment", "topic", "type", "gravity", "q", "material", "geometry", "cabin"].some((name) => params.get(name) !== null);
+}
+
+/** The ranking question the explorer state asks, with explicit choices only. Resolve it before ranking. */
+export function explorerQuestion(state: ExplorerState, cabin: CabinConditions | null): ResearchQuestion {
+  return {
+    text: state.filters.query,
+    environment: state.filters.environment,
+    topic: state.filters.topic,
+    materials: state.material ? [state.material] : [],
+    geometry: state.geometry,
+    cabin: state.matchCabin ? cabin : null,
+  };
+}
+
+/** The explorer state a stored question corresponds to. */
+export function explorerStateFromQuestion(question: ResearchQuestion, matchCabin = false): ExplorerState {
+  return {
+    filters: { ...NO_FILTERS, environment: question.environment, topic: question.topic, query: question.text },
+    material: question.materials[0] ?? null,
+    geometry: question.geometry,
+    matchCabin,
+  };
 }

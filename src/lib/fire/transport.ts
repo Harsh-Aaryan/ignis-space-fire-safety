@@ -12,6 +12,20 @@ export const gasKeys = ["o2", "co2", "co", "inert", "water", "halon", "vapor"] a
 export function gasMoles(z: GasZone) { return gasKeys.reduce((n, k) => n + z[k], 0); }
 export function gasEnergy(z: GasZone) { return gasMoles(z) * GAS_CV * z.tempK; }
 export function gasPressure(z: GasZone) { return gasMoles(z) * GAS_R * z.tempK / z.volumeM3 / 1000; }
+/** Adiabatic mixing of a source stream and bypass air at common molar cp.
+ * Uses the source's gas temperature AFTER modeled fuel and wall losses. The
+ * prescribed duct flow is specified at inlet conditions; hot gas has a different
+ * molar density, so volume-weighted temperatures would not conserve enthalpy.
+ * No forced flow means there is no defined mixed-mean duct outlet reading.
+ */
+export function mixedStreamTemperatureK(source: GasZone, inlet: GasZone, sourceFlowM3s: number, inletFlowM3s: number): number | null {
+  if (inletFlowM3s <= 0) return null;
+  const totalMolarFlow = inletFlowM3s * gasMoles(inlet) / inlet.volumeM3;
+  const sourceMolarFlow = Math.max(0, sourceFlowM3s) * gasMoles(source) / source.volumeM3;
+  if (totalMolarFlow <= 0) return null;
+  const fraction = Math.min(1, sourceMolarFlow / totalMolarFlow);
+  return inlet.tempK + fraction * (source.tempK - inlet.tempK);
+}
 export function makeZone(volumeM3: number, pressureKpa: number, oxygenPct: number, tempK: number, co2Ppm = 400): GasZone {
   const n = pressureKpa * 1000 * volumeM3 / (GAS_R * tempK);
   return { o2: n * oxygenPct / 100, co2: n * co2Ppm / 1e6, co: 0,

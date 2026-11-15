@@ -1,108 +1,116 @@
+/*
+ * The hero is one scene: the habitat render fills it edge to edge and the text sits
+ * on its calm side. A neutral shade keeps the text readable; it is the background
+ * colour at varying opacity, never a hue.
+ */
 .overview-hero {
-  min-width: 0;
-  border-bottom: 1px solid var(--border-subtle);
-  background: var(--background);
-}
-
-.overview-scene {
   position: relative;
   isolation: isolate;
   display: flex;
   min-width: 0;
-  min-height: 720px;
-  flex-direction: column;
+  min-height: 600px;
   overflow: hidden;
-  background: var(--background);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--color-void);
 }
 
-.overview-content {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex: 1;
-  align-items: flex-start;
-  justify-content: center;
-  width: 100%;
-  max-width: 1560px;
-  margin-inline: auto;
-  padding: 32px 24px;
-}
-
-.overview-copy {
-  max-width: 680px;
-  text-align: center;
-}
-
-.overview-render {
+.overview-scene {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  background: var(--color-void);
+  z-index: -1;
+}
+
+/*
+ * The render sits where the text is not, and its edge fades into the hero's own
+ * background, so the habitat stays whole and the headline reads on calm space.
+ * Phones: the render fills the lower part and fades in from the top.
+ */
+.overview-frame {
+  position: absolute;
+  inset: 26% 0 0 0;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 34%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 34%);
 }
 
 .overview-image {
   object-fit: cover;
-  object-position: center;
 }
 
 .overview-shade {
   position: absolute;
-  z-index: 1;
   inset: 0;
-  background: linear-gradient(180deg, rgb(13 15 19 / 88%) 0%, rgb(13 15 19 / 72%) 38%, rgb(13 15 19 / 28%) 64%, rgb(13 15 19 / 96%) 100%);
+  background: linear-gradient(0deg, rgb(7 8 11 / 0.92) 0%, rgb(7 8 11 / 0) 30%);
+}
+
+.overview-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 32px;
+  width: 100%;
+  min-width: 0;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding: 32px 16px 20px;
+}
+
+.overview-intro {
+  min-width: 0;
 }
 
 .overview-caption {
-  position: relative;
-  z-index: 2;
-  display: grid;
-  width: 100%;
-  max-width: 1560px;
-  gap: 16px;
-  margin-inline: auto;
-  padding: 24px;
-}
-
-.overview-controls {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column-reverse;
   gap: 12px;
+  min-width: 0;
 }
 
+/* The finding and the research question, side by side under the hero on wide screens. */
+.overview-evidence {
+  display: grid;
+  min-width: 0;
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .overview-content {
+    padding: 48px 24px 24px;
+  }
+}
+
+/* Wide screens: the hero takes the top half of the screen, text on the left over a side shade. */
 @media (min-width: 1024px) {
-  .overview-scene {
-    min-height: max(760px, calc(100svh - 64px));
+  .overview-hero {
+    min-height: clamp(480px, 56vh, 680px);
   }
 
-  .overview-content {
-    padding: 64px 40px 32px;
+  /* The render takes the right of the hero and fades in from the left, under the text. */
+  .overview-frame {
+    inset: 0 0 0 28%;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 38%);
+    mask-image: linear-gradient(90deg, transparent 0%, #000 38%);
+  }
+
+  .overview-shade {
+    background: linear-gradient(0deg, rgb(7 8 11 / 0.9) 0%, rgb(7 8 11 / 0) 26%);
   }
 
   .overview-caption {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 8px 32px;
-    padding: 24px 40px 32px;
-  }
-
-  .overview-controls {
-    grid-column: 2;
-    grid-row: 1 / 3;
-    justify-content: flex-end;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
     gap: 24px;
   }
 
-  .overview-description {
-    grid-column: 1;
-    grid-row: 1;
-    max-width: 680px;
+  .overview-evidence {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: 24px;
   }
+}
 
-  .overview-credit {
-    grid-column: 1;
-    grid-row: 2;
+@media (min-width: 1280px) {
+  .overview-content {
+    padding: 56px 40px 24px;
   }
 }

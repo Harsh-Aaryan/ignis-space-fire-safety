@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/ask-ignis/route";
+import { FIRE_MODEL_VERSION } from "@/data/fire/sources";
 import { genericFireInput } from "@/lib/fire/scenario";
 import { runFire } from "@/lib/fire/model";
 import { captureChatContext } from "@/services/scenario-chat";
 import { explainScenario, SCOPE_REFUSAL } from "@/services/scenario-assistant";
-import { answerWithGroq, parseChatRequest, retrieveEvidence } from "./ignis-chat";
+import { answerWithGroq, parseChatRequest, researchEvidence, retrieveEvidence, URL_LIKE } from "./ignis-chat";
 
 const input = genericFireInput({ gravityG: 0, oxygenPct: 21, pressurePsi: 14.7, airflowMs: 0.2 }, "pmma", "hot-wire");
 const body = () => ({ message: "Why does this flame have this shape?", ...captureChatContext(input, null), history: [] });
@@ -102,7 +103,7 @@ describe("scoped Groq answers", () => {
     expect(sent.response_format.json_schema.strict).toBe(true);
     expect(sent.tools).toBeUndefined();
     expect(sent.max_completion_tokens).toBe(1800);
-    expect(answer.context).toContain("2.1.0");
+    expect(answer.context).toContain(`Model ${FIRE_MODEL_VERSION}`);
   });
   it.each([
     { ...goodAnswer, sourceIds: ["invented-nasa-paper"] },
@@ -137,7 +138,124 @@ describe("scoped Groq answers", () => {
   });
 });
 
+describe("research answers with Groq", () => {
+  const research = { message: "Which NASA investigations are most relevant to lunar-habitat fire detection?", history: [] };
+  const researchAnswer = (sourceIds: string[], text = "SAME-2 and SAME are the closest records; neither was tested at lunar gravity.") => ({ status: "answer", text, sourceIds });
+
+  it("supplies ranked records, PSI passages and gaps server-side, and accepts record ids and PSI accessions as citations", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(completion({ scope: "in_scope" })).mockResolvedValueOnce(completion(researchAnswer(["same-2", "PSI-101", "saffire-vi"])));
+    vi.stubGlobal("fetch", fetchMock);
+    const answer = await answerWithGroq(parseChatRequest(research), "test-secret");
+    expect(answer.provider).toBe("groq");
+    expect(answer.mode).toBe("research");
+    expect(answer.text).toContain("neither was tested at lunar gravity");
+    // Source chips stay registry ids; the structured lists come from the same deterministic retrieval.
+    expect(answer.sources.every((id) => ["same-2", "saffire-vi"].includes(id))).toBe(true);
+    expect(answer.sources).not.toContain("PSI-101");
+    expect(answer.records?.length).toBe(3);
+    expect(answer.gaps?.[0]).toMatch(/lunar gravity/);
+    expect(answer.passages?.some((p) => p.citationLabel.startsWith("PSI-101"))).toBe(true);
+    const sent = JSON.parse(fetchMock.mock.calls[1][1].body);
+    const payload = JSON.parse(sent.messages[1].content);
+    expect(payload.hasScenario).toBe(false);
+    expect(payload.research.records.length).toBeGreaterThan(0);
+    expect(payload.research.records[0]).toHaveProperty("evidence.label");
+    expect(payload.research.psiPassages.every((p: { id: string; text: string }) => /^PSI-\d+$/.test(p.id) && p.text.length > 0)).toBe(true);
+    expect(payload.research.gaps.length).toBeGreaterThan(0);
+    const allowed = sent.response_format.json_schema.schema.properties.sourceIds.items.enum as string[];
+    expect(allowed).toEqual(expect.arrayContaining(["same-2", "PSI-101"]));
+    expect(sent.messages[0].content).toContain("do not need a selected scenario");
+    expect(sent.messages[0].content).not.toContain(research.message);
+  });
+
+  it("rejects citations outside the supplied records and passages", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(completion({ scope: "in_scope" })).mockResolvedValueOnce(completion(researchAnswer(["PSI-999"]))));
+    const answer = await answerWithGroq(parseChatRequest(research), "test-secret");
+    expect(answer.provider).toBe("local");
+    expect(answer.notice).toContain("could not be validated");
+    expect(answer.text).toBe(explainScenario(research.message, null, null).text);
+    expect(answer.records?.length).toBe(3);
+  });
+
+  it("keeps the strict text checks for research answers", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(completion({ scope: "in_scope" })).mockResolvedValueOnce(completion(researchAnswer(["same-2"], "See https://psi.nasa.gov for SAME-2."))));
+    expect((await answerWithGroq(parseChatRequest(research), "test-secret")).provider).toBe("local");
+  });
+
+  it("keeps the closest records and gaps when the model finds the evidence insufficient", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(completion({ scope: "in_scope" })).mockResolvedValueOnce(completion({ status: "insufficient_evidence", text: "Invented detector study", sourceIds: [] })));
+    const answer = await answerWithGroq(parseChatRequest(research), "test-secret");
+    expect(answer.text).toContain("do not answer that directly");
+    expect(answer.text).not.toContain("Invented");
+    expect(answer.sources).toEqual([]);
+    expect(answer.records?.length).toBe(3);
+    expect(answer.gaps?.length).toBeGreaterThan(0);
+  });
+
+  it("answers a question about a missing run locally, without calling the provider", async () => {
+    const fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock);
+    const answer = await answerWithGroq(parseChatRequest({ message: "Which NASA data supports this?" }), "test-secret");
+    expect(answer.mode).toBe("no-run");
+    expect(answer.text).toContain("Research questions work without a run");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    "Is it safe to use PMMA in a lunar habitat?", "Can Kapton burn on Mars?", "Will a candle burn in a Mars habitat?",
+    "How does fire behave on the Moon?", "How do you put out a fire in a spacecraft?", "Which materials are riskiest in a lunar rover?",
+    "Why does this flame have this shape?",
+  ])("always gives the model ranked records for %s", message => {
+    const parsed = parseChatRequest(message === body().message ? body() : { message });
+    const evidence = researchEvidence(parsed, explainScenario(parsed.message, parsed.input, null));
+    expect(evidence.prompt.records.length).toBeGreaterThanOrEqual(3);
+    expect(evidence.prompt.records.every(r => typeof r.id === "string" && r.evidence.label.length > 0)).toBe(true);
+    expect(evidence.display.records.length).toBe(3);
+  });
+
+  it("falls back to records ranked by habitat and topic when the wording matches nothing", () => {
+    const parsed = parseChatRequest({ message: "Which experiments studied plasma thrusters?" });
+    const evidence = researchEvidence(parsed, explainScenario(parsed.message, null, null));
+    expect(evidence.prompt.records.length).toBe(5);
+  });
+
+  it("shows research lists when the classifier accepts a question the local check refused", async () => {
+    const message = "What happens to a lit match aboard Gateway?";
+    expect(explainScenario(message, null, null).text).toBe(SCOPE_REFUSAL);
+    const fetchMock = vi.fn().mockResolvedValueOnce(completion({ scope: "in_scope" })).mockResolvedValueOnce(completion(researchAnswer(["bass-ii"], "No indexed record burned a match; BASS-II measured solid fuels in microgravity.")));
+    vi.stubGlobal("fetch", fetchMock);
+    const answer = await answerWithGroq(parseChatRequest({ message }), "test-secret");
+    expect(answer.provider).toBe("groq");
+    expect(answer.mode).toBe("research");
+    expect(answer.records?.length).toBe(3);
+    const payload = JSON.parse(JSON.parse(fetchMock.mock.calls[1][1].body).messages[1].content);
+    expect(payload.research.records.length).toBeGreaterThan(0);
+  });
+
+  it.each(["See ntrs.nasa.gov for the SAME-2 paper.", "The data is on psi.nasa.gov.", "Details at nasa.gov/saffire."])("rejects bare domains in generated text: %s", async text => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(completion({ scope: "in_scope" })).mockResolvedValueOnce(completion(researchAnswer(["same-2"], text))));
+    const answer = await answerWithGroq(parseChatRequest(research), "test-secret");
+    expect(answer.provider).toBe("local");
+    expect(answer.text).not.toContain(".gov");
+  });
+
+  it("does not mistake ordinary abbreviations and numbers for domains", () => {
+    for (const text of ["Partial gravity, e.g. 0.165 g, adds a plume.", "U.S. and ESA teams, i.e. NASA-STD-6001B.", "Saffire VI reached 3.2 kW."]) {
+      expect(URL_LIKE.test(text), text).toBe(false);
+    }
+  });
+});
+
 describe("Ask IGNIS route", () => {
+  it("answers research questions locally without a scenario or a key", async () => {
+    vi.stubEnv("GROQ_API_KEY", ""); vi.stubEnv("IGNIS_CHAT_PROVIDER", "local");
+    const response = await POST(request({ message: "Which NASA investigations are most relevant to lunar-habitat fire detection?" }));
+    expect(response.status).toBe(200);
+    const answer = await response.json();
+    expect(answer.mode).toBe("research");
+    expect(answer.records.length).toBe(3);
+    expect(answer.gaps.length).toBeGreaterThan(0);
+    expect(answer.text).not.toContain("Choose a habitat");
+  });
   it("works without an API key and never calls Groq", async () => {
     vi.stubEnv("GROQ_API_KEY", ""); vi.stubEnv("IGNIS_CHAT_PROVIDER", "groq");
     const fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock);
