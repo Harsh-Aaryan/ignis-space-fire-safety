@@ -224,4 +224,24 @@
     color: #1A1814 !important;
   }
   .report-sheet .numeric, .report-sheet a { color: #1A1814 !important; }
+  /* Chart text, grid and series read on white paper. */
+  .report-sheet {
+    --foreground: #1A1814;
+    --muted-foreground: #5A554D;
+    --text-tertiary: #6B665E;
+    --border: #C8C2B8;
+    --border-subtle: #E3DED5;
+    --card: #FFFFFF;
+    --popover: #FFFFFF;
+    --elev-4: #D9D3C8;
+    --color-elev-4: #D9D3C8;
+    --primary: #B8541A;
+    --data-1: #B36B00;
+    --data-2: #1B72A8;
+    --data-3: #00795A;
+    --data-4: #8A7A00;
+    --data-5: #1B5E96;
+    --status-caution: #9A7400;
+    --status-nominal: #1E7F55;
+  }
 }

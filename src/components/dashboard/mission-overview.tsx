@@ -190,9 +190,9 @@ function Hero() {
             IGNIS indexes NASA&apos;s fire-safety investigations by the crew environments they bear on, and models a fire inside a Moon, Mars
             or orbital habitat.
           </p>
-          <div className="mt-6 flex flex-wrap gap-3 md:mt-8">
-            <ActionLink href={ROUTES.simulation} variant="primary" onClick={() => useFireSimStore.getState().setOpen(true)}>
-              <Flame className="size-4" aria-hidden="true" />
+          <div className="mt-6 flex flex-wrap items-center gap-3 md:mt-8">
+            <ActionLink href={ROUTES.simulation} variant="primary" size="lg" onClick={() => useFireSimStore.getState().setOpen(true)}>
+              <Flame className="size-5" aria-hidden="true" />
               Run a fire scenario
             </ActionLink>
             <ActionLink href={ROUTES.research} className="bg-background/70 hover:bg-elev-3">
