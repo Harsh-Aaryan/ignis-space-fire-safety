@@ -3,12 +3,14 @@
 import { useMemo, useState } from "react";
 import { Download } from "lucide-react";
 import { ActionLink, Stat, actionClass, table } from "@/components/design/kit";
+import { FuelBudgetBar, RunTimeCharts, SensitivityChart, ValuesDisclosure } from "@/components/fire/run-charts";
 import { ModelApplicability } from "@/components/simulation/model-applicability";
 import { PHASE_LABEL, clock, formatPower, formatSignificant } from "@/components/simulation/format";
 import { ACCURACY_SUMMARY, accuracyCue, significantFigures, type AccuracyCue } from "@/lib/fire/accuracy";
 import { FIRE_MODEL_VERSION, applicability } from "@/lib/fire/evidence";
 import type { FireInput } from "@/lib/fire/model";
 import { supportedSensitivities, type SensitivityResult, type Support } from "@/lib/fire/sensitivity";
+import { signedPct } from "@/lib/fire/run-chart-data";
 import { downloadText } from "@/lib/research/export";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
@@ -50,7 +52,7 @@ export function RunReview() {
 
   return (
     <section aria-label="Fire run review" className="space-y-5">
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-4">
         <Stat size="sm" label="Ignition" value={snapshot.ignitionTime === null ? "No ignition" : `T+${clock(snapshot.ignitionTime)}`} />
         <Stat size="sm" label="First alarm" value={snapshot.firstAlarmTime === null ? "No alarm" : `T+${clock(snapshot.firstAlarmTime)}`} />
         <Stat size="sm" label="Peak heat release" value={formatPower(snapshot.peakHrrW, sig(cue.hrr))} note={<CueNote cue={cue.hrr} />} />
@@ -72,9 +74,30 @@ export function RunReview() {
         </p>
       </div>
 
-      <ModelApplicability input={input} />
+      <section aria-label="Run over time" className="space-y-4 border-t border-border-subtle pt-5">
+        <h3 className="text-[15px] leading-5 font-medium text-foreground">Run over time</h3>
+        <ModelApplicability input={input} />
+        <RunTimeCharts snapshot={snapshot} history={history} />
+        <FuelBudgetBar snapshot={snapshot} />
+      </section>
 
-      <Sensitivities input={input} />
+      <div className="divide-y divide-border-subtle rounded-md border border-border-subtle">
+        <ValuesDisclosure history={history} />
+        <Sensitivities input={input} />
+        <details>
+          <summary className="flex min-h-10 cursor-pointer items-center px-3 text-sm text-foreground">
+            Event timeline ({events.length})
+          </summary>
+          <ol className="space-y-2.5 border-t border-border-subtle px-3 py-3">
+            {events.map((event, index) => (
+              <li key={index} className="flex gap-3 text-[13px] leading-5">
+                <span className="numeric shrink-0 text-muted-foreground">T+{clock(event.t)}</span>
+                <span className="text-muted-foreground">{event.label}</span>
+              </li>
+            ))}
+          </ol>
+        </details>
+      </div>
 
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={exportRun} className={actionClass("secondary")}>
@@ -83,20 +106,6 @@ export function RunReview() {
         </button>
         <ActionLink href={ROUTES.compare}>Compare gravity</ActionLink>
       </div>
-
-      <details className="rounded-md border border-border-subtle">
-        <summary className="flex min-h-10 cursor-pointer items-center px-3 text-sm text-foreground">
-          Event timeline ({events.length})
-        </summary>
-        <ol className="space-y-2.5 border-t border-border-subtle px-3 py-3">
-          {events.map((event, index) => (
-            <li key={index} className="flex gap-3 text-[13px] leading-5">
-              <span className="numeric shrink-0 text-muted-foreground">T+{clock(event.t)}</span>
-              <span className="text-muted-foreground">{event.label}</span>
-            </li>
-          ))}
-        </ol>
-      </details>
 
       <p className="text-[12px] leading-4 text-text-tertiary">Output of the IGNIS model, not a NASA measurement.</p>
     </section>
@@ -118,12 +127,6 @@ const SUPPORT_LABEL: Record<Support, string> = {
   untested: "Not tested by data",
 };
 
-function signed(value: number | null) {
-  if (value === null) return "–";
-  const rounded = Math.round(value);
-  return `${rounded > 0 ? "+" : ""}${rounded} %`;
-}
-
 function change(result: SensitivityResult) {
   const digits = result.parameter === "airflow" ? 3 : 1;
   const parts = [result.low, result.high].filter((v): v is number => v !== null).map((v) => v.toFixed(digits));
@@ -135,7 +138,7 @@ function Sensitivities({ input }: { input: FireInput }) {
   const [open, setOpen] = useState(false);
   const report = useMemo(() => (open ? supportedSensitivities(input) : null), [open, input]);
   return (
-    <details className="rounded-md border border-border-subtle" onToggle={(event) => setOpen((event.currentTarget as HTMLDetailsElement).open)}>
+    <details onToggle={(event) => setOpen((event.currentTarget as HTMLDetailsElement).open)}>
       <summary className="flex min-h-10 cursor-pointer items-center px-3 text-sm text-foreground">Sensitivity checked against flight data</summary>
       <div className="space-y-3 border-t border-border-subtle px-3 py-3 text-[13px] leading-5 text-muted-foreground">
         {report === null ? null : !report.supported ? (
@@ -144,8 +147,9 @@ function Sensitivities({ input }: { input: FireInput }) {
           <>
             <p>
               Change in peak heat release and cabin CO over {report.horizonS} s when each input moves within the neighbourhood of
-              Saffire VI test {report.nearestTest}. The last column says whether a pair of published tests can resolve the direction.
+              Saffire VI test {report.nearestTest}. The bars are IGNIS model output; the last column of the table says whether a pair of published tests can resolve the direction.
             </p>
+            <SensitivityChart results={report.results} horizonS={report.horizonS} />
             <div className={table.wrap}>
               <table className={table.root} aria-label="Supported sensitivities">
                 <thead className={table.head}>
@@ -162,8 +166,8 @@ function Sensitivities({ input }: { input: FireInput }) {
                     <tr key={result.parameter} className={table.tr}>
                       <th scope="row" className={cn(table.td, "font-normal text-foreground")}>{result.label}</th>
                       <td className={cn(table.num, "whitespace-nowrap")}>{change(result)}</td>
-                      <td className={cn(table.num, "whitespace-nowrap")}>{signed(result.hrrPct.low)} / {signed(result.hrrPct.high)}</td>
-                      <td className={cn(table.num, "whitespace-nowrap")}>{signed(result.coPct.low)} / {signed(result.coPct.high)}</td>
+                      <td className={cn(table.num, "whitespace-nowrap")}>{signedPct(result.hrrPct.low)} / {signedPct(result.hrrPct.high)}</td>
+                      <td className={cn(table.num, "whitespace-nowrap")}>{signedPct(result.coPct.low)} / {signedPct(result.coPct.high)}</td>
                       <td className={table.td} title={result.evidence}>{SUPPORT_LABEL[result.hrrSupport]}</td>
                     </tr>
                   ))}

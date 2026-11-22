@@ -120,7 +120,7 @@ export function Stat({
         {value}
         {unit ? <span className="ml-1 font-sans text-[13px] text-muted-foreground">{unit}</span> : null}
       </dd>
-      {note ? <p className="mt-0.5 text-[12px] leading-4 text-text-tertiary">{note}</p> : null}
+      {note ? <dd className="mt-0.5 text-[12px] leading-4 text-text-tertiary">{note}</dd> : null}
     </div>
   );
 }
@@ -211,26 +211,31 @@ export function ActionLink({
   href,
   children,
   variant = "secondary",
+  size = "md",
   onClick,
   className,
 }: {
   href: string;
   children: React.ReactNode;
   variant?: "primary" | "secondary";
+  size?: ActionSize;
   onClick?: () => void;
   className?: string;
 }) {
   return (
-    <Link href={href} onClick={onClick} className={cn(actionClass(variant), className)}>
+    <Link href={href} onClick={onClick} className={cn(actionClass(variant, size), className)}>
       {children}
     </Link>
   );
 }
 
-/** The same look for a <button>. */
-export function actionClass(variant: "primary" | "secondary" = "secondary"): string {
+export type ActionSize = "md" | "lg";
+
+/** The same look for a <button>. "lg" is for the one lead action on a page, such as the hero. */
+export function actionClass(variant: "primary" | "secondary" = "secondary", size: ActionSize = "md"): string {
   return cn(
-    "inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-40",
+    "inline-flex items-center justify-center rounded-md font-medium transition-colors disabled:pointer-events-none disabled:opacity-40",
+    size === "lg" ? "min-h-14 gap-2.5 px-6 text-base" : "min-h-11 gap-2 px-4 text-sm",
     variant === "primary"
       ? "bg-primary text-primary-foreground hover:bg-primary/85"
       : "border border-border bg-transparent text-foreground hover:bg-elev-3",
