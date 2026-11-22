@@ -29,6 +29,21 @@ test("four sections, and earlier addresses still resolve", async ({ page }) => {
   await expect(sections.getByRole("link", { name: "Results", exact: true })).toHaveAttribute("aria-current", "page");
 });
 
+test("the page itself never scrolls; only the main area does", async ({ page }) => {
+  // Regression: sr-only labels inside <main> once anchored to the page, stretched the
+  // document past the h-dvh shell and added a second scrollbar over an empty band.
+  for (const viewport of [{ width: 1912, height: 988 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    for (const path of ["/", "/research", "/results"]) {
+      await page.goto(path, { waitUntil: "domcontentloaded" });
+      await expect(page.locator("#main")).toBeVisible();
+      await expect
+        .poll(() => page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight), { message: `${path} at ${viewport.width}px` })
+        .toBeLessThanOrEqual(1);
+    }
+  }
+});
+
 test("overview leads to the three research questions", async ({ page }) => {
   const errors = monitor(page);
   await page.goto("/");

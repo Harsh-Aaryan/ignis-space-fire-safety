@@ -79,10 +79,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Sidebar pathname={pathname} />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar pathname={pathname} />
+        {/* `relative` makes <main> the containing block for absolutely positioned
+            descendants (sr-only labels in particular). Without it they anchor to the
+            page, escape this scroll container's clipping and stretch the document,
+            which adds a second scrollbar and an empty band under the shell. */}
         <main
           id="main"
           className={cn(
-            "min-h-0 flex-1 pb-20 md:pb-0",
+            "relative min-h-0 flex-1 pb-20 md:pb-0",
             fullBleed ? "flex flex-col overflow-hidden" : "overflow-y-auto overflow-x-hidden",
           )}
         >
