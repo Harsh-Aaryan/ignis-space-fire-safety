@@ -26,6 +26,16 @@ const rise = (value: number) => (Math.abs(value) < 1 ? value.toFixed(2) : value.
 const points = (value: number) => value.toFixed(2);
 const dash = <span className="text-text-tertiary">–</span>;
 
+/** The shipped CFAST cases were generated before the habitats took their current display names. */
+const LEGACY_HABITAT_NAMES: Array<[string, string]> = [
+  ["Lunar Habitat", "Moon habitat"],
+  ["Mars Habitat", "Mars habitat"],
+];
+
+function caseLabel(item: CfastCase): string {
+  return LEGACY_HABITAT_NAMES.reduce((label, [from, to]) => (label.startsWith(`${from} · `) ? to + label.slice(from.length) : label), item.label);
+}
+
 function zoneLabel(item: CfastCase) {
   return item.zoneModel === "single-zone" ? "Single zone" : "Two-zone bound";
 }
@@ -51,7 +61,7 @@ function CaseChart({ item, kind }: { item: CfastCase; kind: "temperature" | "oxy
   return (
     <figure className="min-w-0">
       <figcaption className="mb-2 text-[13px] text-muted-foreground">{title}</figcaption>
-      <div className="h-56" role="img" aria-label={`${title} over time, ${item.label}`}>
+      <div className="h-56" role="img" aria-label={`${title} over time, ${caseLabel(item)}`}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={rows} margin={{ top: 4, right: 12, bottom: 4, left: 0 }}>
             <CartesianGrid stroke="var(--border-subtle)" vertical={false} />
@@ -165,7 +175,7 @@ export function CfastCrosscheck() {
               return (
                 <tr key={item.id} className={table.tr}>
                   <th scope="row" className={cn(table.td, "font-normal text-foreground")}>
-                    {item.label.split(" · ").slice(0, -1).join(" · ")}
+                    {caseLabel(item).split(" · ").slice(0, -1).join(" · ")}
                   </th>
                   <td className={table.td}>{sourceLabel(item)}</td>
                   <td className={table.td}>{zoneLabel(item)}</td>
@@ -196,7 +206,7 @@ export function CfastCrosscheck() {
         <select id={selectId} className={fieldClass} value={selected.id} onChange={(event) => setSelectedId(event.target.value)}>
           {cases.map((item) => (
             <option key={item.id} value={item.id}>
-              {item.label}
+              {caseLabel(item)}
             </option>
           ))}
         </select>

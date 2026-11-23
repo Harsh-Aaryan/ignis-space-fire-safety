@@ -35,7 +35,11 @@ const STEP_S = 0.25;
 const MAX_HISTORY = 480;
 
 interface FireSimStore {
-  /** The fire scenario panel is showing in the Simulation side panel. */
+  /**
+   * The fire scenario panel is showing in the Simulation side panel. It starts
+   * open so a direct visit lands on the scenario; choosing the Equipment tab
+   * sets it false and that choice holds for the rest of the session.
+   */
   open: boolean;
   enhanceVisibility: boolean;
   showAirflow: boolean;
@@ -76,7 +80,7 @@ function copyState(state: FireState): FireState {
 }
 
 export const useFireSimStore = create<FireSimStore>()((set, get) => ({
-  open: false,
+  open: true,
   enhanceVisibility: false,
   showAirflow: false,
   setVisuals: (patch) => set(patch),

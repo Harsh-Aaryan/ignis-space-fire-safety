@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { CREW_ENVIRONMENTS, type CrewEnvironment, type InvestigationRecord } from "@/data/research/investigations";
+import { Term } from "@/components/design/term";
 import { CompareToggle } from "@/components/research/compare-tray";
-import { BasisTag, GravityChips, KindTag, holdingSummary } from "@/components/research/record-meta";
+import { BasisTag, GravityChips, KindTag, TERM_DEFINITIONS, holdingSummary } from "@/components/research/record-meta";
 import { environmentLink } from "@/lib/research/filter";
 import { EVIDENCE_GRADE_HINT, evidenceQuality, type EvidenceQuality, type RankReason, type RankedRecord } from "@/lib/research/rank";
 import { ROUTES } from "@/lib/routes";
@@ -104,12 +105,18 @@ export function InvestigationCard({
   environment,
   ranked = null,
   muted = false,
+  defineBasis = false,
+  defineHeld = false,
 }: {
   record: InvestigationRecord;
   environment: CrewEnvironment | null;
   ranked?: RankedRecord | null;
   /** Less related: shorter, quieter card. */
   muted?: boolean;
+  /** First card on the page with this basis: define the basis label. */
+  defineBasis?: boolean;
+  /** First card on the page: define "Held here". */
+  defineHeld?: boolean;
 }) {
   const link = environment ? environmentLink(record, environment) : null;
   const held = holdingSummary(record);
@@ -154,7 +161,7 @@ export function InvestigationCard({
 
           {environment ? (
             <p className="mt-3 flex flex-wrap items-start gap-x-2 gap-y-1 rounded-md bg-elev-2 px-3 py-2 text-[13px] leading-5">
-              <BasisTag basis={link?.basis ?? null} />
+              <BasisTag basis={link?.basis ?? null} define={defineBasis} />
               <span className="min-w-0 flex-1 basis-60 text-muted-foreground">
                 <span className="text-foreground">{CREW_ENVIRONMENTS[environment].label}. </span>
                 {link ? link.note : "This record does not address this environment."}
@@ -172,7 +179,7 @@ export function InvestigationCard({
             <div className="flex min-w-0 flex-wrap items-center gap-x-6 gap-y-2">
               <GravityChips record={record} />
               <p className="text-[13px] leading-5 text-muted-foreground">
-                <span className="text-text-tertiary">Held here: </span>
+                <span className="text-text-tertiary">{defineHeld ? <Term definition={TERM_DEFINITIONS.heldHere}>Held here</Term> : "Held here"}: </span>
                 {held.join(", ")}
               </p>
             </div>
@@ -181,7 +188,7 @@ export function InvestigationCard({
               <Link
                 href={ROUTES.investigation(record.id)}
                 className="inline-flex min-h-10 items-center gap-1 rounded-md px-2 text-[13px] text-foreground underline decoration-foreground/25 underline-offset-4 hover:decoration-foreground"
-                aria-label={`Open the ${record.name} record`}
+                aria-label={`Open ${record.name} record`}
               >
                 Open record
                 <ArrowRight className="size-4" aria-hidden="true" />

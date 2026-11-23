@@ -1,4 +1,9 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+
+/** Picks a habitat with the Moon / Mars / Gateway switcher in the top bar. */
+async function chooseHabitat(page: Page, name: string) {
+  await page.getByRole("radio", { name, exact: true }).click();
+}
 
 test("Ask IGNIS shows pending AI answers, citations and recoverable errors", async ({ page }) => {
   let releaseAnswer!: () => void;
@@ -40,14 +45,14 @@ test("guided setup, grounded assistant and review work together", async ({ page 
   await page.goto("/simulation");
   await page.getByRole("tab",{name:"Fire scenario",exact:true}).click();
   await page.getByRole("button",{name:"Acrylic ignition",exact:true}).click();
-  await expect(page.getByRole("button",{name:"Start scenario",exact:true})).toBeEnabled();
+  await expect(page.getByRole("button",{name:"Start fire",exact:true})).toBeEnabled();
   await page.getByRole("button",{name:"10×",exact:true}).click();
-  await page.getByRole("button",{name:"Start scenario",exact:true}).click();
+  await page.getByRole("button",{name:"Start fire",exact:true}).click();
   await expect(page.getByTestId("fire-status")).toContainText("Flaming");
   await page.getByRole("button",{name:"Pause",exact:true}).click();
   await page.getByRole("button",{name:"Explain this run",exact:true}).click();
   const assistant=page.getByRole("complementary",{name:"Ask IGNIS scenario assistant"});
-  await assistant.getByRole("button",{name:"Explain this run",exact:true}).click();
+
   await expect(assistant).toContainText("The fire itself is releasing");
   await expect(assistant.getByRole("link",{name:/NIST CFAST/})).toHaveAttribute("href",/nist/);
   await assistant.getByRole("button",{name:"What changes if I stop ventilation?",exact:true}).click();
@@ -76,11 +81,11 @@ test("short requests explain the captured run instead of showing the scope messa
   });
   await page.goto("/simulation", { waitUntil: "domcontentloaded" });
   await expect(page.getByText(/WebGL is unavailable/)).toBeVisible();
-  await page.getByRole("radio", { name: "Gateway, about 0 g", exact: true }).click();
+  await chooseHabitat(page, "Gateway, about 0 g");
   await page.getByRole("tab", { name: "Fire scenario", exact: true }).click();
   await page.getByRole("button", { name: "Acrylic ignition", exact: true }).click();
   await page.getByRole("button", { name: "60×", exact: true }).click();
-  await page.getByRole("button", { name: "Start scenario", exact: true }).click();
+  await page.getByRole("button", { name: "Start fire", exact: true }).click();
   await expect(page.getByTestId("fire-status")).toContainText("Flaming");
   await page.getByRole("button", { name: "Pause", exact: true }).click();
   await page.getByRole("button", { name: "Ask IGNIS", exact: true }).click();

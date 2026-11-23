@@ -1,6 +1,7 @@
 import { ActionLink, EvidenceTag, Note, Panel, SectionHeading, TextLink, table } from "@/components/design/kit";
+import { Term } from "@/components/design/term";
 import { Cite, evidenceClass } from "@/components/fire/cite";
-import { KindTag } from "@/components/research/record-meta";
+import { KindTag, TERM_DEFINITIONS } from "@/components/research/record-meta";
 import { FIRE_SENSORS, HAZARD_LIMITS, SAFFIRE_IV_VI_EMISSION, SAFFIRE_IV_VI_EMISSION_META, SUPPRESSION_ACTIONS } from "@/data/fire/options";
 import { GRAVITY_REGIMES, TOPICS, type InvestigationRecord } from "@/data/research/investigations";
 import { controlRecords, partialGravityGaps, type ControlGroupId } from "@/lib/research/coverage";
@@ -100,7 +101,11 @@ function AlarmTiming() {
   return (
     <Panel
       title="Smoke alarm timing in Saffire IV–VI"
-      description="Total particulate at the far-field detector, alarm reference of 2 mg/m³, in seven flight tests."
+      description={
+        <>
+          Total particulate at the <Term definition={TERM_DEFINITIONS.farField}>far-field detector</Term>, alarm reference of 2 mg/m³, in seven flight tests.
+        </>
+      }
       actions={<Cite id="saffire-iv-vi-emission" />}
     >
       <ul className="space-y-2">

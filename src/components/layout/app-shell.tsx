@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { Box, FileText, LayoutGrid, Library, SlidersHorizontal, X, type LucideIcon } from "lucide-react";
+import { Box, FileText, LayoutGrid, Library, X, type LucideIcon } from "lucide-react";
 import { AskIgnisButton, ScenarioAssistant } from "@/components/ai/scenario-assistant";
-import { ConditionControls } from "@/components/dashboard/controls";
 import { Wordmark } from "@/components/design/marks";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { HabitatSwitcher } from "@/components/layout/habitat-switcher";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { formatGravity, formatNumber, formatOxygen, formatPsi } from "@/lib/format";
+import { ScenarioChip } from "@/components/layout/scenario-chip";
+import { useResearchPickCount } from "@/components/layout/use-research-picks";
 import { PRIMARY_NAV, ROUTES, sectionForPath, type SectionId } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { syncFireMission, useFireSimDriver, useFireSimStore } from "@/stores/fire-sim-store";
@@ -34,11 +34,6 @@ const NTRS = "https://ntrs.nasa.gov/";
 
 function isSectionActive(pathname: string, href: string): boolean {
   return SECTION_HREF[sectionForPath(pathname)] === href;
-}
-
-function sectionLabel(pathname: string): string {
-  const href = SECTION_HREF[sectionForPath(pathname)];
-  return PRIMARY_NAV.find((item) => item.href === href)?.label ?? "Overview";
 }
 
 /** Opening the Simulation section also opens its scenario panel. */
@@ -121,12 +116,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** The research pick count, read out in the link's name and shown as a quiet figure. */
+function PickCount({ href, className }: { href: string; className?: string }) {
+  const picks = useResearchPickCount();
+  if (href !== ROUTES.research || picks === 0) return null;
+  return (
+    <>
+      <span className={cn("numeric text-[11px] leading-4 text-text-tertiary", className)} aria-hidden="true">
+        {picks}
+      </span>
+      <span className="sr-only">, {picks} picked</span>
+    </>
+  );
+}
+
+/**
+ * Narrow rail with a small label under each icon from md, full labels from lg.
+ * The rail is 72px so the longest label ("Simulation") fits at 11px.
+ */
 function Sidebar({ pathname }: { pathname: string }) {
   return (
-    <div className="no-print hidden w-16 shrink-0 flex-col border-r border-border-subtle bg-elev-1 md:flex xl:w-60">
+    <div className="no-print hidden w-[72px] shrink-0 flex-col border-r border-border-subtle bg-elev-1 md:flex xl:w-60">
       <Link
         href={ROUTES.overview}
-        className="flex h-16 shrink-0 items-center gap-3 px-6 xl:px-5"
+        className="flex h-16 shrink-0 items-center justify-center gap-3 px-3 xl:justify-start xl:px-5"
       >
         <Wordmark compact />
         <span className="sr-only xl:not-sr-only">
@@ -134,7 +147,7 @@ function Sidebar({ pathname }: { pathname: string }) {
           <span className="hidden text-[12px] leading-4 text-muted-foreground xl:block">Spacecraft fire safety research</span>
         </span>
       </Link>
-      <nav aria-label="Sections" className="mt-2 flex flex-col gap-1 px-2 xl:px-3">
+      <nav aria-label="Sections" className="mt-2 flex flex-col gap-1 px-1 xl:px-3">
         {PRIMARY_NAV.map((item) => {
           const active = isSectionActive(pathname, item.href);
           const Icon = ICONS[item.href];
@@ -144,15 +157,16 @@ function Sidebar({ pathname }: { pathname: string }) {
               href={item.href}
               onClick={() => onNavigate(item.href)}
               aria-current={active ? "page" : undefined}
-              title={item.label}
               className={cn(
-                "relative flex h-9 items-center justify-center gap-3 rounded-md px-3 text-sm transition-colors xl:justify-start",
+                "relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-md px-0 py-2 text-center text-[11px] leading-4 whitespace-nowrap transition-colors",
+                "xl:h-9 xl:min-h-0 xl:flex-row xl:justify-start xl:gap-3 xl:px-3 xl:py-0 xl:text-sm",
                 active ? "bg-elev-3 text-foreground" : "text-muted-foreground hover:bg-elev-2 hover:text-foreground",
               )}
             >
               {active ? <span className="absolute top-2 bottom-2 left-0 w-0.5 rounded-full bg-primary" aria-hidden="true" /> : null}
               <Icon className="size-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />
-              <span className="sr-only xl:not-sr-only">{item.label}</span>
+              <span>{item.label}</span>
+              <PickCount href={item.href} className="absolute top-1.5 right-2 xl:static xl:ml-auto xl:text-[12px]" />
             </Link>
           );
         })}
@@ -193,7 +207,10 @@ function MobileNav({ pathname }: { pathname: string }) {
           >
             {active ? <span className="absolute inset-x-6 top-0 h-0.5 rounded-full bg-primary" aria-hidden="true" /> : null}
             <Icon className="size-4" strokeWidth={1.5} aria-hidden="true" />
-            {item.label}
+            <span className="flex items-baseline gap-1">
+              {item.label}
+              <PickCount href={item.href} />
+            </span>
           </Link>
         );
       })}
@@ -201,54 +218,28 @@ function MobileNav({ pathname }: { pathname: string }) {
   );
 }
 
+/**
+ * One row at every width. Phones: the mark, the scenario chip and an icon-only Ask IGNIS,
+ * within 56px. From md: the breadcrumb trail, then the scenario chip and Ask IGNIS; when
+ * space runs short the chip's trailing readouts truncate first, then the last crumb.
+ */
 function TopBar({ pathname }: { pathname: string }) {
   return (
-    <header className="no-print flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-b border-border-subtle bg-elev-1 px-4 py-2 md:min-h-16 md:px-6 md:py-3">
-      <Link href={ROUTES.overview} className="order-1 flex min-h-11 items-center gap-3 md:hidden">
+    // Phone: logo, cabin chip and Ask IGNIS on one row, the habitat switcher full width below.
+    // Tablet: the breadcrumb takes the logo's place. Desktop: everything on one row.
+    <header className="no-print flex shrink-0 flex-wrap items-center gap-x-2 gap-y-2 border-b border-border-subtle bg-elev-1 px-4 py-2 md:min-h-16 md:gap-x-4 md:px-6 lg:flex-nowrap">
+      <Link href={ROUTES.overview} className="order-1 flex min-h-11 shrink-0 items-center gap-2.5 md:hidden">
         <Wordmark compact />
-        <span className="text-[16px] font-medium tracking-[0.04em]">IGNIS</span>
+        <span className="text-[16px] font-medium tracking-[0.04em] max-[359px]:sr-only">IGNIS</span>
       </Link>
-      <p className="order-1 hidden min-w-0 truncate text-[15px] font-medium text-foreground md:block">
-        {sectionLabel(pathname)}
-      </p>
-      <div className="order-3 flex w-full flex-wrap items-center gap-2 sm:flex-nowrap lg:order-2 lg:ml-auto lg:w-auto">
+      <Breadcrumbs pathname={pathname} className="order-1 hidden min-w-0 flex-1 md:block lg:max-w-[40%] lg:flex-initial" />
+      <div className="order-4 w-full lg:order-2 lg:ml-auto lg:w-auto lg:shrink-0">
         <HabitatSwitcher />
-        <CabinConditions />
       </div>
-      <div className="order-2 ml-auto flex items-center lg:order-3 lg:ml-0">
-        <AskIgnisButton />
+      <ScenarioChip className="order-2 flex-1 md:flex-initial lg:order-3" />
+      <div className="order-3 shrink-0 lg:order-4">
+        <AskIgnisButton compact />
       </div>
     </header>
-  );
-}
-
-function airflowCmS(airflowMs: number): string {
-  const cm = Number((airflowMs * 100).toFixed(1));
-  return formatNumber(cm, Number.isInteger(cm) ? 0 : 1);
-}
-
-function CabinConditions() {
-  const scenario = useMissionStore((state) => state.scenario);
-  return (
-    <Popover>
-      <PopoverTrigger className="inline-flex min-h-11 w-full min-w-0 items-center gap-2 rounded-md border border-border-subtle bg-background px-3 py-2 text-[13px] transition-colors hover:border-border hover:bg-elev-2 sm:w-auto md:min-h-9 md:py-1.5">
-        <SlidersHorizontal className="size-4 shrink-0 text-muted-foreground" strokeWidth={1.5} aria-hidden="true" />
-        <span className="sr-only text-muted-foreground sm:not-sr-only">Cabin</span>
-        <span className="numeric flex min-w-0 flex-wrap gap-x-3 gap-y-1 text-left text-[12px] leading-5 text-foreground sm:text-[13px]">
-          <span className="whitespace-nowrap">{formatOxygen(scenario.oxygenPct)}% O₂</span>{" "}
-          <span className="whitespace-nowrap">{formatPsi(scenario.pressurePsi)} psi</span>{" "}
-          <span className="whitespace-nowrap">{formatGravity(scenario.gravityG)} g</span>{" "}
-          <span className="whitespace-nowrap">{airflowCmS(scenario.airflowMs)} cm/s</span>
-        </span>
-        <span className="sr-only">, edit</span>
-      </PopoverTrigger>
-      <PopoverContent className="max-h-[min(80vh,640px)] w-[420px] max-w-[calc(100vw-2rem)] overflow-y-auto border border-border bg-popover p-5">
-        <p className="text-[15px] font-medium text-foreground">Cabin conditions</p>
-        <p className="mt-1 mb-4 text-[13px] leading-5 text-muted-foreground">
-          One set of conditions is shared across IGNIS. Changing it here changes it everywhere.
-        </p>
-        <ConditionControls />
-      </PopoverContent>
-    </Popover>
   );
 }

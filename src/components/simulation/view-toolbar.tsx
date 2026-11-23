@@ -12,7 +12,7 @@ const MODES: Array<{ id: NavigationMode; label: string; hint: string }> = [
   { id: "cutaway", label: "Cutaway", hint: "All levels with the shell opened" },
   { id: "interior", label: "Interior", hint: "Inside the selected room" },
   { id: "floor", label: "Floor", hint: "One level at a time" },
-  { id: "equipment", label: "Equipment", hint: "Close view of the selected equipment" },
+  { id: "equipment", label: "Equipment only", hint: "Close view of the selected equipment" },
 ];
 
 const chip =

@@ -6,6 +6,7 @@ import {
   type InvestigationRecord,
 } from "@/data/research/investigations";
 import { Tag } from "@/components/design/kit";
+import { Term } from "@/components/design/term";
 
 /** Small shared pieces for showing a research record. Hook-free: usable on the server and the client. */
 
@@ -21,8 +22,24 @@ export const BASIS_HINT: Record<EnvironmentLink["basis"], string> = {
   transferable: "Informs this environment, with the stated caveat.",
 };
 
-export function BasisTag({ basis }: { basis: EnvironmentLink["basis"] | null }) {
+/** Definitions for <Term>, in wording the site already uses. */
+export const TERM_DEFINITIONS = {
+  /** From the evidence-quality hints, EVIDENCE_GRADE_HINT in src/lib/research/rank.ts. */
+  heldHere: "What IGNIS holds for this record: an original NASA data file, values published in the record's papers, or a citation record and no values.",
+  /** From the Saffire IV–VI notes: src/lib/fire/accuracy.ts (Far Field Diagnostics beside the air intake) and saffire-detection.tsx (read next to the cabin air intake). */
+  farField: "Saffire's Far Field Diagnostics: point readings taken next to the cabin air intake.",
+} as const;
+
+/** `define` turns the label into a defined term: use it at the first appearance of each basis on a page. */
+export function BasisTag({ basis, define = false }: { basis: EnvironmentLink["basis"] | null; define?: boolean }) {
   if (!basis) return <Tag className="border-dashed">Not addressed</Tag>;
+  if (define) {
+    return (
+      <Tag tone={basis === "transferable" ? "neutral" : "positive"}>
+        <Term definition={BASIS_HINT[basis]}>{BASIS_LABEL[basis]}</Term>
+      </Tag>
+    );
+  }
   return (
     <span title={BASIS_HINT[basis]}>
       <Tag tone={basis === "transferable" ? "neutral" : "positive"}>{BASIS_LABEL[basis]}</Tag>

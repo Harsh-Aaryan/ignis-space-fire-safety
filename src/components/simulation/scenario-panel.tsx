@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { ArrowRight, Check, Pause, Play, RotateCcw } from "lucide-react";
 import { AskIgnisButton } from "@/components/ai/scenario-assistant";
 import { Note, Stat, TextLink, actionClass } from "@/components/design/kit";
@@ -16,7 +16,7 @@ import type { FireInput, FireState } from "@/lib/fire/model";
 import { buildFireInput, fuelPackageFor, ventilationCfm } from "@/lib/fire/scenario";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
-import { fireRuntime, useFireSimStore, type FireSpeed } from "@/stores/fire-sim-store";
+import { fireRuntime, useFireSimStore, type FireSpeed, type FireStatus } from "@/stores/fire-sim-store";
 import { useMissionStore } from "@/stores/mission-store";
 import { PHASE_EXPLANATION, PHASE_LABEL, clock, fieldClass, formatPower } from "./format";
 import { ModelApplicability } from "./model-applicability";
@@ -24,13 +24,31 @@ import { ModelApplicability } from "./model-applicability";
 const STAGES = ["Set up", "Run", "Respond", "Review"] as const;
 type Stage = (typeof STAGES)[number];
 
+/** Phases with no flame. A run can stay in one for a long time while its heat source is still on, so Review is offered, not forced. */
+const FLAME_OUT: ReadonlySet<FireState["phase"]> = new Set(["extinguished", "burned-out", "no-ignition"]);
+
+/** The stage that matches a run's status when the panel first shows. */
+function stageForStatus(status: FireStatus): Stage {
+  if (status === "finished") return "Review";
+  return status === "idle" ? "Set up" : "Run";
+}
+
 const SPEEDS: FireSpeed[] = [1, 10, 60];
 
 /** The fire scenario: set it up, run it, respond to it, review it. */
 export function ScenarioPanel() {
   const mission = useMissionStore();
   const sim = useFireSimStore();
-  const [stage, setStage] = useState<Stage>("Set up");
+  const [stage, setStage] = useState<Stage>(() => stageForStatus(sim.status));
+  const [seenStatus, setSeenStatus] = useState<FireStatus>(sim.status);
+  const startHintId = useId();
+  // Follow the run as its status changes: starting opens Run, finishing opens
+  // Review, and a reset from anywhere returns to the setup. Pausing changes nothing.
+  if (sim.status !== seenStatus) {
+    setSeenStatus(sim.status);
+    if (sim.status === "finished" || sim.status === "idle") setStage(stageForStatus(sim.status));
+    else if (seenStatus === "idle") setStage("Run");
+  }
   const locked = sim.status !== "idle";
   const snapshot = sim.snapshot;
   const object = objectById(locked ? sim.activeObjectId : mission.selectedObjectId);
@@ -43,12 +61,6 @@ export function ScenarioPanel() {
   function start() {
     if (!object || !room || !input) return;
     sim.start(input, room.id, object.id);
-    setStage("Run");
-  }
-
-  function reset() {
-    sim.reset();
-    setStage("Set up");
   }
 
   return (
@@ -74,15 +86,21 @@ export function ScenarioPanel() {
                 {sim.status === "running" ? <Pause className="size-4" aria-hidden="true" /> : <Play className="size-4" aria-hidden="true" />}
                 {sim.status === "running" ? "Pause" : "Resume"}
               </button>
-              <button type="button" onClick={reset} className={actionClass("secondary")}>
+              <button type="button" onClick={sim.reset} className={actionClass("secondary")}>
                 <RotateCcw className="size-4" aria-hidden="true" />
                 Reset
               </button>
             </>
           ) : (
-            <button type="button" disabled={!input} onClick={start} className={actionClass("primary")}>
+            <button
+              type="button"
+              disabled={!input}
+              onClick={start}
+              aria-describedby={input ? undefined : startHintId}
+              className={actionClass("primary")}
+            >
               <Play className="size-4" aria-hidden="true" />
-              Start scenario
+              Start fire
             </button>
           )}
           <div role="group" aria-label="Simulation speed" className="ml-auto flex rounded-md border border-border p-0.5">
@@ -102,6 +120,11 @@ export function ScenarioPanel() {
             ))}
           </div>
         </div>
+        {!locked && !input ? (
+          <p id={startHintId} className="-mt-1 text-[13px] leading-5 text-muted-foreground">
+            Pick where the fire starts first
+          </p>
+        ) : null}
 
         {snapshot ? (
           <p data-testid="fire-status" className="numeric text-sm text-foreground">
@@ -133,10 +156,21 @@ export function ScenarioPanel() {
       </header>
 
       <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-4">
-        {stage === "Set up" ? <SetUpStage locked={locked} input={input} material={material} ignition={ignition} /> : null}
+        {(stage === "Run" || stage === "Respond") && snapshot && FLAME_OUT.has(snapshot.phase) ? (
+          <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border-subtle bg-elev-2 p-3">
+            <p className="text-[13px] leading-5 text-muted-foreground">
+              No flame. The run keeps going while the cabin cools and the gases mix.
+            </p>
+            <button type="button" onClick={() => setStage("Review")} className={actionClass("primary")}>
+              Review this run
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </button>
+          </div>
+        ) : null}
+        {stage === "Set up" ?<SetUpStage locked={locked} input={input} material={material} ignition={ignition} /> : null}
         {stage === "Run" ? <RunStage snapshot={snapshot} onRespond={() => setStage("Respond")} /> : null}
         {stage === "Respond" ? <RespondStage locked={locked} snapshot={snapshot} room={room} /> : null}
-        {stage === "Review" ? <RunReview /> : null}
+        {stage === "Review" ? <RunReview resultsLink /> : null}
 
         <details className="rounded-md border border-border-subtle">
           <summary className="flex min-h-10 cursor-pointer items-center px-3 text-sm text-foreground">Model basis and assumptions</summary>
@@ -300,7 +334,7 @@ function RunStage({ snapshot, onRespond }: { snapshot: FireState | null; onRespo
     <>
       <section className="space-y-3">
         <StageHeading title={snapshot ? PHASE_LABEL[snapshot.phase] : "Not started"}>
-          {snapshot ? PHASE_EXPLANATION[snapshot.phase] : "Choose where the fire starts in Set up, then start the scenario."}
+          {snapshot ? PHASE_EXPLANATION[snapshot.phase] : "Choose where the fire starts, then start the fire."}
         </StageHeading>
         {snapshot ? (
           <dl className="grid grid-cols-2 gap-x-4 gap-y-4 rounded-md border border-border-subtle p-3">
@@ -356,7 +390,15 @@ function isUsed(snapshot: FireState | null, id: SuppressionId): boolean {
   return snapshot.agent.halonStart !== null;
 }
 
-function RespondStage({ locked, snapshot, room }: { locked: boolean; snapshot: FireState | null; room: HabitatRoomConfig | null }) {
+function RespondStage({
+  locked,
+  snapshot,
+  room,
+}: {
+  locked: boolean;
+  snapshot: FireState | null;
+  room: HabitatRoomConfig | null;
+}) {
   const sim = useFireSimStore();
   const airflowMs = useMissionStore((state) => state.scenario.airflowMs);
   const liveMs = snapshot?.uForcedMs ?? airflowMs;
@@ -393,7 +435,7 @@ function RespondStage({ locked, snapshot, room }: { locked: boolean; snapshot: F
       </section>
 
       <section className="space-y-3">
-        <StageHeading title="Actions">{locked ? undefined : "Start the scenario to act on it."}</StageHeading>
+        <StageHeading title="Actions">{locked ? undefined : "Start the fire to act on it."}</StageHeading>
         <ul className="space-y-2">
           {SUPPRESSION_ACTIONS.map((action) => {
             const used = isUsed(snapshot, action.id);

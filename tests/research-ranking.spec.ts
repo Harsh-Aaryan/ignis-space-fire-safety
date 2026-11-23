@@ -40,7 +40,9 @@ test("on a phone the question box and results sit near the top", async ({ page }
   await expect(page.getByRole("searchbox")).toBeEditable();
   const question = (await page.getByRole("searchbox").boundingBox())!;
   expect(question.y).toBeLessThan(700);
-  const firstRecord = (await page.getByRole("article").first().boundingBox())!;
+  const first = page.getByRole("article").first();
+  await expect(first).toBeVisible();
+  const firstRecord = (await first.boundingBox())!;
   expect(firstRecord.y).toBeLessThan(1400);
   expect(await noSidewaysScroll(page)).toBe(true);
 });
@@ -88,4 +90,52 @@ test("results puts an exportable evidence brief first once investigations are pi
   const json = page.waitForEvent("download");
   await brief.getByRole("button", { name: "JSON", exact: true }).click();
   expect((await json).suggestedFilename()).toMatch(/^ignis-evidence-brief-\d{4}-\d{2}-\d{2}\.json$/);
+});
+
+test("the ranking criteria fold behind one toggle that says what is set", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/research");
+  const refine = page.getByRole("button", { name: /^Refine the ranking/ });
+  await expect(refine).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByRole("combobox", { name: "Topic", exact: true })).toBeHidden();
+  // Cards lay out a moment after hydration; poll until the first one has a box.
+  const first = page.getByRole("article").first();
+  await expect.poll(async () => (await first.boundingBox())?.y ?? Infinity).toBeLessThan(900);
+
+  await refine.click();
+  await expect(refine).toHaveAttribute("aria-expanded", "true");
+  await page.getByRole("combobox", { name: "Topic", exact: true }).selectOption("detection");
+  await refine.click();
+  await expect(refine).toHaveAttribute("aria-expanded", "false");
+  await expect(refine).toContainText("Fire detection");
+});
+
+test("a record page shows the comparison tray once a record is added", async ({ page }) => {
+  await page.goto("/research/saffire-vi");
+  await expect(page.getByRole("complementary", { name: "Comparison" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Add Saffire VI to comparison", exact: true }).click();
+  const tray = page.getByRole("complementary", { name: "Comparison" });
+  await expect(tray).toContainText("1 of 3 picked");
+  await expect(tray.getByRole("button", { name: "Remove Saffire VI from comparison", exact: true })).toBeVisible();
+});
+
+test("card actions name their record", async ({ page }) => {
+  await page.goto("/research");
+  await expect(page.getByRole("link", { name: "Open Saffire VI record", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add Saffire VI to comparison", exact: true })).toBeVisible();
+});
+
+test("a defined term shows its definition on keyboard focus", async ({ page }) => {
+  await page.goto("/research/saffire-vi");
+  const term = page.getByRole("button", { name: "Transferable", exact: true }).first();
+  await term.focus();
+  await page.keyboard.press("Shift+Tab");
+  await page.keyboard.press("Tab");
+  const definition = page.getByRole("tooltip").filter({ hasText: "Informs this environment, with the stated caveat." });
+  await expect(definition).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(definition).toBeHidden();
+  // Tabbing on from a term keeps keyboard focus in the page instead of dropping it to the body.
+  await page.keyboard.press("Tab");
+  expect(await page.evaluate(() => document.activeElement !== document.body)).toBe(true);
 });

@@ -1,5 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 
+/** Picks a habitat with the Moon / Mars / Gateway switcher in the top bar. */
+async function chooseHabitat(page: Page, name: string) {
+  await page.getByRole("radio", { name, exact: true }).click();
+}
+
 function monitor(page: Page): string[] {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
@@ -20,14 +25,14 @@ for (const habitat of HABITATS) {
     const errors = monitor(page);
     await page.goto("/simulation", { waitUntil: "domcontentloaded" });
     await expect(page.locator("canvas")).toBeVisible();
-    await page.getByRole("radio", { name: habitat.name, exact: true }).click();
+    await chooseHabitat(page, habitat.name);
     await page.getByRole("tab", { name: "Fire scenario", exact: true }).click();
     await expect(page.getByRole("tab", { name: "Fire scenario", exact: true })).toHaveAttribute("aria-selected", "true");
     await page.getByRole("button", { name: "Acrylic ignition", exact: true }).click();
     await expect(page.getByLabel("Material", { exact: true })).toHaveValue("pmma");
-    await expect(page.getByRole("button", { name: "Start scenario", exact: true })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Start fire", exact: true })).toBeEnabled();
     await page.getByRole("button", { name: "60×", exact: true }).click();
-    await page.getByRole("button", { name: "Start scenario", exact: true }).click();
+    await page.getByRole("button", { name: "Start fire", exact: true }).click();
     await expect(page.getByTestId("fire-status")).toContainText("Flaming", { timeout: 60_000 });
     await expect(page.getByTestId("fire-hud")).toContainText("CFM");
     await expect(page.getByTestId("fire-hud")).toContainText(habitat.gravity);
@@ -39,7 +44,7 @@ for (const habitat of HABITATS) {
     expect(await page.getByTestId("fire-status").textContent()).toBe(paused);
     await page.getByRole("button", { name: "Resume", exact: true }).click();
 
-    await page.getByRole("button", { name: /3\s*Respond/ }).click();
+    await page.getByRole("button", { name: "Respond to the fire", exact: true }).click();
     await page.getByRole("button", { name: "Fine water mist extinguisher", exact: true }).click();
     await expect(page.getByTestId("fire-status")).toContainText("Flame out", { timeout: 90_000 });
 
@@ -50,6 +55,50 @@ for (const habitat of HABITATS) {
     expect(errors).toEqual([]);
   });
 }
+
+function withoutWebGL(page: Page) {
+  return page.addInitScript(() => {
+    const original = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, type: string, ...args: unknown[]) {
+      if (type.startsWith("webgl")) return null;
+      return original.apply(this, [type, ...args] as never);
+    } as typeof original;
+  });
+}
+
+test("a direct visit opens on the fire scenario and asks where the fire starts", async ({ page }) => {
+  await withoutWebGL(page);
+  await page.goto("/simulation", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("tab", { name: "Fire scenario", exact: true })).toHaveAttribute("aria-selected", "true");
+  const steps = page.getByRole("navigation", { name: "Scenario stages" });
+  await expect(steps.getByRole("button", { name: /1\s*Set up/ })).toHaveAttribute("aria-current", "step");
+  const start = page.getByRole("button", { name: "Start fire", exact: true });
+  await expect(start).toBeDisabled();
+  await expect(start).toHaveAccessibleDescription("Pick where the fire starts first");
+});
+
+test("once the flame is out, the run offers Review, which leads to Results", async ({ page }) => {
+  test.setTimeout(300_000);
+  await withoutWebGL(page);
+  await page.goto("/simulation", { waitUntil: "domcontentloaded" });
+  await expect(page.getByText(/WebGL is unavailable/)).toBeVisible();
+  await page.getByRole("button", { name: "Acrylic ignition", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Start fire", exact: true })).toBeEnabled();
+  await page.getByRole("button", { name: "60×", exact: true }).click();
+  await page.getByRole("button", { name: "Start fire", exact: true }).click();
+  const steps = page.getByRole("navigation", { name: "Scenario stages" });
+  await expect(steps.getByRole("button", { name: /2\s*Run/ })).toHaveAttribute("aria-current", "step");
+  await expect(page.getByTestId("fire-status")).toContainText("Flaming", { timeout: 60_000 });
+  await page.getByRole("button", { name: "Respond to the fire", exact: true }).click();
+  await page.getByRole("button", { name: "Fine water mist extinguisher", exact: true }).click();
+  await expect(page.getByTestId("fire-status")).toContainText("Flame out", { timeout: 120_000 });
+  await page.getByRole("button", { name: "Review this run", exact: true }).click();
+  await expect(steps.getByRole("button", { name: /4\s*Review/ })).toHaveAttribute("aria-current", "step");
+  await expect(page.getByRole("region", { name: "Fire run review" })).toBeVisible();
+  const results = page.getByRole("link", { name: "Open in Results", exact: true });
+  await expect(results).toBeVisible();
+  await expect(results).toHaveAttribute("href", "/results");
+});
 
 test("view controls reach every mode, room and level", async ({ page }) => {
   const errors = monitor(page);
@@ -102,7 +151,7 @@ test("setup controls wait for hydration before accepting an origin", async ({ pa
     await expect(origin).toBeEnabled();
     await origin.selectOption("lunar-habitat-lab-bench-0");
     await expect(origin).toHaveValue("lunar-habitat-lab-bench-0");
-    await expect(page.getByRole("table", { name: "Gravity regime comparison" })).toContainText("Orbit, 0 g");
+    await expect(page.getByRole("table", { name: "Gravity regime comparison" })).toContainText("Orbit, ~0 g");
   } finally {
     releaseScripts();
   }
@@ -113,7 +162,7 @@ test("gravity comparison runs one setup at three gravity levels", async ({ page 
   await page.getByLabel("Forecast origin", { exact: true }).selectOption("lunar-habitat-lab-bench-0");
   await expect(page.getByLabel("Forecast origin", { exact: true })).toHaveValue("lunar-habitat-lab-bench-0");
   const table = page.getByRole("table", { name: "Gravity regime comparison" });
-  await expect(table).toContainText("Orbit, 0 g");
+  await expect(table).toContainText("Orbit, ~0 g");
   await expect(table).toContainText("Mars, 0.38 g");
   await expect(table).toContainText("Extrapolated");
   await page.getByLabel("Prediction ignition source", { exact: true }).selectOption("hot-wire");
@@ -136,7 +185,7 @@ test("telemetry fits all readouts and centers its graph without horizontal scrol
   await expect(page.getByRole("tab", { name: "Fire scenario", exact: true })).toHaveAttribute("aria-selected", "true");
   await page.getByRole("button", { name: "Acrylic ignition", exact: true }).click();
   await page.getByRole("button", { name: "60×", exact: true }).click();
-  await page.getByRole("button", { name: "Start scenario", exact: true }).click();
+  await page.getByRole("button", { name: "Start fire", exact: true }).click();
   await expect(page.getByTestId("fire-status")).toContainText("Flaming");
   await page.getByRole("button", { name: "Pause", exact: true }).click();
 
@@ -181,7 +230,7 @@ test("the simulation works on a narrow screen without WebGL", async ({ page }) =
   await page.getByRole("tab", { name: "Fire scenario", exact: true }).click();
   await page.getByLabel("Fire origin", { exact: true }).selectOption("lunar-habitat-lab-bench-0");
   await page.getByRole("button", { name: "60×", exact: true }).click();
-  await page.getByRole("button", { name: "Start scenario", exact: true }).click();
+  await page.getByRole("button", { name: "Start fire", exact: true }).click();
   await expect(page.getByTestId("fire-status")).toContainText("Flaming");
   await page.getByRole("button", { name: "Pause", exact: true }).click();
   await expect(page.getByTestId("fire-hud")).toContainText("paused");

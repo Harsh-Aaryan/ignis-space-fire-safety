@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useId, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { GRAVITY_REGIMES, KIND_LABEL, TOPICS, type GravityRegime, type RecordKind, type Topic } from "@/data/research/investigations";
 import { cn } from "@/lib/utils";
 import { isGravityRegime, isMaterialId, isRecordKind, isSpecimenGeometry, isTopic, type ExplorerState } from "@/lib/research/filter";
@@ -9,9 +10,49 @@ export const fieldClass =
 
 const labelClass = "flex min-w-0 flex-col gap-1 text-[12px] text-muted-foreground";
 
+const toggleClass =
+  "flex min-h-10 w-full min-w-0 items-center justify-between gap-2 rounded-md border border-border-subtle px-3 text-left text-[13px] text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary";
+
+/** "PMMA (acrylic)" → "PMMA": the short form for a one-line summary. */
+function short(label: string): string {
+  return label.split(" (")[0];
+}
+
+/** A disclosure button whose closed state says what is set inside it. */
+function DisclosureToggle({
+  open,
+  onToggle,
+  controls,
+  label,
+  active,
+  hint,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  controls: string;
+  label: string;
+  /** What is set, e.g. ["Smoke and aerosols", "Thin"]. */
+  active: string[];
+  /** Shown when nothing is set. */
+  hint: string;
+}) {
+  return (
+    <button type="button" aria-expanded={open} aria-controls={controls} onClick={onToggle} className={toggleClass}>
+      <span className="min-w-0 truncate">
+        {label}
+        <span aria-hidden="true" className="mx-1.5 text-text-tertiary">
+          ·
+        </span>
+        {active.length ? <span className="text-ember-text">{active.join(", ")}</span> : <span className="text-text-tertiary">{hint}</span>}
+      </span>
+      <ChevronDown className={cn("size-4 shrink-0 motion-safe:transition-transform", open && "rotate-180")} strokeWidth={1.5} aria-hidden="true" />
+    </button>
+  );
+}
+
 /**
- * Ranking criteria (topic, material, specimen, the cabin's conditions) in one compact row, and the two
- * filters that narrow the list (record type, gravity tested) folded below.
+ * Ranking criteria (topic, material, specimen, the cabin's conditions) and the two filters that narrow
+ * the list (record type, gravity tested), each folded behind one toggle that summarises what is set.
  */
 export function IndexFilterBar({
   state,
@@ -24,28 +65,43 @@ export function IndexFilterBar({
   cabinSummary: string;
 }) {
   const { filters } = state;
-  const narrowed = Boolean(filters.kind || filters.gravity);
-  const criteria = [filters.topic, state.material, state.geometry, state.matchCabin || null].filter(Boolean).length;
-  const [open, setOpen] = useState(false);
+  const criteria = [
+    filters.topic ? TOPICS[filters.topic].label : null,
+    state.material ? short(MATERIAL_TERMS.find((term) => term.id === state.material)?.label ?? state.material) : null,
+    state.geometry ? short(GEOMETRY_LABEL[state.geometry]) : null,
+    state.matchCabin ? "My cabin" : null,
+  ].filter((item): item is string => Boolean(item));
+  const narrowing = [filters.kind ? KIND_LABEL[filters.kind] : null, filters.gravity ? GRAVITY_REGIMES[filters.gravity].label : null].filter(
+    (item): item is string => Boolean(item),
+  );
+  const [refineOpen, setRefineOpen] = useState(criteria.length > 0);
+  const [narrowOpen, setNarrowOpen] = useState(narrowing.length > 0);
+  const id = useId();
+  const refineId = `${id}-ranking-criteria`;
+  const narrowId = `${id}-narrow-list`;
+
   return (
     <div className="min-w-0 space-y-3">
-      {/* On a phone the criteria fold behind one button so the results stay near the top. */}
-      {criteria > 0 ? null : (
-        <button
-          type="button"
-          aria-expanded={open}
-          aria-controls="ranking-criteria"
-          onClick={() => setOpen((value) => !value)}
-          className="flex min-h-10 w-full items-center justify-between gap-2 rounded-md border border-border-subtle px-3 text-[13px] text-muted-foreground hover:text-foreground md:hidden"
-        >
-          <span>Refine the ranking: topic, material, specimen, cabin</span>
-          <span aria-hidden="true">{open ? "▴" : "▾"}</span>
-        </button>
-      )}
-      <div
-        id="ranking-criteria"
-        className={cn("grid-cols-2 gap-3 md:grid lg:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.3fr)]", open || criteria > 0 ? "grid" : "hidden")}
-      >
+      <div className="grid gap-2 md:grid-cols-2">
+        <DisclosureToggle
+          open={refineOpen}
+          onToggle={() => setRefineOpen((value) => !value)}
+          controls={refineId}
+          label="Refine the ranking"
+          active={criteria}
+          hint="topic, material, specimen, cabin"
+        />
+        <DisclosureToggle
+          open={narrowOpen}
+          onToggle={() => setNarrowOpen((value) => !value)}
+          controls={narrowId}
+          label="Narrow the list"
+          active={narrowing}
+          hint="record type, gravity tested"
+        />
+      </div>
+
+      <div id={refineId} hidden={!refineOpen} className="grid grid-cols-2 gap-3 lg:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.3fr)]">
         <label className={labelClass}>
           Topic
           <select
@@ -105,49 +161,38 @@ export function IndexFilterBar({
         </label>
       </div>
 
-      <details className="group rounded-md border border-border-subtle" open={narrowed || undefined}>
-        <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 px-3 text-[13px] text-muted-foreground hover:text-foreground">
-          <span>
-            Narrow the list
-            {narrowed ? <span className="ml-2 text-ember-text">filters on</span> : <span className="ml-2 text-text-tertiary">record type, gravity tested</span>}
-          </span>
-          <span aria-hidden="true" className="transition-transform group-open:rotate-180">
-            ▾
-          </span>
-        </summary>
-        <div className="grid grid-cols-2 gap-3 border-t border-border-subtle p-3">
-          <label className={labelClass}>
-            Record type
-            <select
-              className={fieldClass}
-              value={filters.kind ?? ""}
-              onChange={(event) => onChange({ ...state, filters: { ...filters, kind: isRecordKind(event.target.value) ? (event.target.value as RecordKind) : null } })}
-            >
-              <option value="">All types</option>
-              {(Object.keys(KIND_LABEL) as RecordKind[]).map((kind) => (
-                <option key={kind} value={kind}>
-                  {KIND_LABEL[kind]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className={labelClass}>
-            Gravity tested
-            <select
-              className={fieldClass}
-              value={filters.gravity ?? ""}
-              onChange={(event) => onChange({ ...state, filters: { ...filters, gravity: isGravityRegime(event.target.value) ? (event.target.value as GravityRegime) : null } })}
-            >
-              <option value="">Any gravity</option>
-              {(Object.keys(GRAVITY_REGIMES) as GravityRegime[]).map((gravity) => (
-                <option key={gravity} value={gravity}>
-                  {GRAVITY_REGIMES[gravity].label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      </details>
+      <div id={narrowId} hidden={!narrowOpen} className="grid grid-cols-2 gap-3 md:max-w-xl">
+        <label className={labelClass}>
+          Record type
+          <select
+            className={fieldClass}
+            value={filters.kind ?? ""}
+            onChange={(event) => onChange({ ...state, filters: { ...filters, kind: isRecordKind(event.target.value) ? (event.target.value as RecordKind) : null } })}
+          >
+            <option value="">All types</option>
+            {(Object.keys(KIND_LABEL) as RecordKind[]).map((kind) => (
+              <option key={kind} value={kind}>
+                {KIND_LABEL[kind]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className={labelClass}>
+          Gravity tested
+          <select
+            className={fieldClass}
+            value={filters.gravity ?? ""}
+            onChange={(event) => onChange({ ...state, filters: { ...filters, gravity: isGravityRegime(event.target.value) ? (event.target.value as GravityRegime) : null } })}
+          >
+            <option value="">Any gravity</option>
+            {(Object.keys(GRAVITY_REGIMES) as GravityRegime[]).map((gravity) => (
+              <option key={gravity} value={gravity}>
+                {GRAVITY_REGIMES[gravity].label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
     </div>
   );
 }

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { ExternalLink, PageHeader, Panel, Tag, TextLink, table } from "@/components/design/kit";
 import { Cite } from "@/components/fire/cite";
-import { CompareToggle } from "@/components/research/compare-tray";
+import { CompareToggle, CompareTray } from "@/components/research/compare-tray";
 import { BasisTag, GravityChips, KindTag, formatRange } from "@/components/research/record-meta";
 import { FIRE_SOURCES } from "@/data/fire/sources";
 import {
@@ -75,8 +75,10 @@ export function InvestigationDetail({ record }: { record: InvestigationRecord })
                   </tr>
                 </thead>
                 <tbody>
-                  {ENVIRONMENT_ORDER.map((id) => {
+                  {ENVIRONMENT_ORDER.map((id, index) => {
                     const link = environmentLink(record, id);
+                    // Define each basis at its first row only.
+                    const firstOfBasis = Boolean(link) && ENVIRONMENT_ORDER.findIndex((other) => environmentLink(record, other)?.basis === link?.basis) === index;
                     return (
                       <tr key={id} className={table.tr}>
                         <th scope="row" className={`${table.td} font-normal whitespace-nowrap`}>
@@ -84,7 +86,7 @@ export function InvestigationDetail({ record }: { record: InvestigationRecord })
                           <span className="numeric block text-[12px] text-text-tertiary">{CREW_ENVIRONMENTS[id].gravityLabel}</span>
                         </th>
                         <td className={table.td}>
-                          <BasisTag basis={link?.basis ?? null} />
+                          <BasisTag basis={link?.basis ?? null} define={firstOfBasis} />
                         </td>
                         <td className={`${table.td} min-w-56 text-muted-foreground`}>{link?.note ?? "This record does not address this environment."}</td>
                       </tr>
@@ -168,6 +170,8 @@ export function InvestigationDetail({ record }: { record: InvestigationRecord })
           </Panel>
         </div>
       </div>
+
+      <CompareTray className="mt-6" />
     </div>
   );
 }

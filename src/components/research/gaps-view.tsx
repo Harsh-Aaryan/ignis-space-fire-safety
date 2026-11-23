@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Check, Minus, X } from "lucide-react";
-import { Note, Panel, Tag, TextLink, table } from "@/components/design/kit";
+import { Note, Panel, Tag, TextLink, evidenceHint, table } from "@/components/design/kit";
+import { Term } from "@/components/design/term";
+import { TERM_DEFINITIONS } from "@/components/research/record-meta";
 import { GRAVITY_REGIMES, TOPICS, type GravityRegime, type Topic } from "@/data/research/investigations";
 import { formatGravity, formatOxygen, formatPsi } from "@/lib/format";
 import { KPA_PER_PSI } from "@/lib/physics/atmosphere";
@@ -243,8 +245,8 @@ function CabinComparison() {
             </>
           ) : (
             <>
-              <span className="font-medium text-foreground">No tabulated run matches this combination.</span> Model results for this cabin are
-              extrapolations.{" "}
+              <span className="font-medium text-foreground">No tabulated run matches this combination.</span> Model results for this cabin are{" "}
+              <Term definition={evidenceHint("extrapolated")}>extrapolations</Term>.{" "}
             </>
           )}
           {EVIDENCE_MATCH_ORDER.filter((status) => status !== "matching-run")
@@ -385,7 +387,7 @@ function ModelGaps() {
             <p className="text-[12px] leading-4 text-text-tertiary">Smoke detection time · VI-3</p>
             <h3 className="mt-1.5 text-[15px] leading-6 font-medium text-foreground">Far-field smoke arrival</h3>
             <p className="mt-2 text-[13px] leading-5 text-muted-foreground">
-              The far-field detector reached 2 mg/m³ {smoke.measured} s after ignition; the model reaches it at {smoke.model} s. The soot yield is a handbook value not yet fitted to
+              The <Term definition={TERM_DEFINITIONS.farField}>far-field detector</Term> reached 2 mg/m³ {smoke.measured} s after ignition; the model reaches it at {smoke.model} s. The soot yield is a handbook value not yet fitted to
               a flight test, so modeled detection times are earlier than measured.
             </p>
           </li>

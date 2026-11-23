@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { MessageCircle, Send, X } from "lucide-react";
 import { Cite } from "@/components/fire/cite";
@@ -16,17 +16,27 @@ import { useAssistantStore } from "@/stores/assistant-store";
 import { fireRuntime, useFireSimStore } from "@/stores/fire-sim-store";
 import { useMissionStore } from "@/stores/mission-store";
 
-export function AskIgnisButton({ prompt, label = "Ask IGNIS" }: { prompt?: string; label?: string }) {
+/**
+ * Opens the assistant; with a prompt it also sends that question. Outlined, not filled:
+ * the filled accent belongs to each page's own primary action. `compact` drops the
+ * visible label below md, leaving an icon button with the same accessible name.
+ */
+export function AskIgnisButton({ prompt, label = "Ask IGNIS", compact = false }: { prompt?: string; label?: string; compact?: boolean }) {
   const show = useAssistantStore((s) => s.show);
   return (
     <button
       type="button"
       onClick={() => show(prompt)}
       aria-label={label}
-      className={cn(actionClass("primary"), "shrink-0 px-4 md:min-h-9")}
+      title={compact ? label : undefined}
+      className={cn(
+        actionClass("secondary"),
+        "shrink-0 border-border-subtle bg-background px-4 hover:border-border hover:bg-elev-2 md:min-h-9",
+        compact && "size-11 px-0 md:size-auto md:px-3.5",
+      )}
     >
       <MessageCircle className="size-4" strokeWidth={1.5} aria-hidden="true" />
-      {label}
+      <span className={compact ? "sr-only md:not-sr-only" : undefined}>{label}</span>
     </button>
   );
 }
@@ -113,7 +123,7 @@ function ResearchEvidence({ answer }: { answer: ScenarioAnswer }) {
 type Turn = { question: string; answer: ScenarioAnswer; input: FireInput | null };
 
 export function ScenarioAssistant() {
-  const { open, close, draft, setDraft } = useAssistantStore();
+  const { open, close, draft, setDraft, queued } = useAssistantStore();
   const mission = useMissionStore();
   const sim = useFireSimStore();
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -172,7 +182,18 @@ export function ScenarioAssistant() {
     };
   }, [open, close]);
 
-  if (!open) return null;
+  // A preset prompt (from show(prompt)) is sent as soon as the assistant is open. If a
+  // question is already in flight, the prompt waits in the input instead of being lost.
+  const sendQueued = useEffectEvent(() => {
+    const question = useAssistantStore.getState().takeQueued();
+    if (!question) return;
+    if (pendingRef.current) setDraft(question);
+    else void ask(question);
+  });
+
+  useEffect(() => {
+    if (open && queued) sendQueued();
+  }, [open, queued]);
 
   async function ask(q: string) {
     const question = q.trim();
@@ -232,6 +253,8 @@ export function ScenarioAssistant() {
       )} kW, heat ${(stopped.state.totalHeatJ / 1000).toFixed(1)} kJ, final phase ${stopped.state.phase}. These are model estimates.`,
     );
   }
+
+  if (!open) return null;
 
   return (
     <aside

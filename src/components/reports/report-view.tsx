@@ -7,6 +7,7 @@ import { RunReview } from "@/components/fire/run-review";
 import { EvidenceBrief, EvidenceBriefPrompt } from "@/components/reports/evidence-brief";
 import { useSelectedIds } from "@/components/research/compare-tray";
 import { fieldClass } from "@/components/research/index-filter-bar";
+import { missionById } from "@/data/missions";
 import { INVESTIGATIONS } from "@/data/research/investigations";
 import { formatGravity, formatNumber, formatOxygen, formatPsi } from "@/lib/format";
 import { oxygenPartialPressurePsi } from "@/lib/physics/atmosphere";
@@ -15,7 +16,7 @@ import { ROUTES } from "@/lib/routes";
 import { useFireSimStore } from "@/stores/fire-sim-store";
 import { useMissionStore } from "@/stores/mission-store";
 
-/** Results: the evidence brief for the picked investigations, the latest fire run, the cabin it ran in, and saved cabin scenarios. */
+/** Results: the latest fire run, the evidence brief for the picked investigations, saved cabin scenarios, and the current cabin. */
 export function ReportView() {
   const scenario = useMissionStore((state) => state.scenario);
   const saved = useMissionStore((state) => state.savedScenarios);
@@ -56,7 +57,7 @@ export function ReportView() {
     <div className="flex min-w-0 flex-col">
       <PageHeader
         title="Results and saved scenarios"
-        description="Export an evidence brief for your research question, review the latest fire run, and keep the cabin setups you want to return to."
+        description="Review the latest fire run, export an evidence brief for your research question, and keep the cabin setups you want to return to."
         actions={
           <>
             <button type="button" className={`${actionClass("secondary")} no-print`} onClick={() => window.print()}>
@@ -72,18 +73,6 @@ export function ReportView() {
       />
 
       <div className="flex flex-col gap-5">
-        {hasBrief ? <EvidenceBrief /> : null}
-
-        <Panel title="Cabin" description={scenario.name} className="report-sheet">
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3 lg:grid-cols-5">
-            <Stat label="Gravity" value={formatGravity(scenario.gravityG)} unit="g" />
-            <Stat label="Oxygen" value={formatOxygen(scenario.oxygenPct)} unit="%" />
-            <Stat label="Cabin pressure" value={formatPsi(scenario.pressurePsi)} unit="psi" />
-            <Stat label="Oxygen partial pressure" value={formatNumber(partial, 2)} unit="psi" />
-            <Stat label="Airflow" value={(scenario.airflowMs * 100).toFixed(1)} unit="cm/s" />
-          </dl>
-        </Panel>
-
         <Panel
           title="Latest fire run"
           className="report-sheet"
@@ -97,6 +86,8 @@ export function ReportView() {
         >
           <RunReview />
         </Panel>
+
+        {hasBrief ? <EvidenceBrief /> : <EvidenceBriefPrompt />}
 
         <Panel
           title="Saved cabin scenarios"
@@ -148,7 +139,15 @@ export function ReportView() {
           )}
         </Panel>
 
-        {hasBrief ? null : <EvidenceBriefPrompt />}
+        <Panel title="Cabin" description={missionById(scenario.missionId).name} className="report-sheet">
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3 lg:grid-cols-5">
+            <Stat label="Gravity" value={formatGravity(scenario.gravityG)} unit="g" />
+            <Stat label="Oxygen" value={formatOxygen(scenario.oxygenPct)} unit="%" />
+            <Stat label="Cabin pressure" value={formatPsi(scenario.pressurePsi)} unit="psi" />
+            <Stat label="Oxygen partial pressure" value={formatNumber(partial, 2)} unit="psi" />
+            <Stat label="Airflow" value={(scenario.airflowMs * 100).toFixed(1)} unit="cm/s" />
+          </dl>
+        </Panel>
       </div>
     </div>
   );

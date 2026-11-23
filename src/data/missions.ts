@@ -22,7 +22,7 @@ export interface MissionProfile {
 export const MISSIONS: MissionProfile[] = [
   {
     id: "lunar-habitat",
-    name: "Lunar Habitat",
+    name: "Moon habitat",
     short: "Moon",
     gravityG: GRAVITY_G.moon,
     gravityLabel: "0.165 g",
@@ -38,7 +38,7 @@ export const MISSIONS: MissionProfile[] = [
   },
   {
     id: "mars-habitat",
-    name: "Mars Habitat",
+    name: "Mars habitat",
     short: "Mars",
     gravityG: GRAVITY_G.mars,
     gravityLabel: "0.38 g",
@@ -54,7 +54,7 @@ export const MISSIONS: MissionProfile[] = [
   },
   {
     id: "iss-microgravity",
-    name: "ISS / Microgravity Spacecraft",
+    name: "ISS microgravity spacecraft",
     short: "ISS",
     gravityG: GRAVITY_G.microgravity,
     gravityLabel: "~0 g",
@@ -70,7 +70,7 @@ export const MISSIONS: MissionProfile[] = [
   },
   {
     id: "lunar-rover",
-    name: "Pressurized Lunar Rover",
+    name: "Pressurized lunar rover",
     short: "Rover",
     gravityG: GRAVITY_G.moon,
     gravityLabel: "0.165 g",

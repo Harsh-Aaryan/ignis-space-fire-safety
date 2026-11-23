@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { ChevronRight, Flame } from "lucide-react";
-import { Note, Tag, actionClass } from "@/components/design/kit";
+import { Note, actionClass } from "@/components/design/kit";
 import { Cite } from "@/components/fire/cite";
 import { materialById } from "@/data/fire/materials";
 import { ignitionById } from "@/data/fire/options";
@@ -13,12 +12,11 @@ import {
   type HabitatRoomConfig,
   type InteriorEquipment,
 } from "@/data/habitat-interiors";
-import { KIND_LABEL, investigationById, type InvestigationRecord } from "@/data/research/investigations";
 import { fuelPackageFor } from "@/lib/fire/scenario";
-import { ROUTES } from "@/lib/routes";
 import { useFireSimStore } from "@/stores/fire-sim-store";
 import { useMissionStore } from "@/stores/mission-store";
 import { habitatName, levelLabel } from "./format";
+import { RelatedResearch } from "./related-research";
 
 const rowClass =
   "flex min-h-11 w-full items-center justify-between gap-3 px-3 text-left text-sm text-foreground transition-colors hover:bg-elev-3";
@@ -102,7 +100,6 @@ function EquipmentDetail({ object, room }: { object: InteriorEquipment; room: Ha
   const pack = fuelPackageFor(object);
   const material = materialById(pack.materialId);
   const ignition = ignitionById(pack.defaultIgnitionId);
-  const records = object.investigations.map(investigationById).filter((record): record is InvestigationRecord => record !== null);
 
   function startFireHere() {
     // Use this equipment's own fuel and heat source, then open the scenario.
@@ -146,27 +143,7 @@ function EquipmentDetail({ object, room }: { object: InteriorEquipment; room: Ha
         </button>
       </section>
 
-      <section aria-labelledby="research-heading" className="space-y-3">
-        <h3 id="research-heading" className="text-[15px] leading-5 font-medium text-foreground">
-          Related research
-        </h3>
-        <ul className="space-y-2">
-          {records.map((record) => (
-            <li key={record.id}>
-              <Link
-                href={ROUTES.investigation(record.id)}
-                className="block rounded-md border border-border-subtle p-3 transition-colors hover:border-border hover:bg-elev-3"
-              >
-                <span className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-medium text-foreground">{record.name}</span>
-                  <Tag>{KIND_LABEL[record.kind]}</Tag>
-                </span>
-                <span className="mt-1 block text-[13px] leading-5 text-muted-foreground">{record.summary}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <RelatedResearch investigations={object.investigations} />
 
       <Note>{object.limitation}</Note>
     </div>

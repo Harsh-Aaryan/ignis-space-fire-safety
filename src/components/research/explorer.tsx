@@ -13,6 +13,7 @@ import { KPA_PER_PSI } from "@/lib/physics/atmosphere";
 import {
   NO_EXPLORER_STATE,
   NO_FILTERS,
+  environmentLink,
   explorerQuestion,
   explorerStateFromQuery,
   explorerStateFromQuestion,
@@ -90,6 +91,19 @@ export function ResearchExplorer({ initialState = NO_EXPLORER_STATE, syncUrl = f
   const parts = describeQuestion(explicit);
   const gaps = ranking ? questionGaps(explicit) : [];
   const narrowed = Boolean(state.filters.kind || state.filters.gravity);
+  // Terms are defined at their first appearance on the page: "Held here" on the first card, each basis on the first card showing it.
+  const firstCardId = (related[0] ?? less[0])?.record.id;
+  const basisDefinedOn = new Set<string>();
+  if (resolved.environment) {
+    const seen = new Set<string>();
+    for (const row of [...related, ...less]) {
+      const basis = environmentLink(row.record, resolved.environment)?.basis;
+      if (basis && !seen.has(basis)) {
+        seen.add(basis);
+        basisDefinedOn.add(row.record.id);
+      }
+    }
+  }
 
   // Reflect a question restored from this browser in the URL, so the view can be shared as it is.
   useEffect(() => {
@@ -195,7 +209,13 @@ export function ResearchExplorer({ initialState = NO_EXPLORER_STATE, syncUrl = f
               <ul className="space-y-3">
                 {related.map((row) => (
                   <li key={row.record.id}>
-                    <InvestigationCard record={row.record} environment={resolved.environment} ranked={ranking ? row : null} />
+                    <InvestigationCard
+                      record={row.record}
+                      environment={resolved.environment}
+                      ranked={ranking ? row : null}
+                      defineBasis={basisDefinedOn.has(row.record.id)}
+                      defineHeld={row.record.id === firstCardId}
+                    />
                   </li>
                 ))}
               </ul>
@@ -211,7 +231,14 @@ export function ResearchExplorer({ initialState = NO_EXPLORER_STATE, syncUrl = f
                 <ul className="space-y-2">
                   {less.map((row) => (
                     <li key={row.record.id}>
-                      <InvestigationCard record={row.record} environment={resolved.environment} ranked={row} muted />
+                      <InvestigationCard
+                        record={row.record}
+                        environment={resolved.environment}
+                        ranked={row}
+                        muted
+                        defineBasis={basisDefinedOn.has(row.record.id)}
+                        defineHeld={row.record.id === firstCardId}
+                      />
                     </li>
                   ))}
                 </ul>

@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Download } from "lucide-react";
+import { ArrowRight, Download } from "lucide-react";
 import { ActionLink, Stat, actionClass, table } from "@/components/design/kit";
 import { FuelBudgetBar, RunTimeCharts, SensitivityChart, ValuesDisclosure } from "@/components/fire/run-charts";
 import { ModelApplicability } from "@/components/simulation/model-applicability";
+import { RelatedResearch } from "@/components/simulation/related-research";
 import { PHASE_LABEL, clock, formatPower, formatSignificant } from "@/components/simulation/format";
 import { ACCURACY_SUMMARY, accuracyCue, significantFigures, type AccuracyCue } from "@/lib/fire/accuracy";
 import { FIRE_MODEL_VERSION, applicability } from "@/lib/fire/evidence";
@@ -13,14 +14,19 @@ import { supportedSensitivities, type SensitivityResult, type Support } from "@/
 import { signedPct } from "@/lib/fire/run-chart-data";
 import { downloadText } from "@/lib/research/export";
 import { ROUTES } from "@/lib/routes";
+import { objectById } from "@/data/habitat-interiors";
 import { cn } from "@/lib/utils";
 import { fireRuntime, useFireSimStore } from "@/stores/fire-sim-store";
 
-/** What happened in the latest run: key times, totals, what remains, and the event log. */
-export function RunReview() {
+/**
+ * What happened in the latest run: key times, totals, what remains, and the event log.
+ * `resultsLink` leads to the Results page, for views other than Results itself.
+ */
+export function RunReview({ resultsLink = false }: { resultsLink?: boolean }) {
   const snapshot = useFireSimStore((store) => store.snapshot);
   const history = useFireSimStore((store) => store.history);
   const events = useFireSimStore((store) => store.events);
+  const object = objectById(useFireSimStore((store) => store.activeObjectId));
   const input = fireRuntime.input;
 
   if (!snapshot || !input) {
@@ -100,12 +106,20 @@ export function RunReview() {
       </div>
 
       <div className="flex flex-wrap gap-2">
+        {resultsLink ? (
+          <ActionLink href={ROUTES.results} variant="primary">
+            Open in Results
+            <ArrowRight className="size-4" strokeWidth={1.5} aria-hidden="true" />
+          </ActionLink>
+        ) : null}
         <button type="button" onClick={exportRun} className={actionClass("secondary")}>
           <Download className="size-4" aria-hidden="true" />
           Export this fire run
         </button>
         <ActionLink href={ROUTES.compare}>Compare gravity</ActionLink>
       </div>
+
+      {object ? <RelatedResearch investigations={object.investigations} /> : null}
 
       <p className="text-[12px] leading-4 text-text-tertiary">Output of the IGNIS model, not a NASA measurement.</p>
     </section>

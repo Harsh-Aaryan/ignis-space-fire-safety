@@ -7,6 +7,7 @@ import { ArrowRight, Flame, Search } from "lucide-react";
 import { FeaturedFinding } from "@/components/dashboard/featured-finding";
 import { ActionLink, ExternalLink, LINK, SectionHeading, TextLink, actionClass } from "@/components/design/kit";
 import { FIRE_MATERIALS } from "@/data/fire/materials";
+import { missionById } from "@/data/missions";
 import { EXAMPLE_QUESTIONS, type ExampleQuestion } from "@/data/research/featured-findings";
 import {
   CREW_ENVIRONMENTS,
@@ -35,7 +36,6 @@ const NTRS = "https://ntrs.nasa.gov/";
 
 const HABITAT_PREVIEWS: Array<{
   id: MissionId;
-  name: string;
   image: string;
   gravity: string;
   alt: string;
@@ -46,7 +46,6 @@ const HABITAT_PREVIEWS: Array<{
 }> = [
   {
     id: "lunar-habitat",
-    name: "Moon",
     image: "moon-exterior",
     gravity: "0.165 g",
     alt: "Rendered exterior of the conceptual Moon habitat beneath its protective shell.",
@@ -56,7 +55,6 @@ const HABITAT_PREVIEWS: Array<{
   },
   {
     id: "mars-habitat",
-    name: "Mars",
     image: "mars-exterior",
     gravity: "0.38 g",
     alt: "Rendered exterior of the conceptual four-floor Mars habitat.",
@@ -66,9 +64,8 @@ const HABITAT_PREVIEWS: Array<{
   },
   {
     id: "gateway-orbit",
-    name: "Gateway",
     image: "gateway",
-    gravity: "about 0 g",
+    gravity: "~0 g",
     alt: "Rendered exterior of the Gateway-inspired orbital habitat with its solar arrays extended.",
     caption: "A station in lunar orbit. Open it to inspect conceptual module interiors in microgravity.",
     credit: "Exterior after NASA Gateway; interiors are conceptual",
@@ -147,15 +144,16 @@ export function MissionOverview() {
 
 /**
  * The opening screen: the habitat render fills the hero edge to edge, and what IGNIS is
- * and the two ways in sit on its calm side. The selection is the shared mission in the
- * store, so the scene always matches the habitat switcher in the top bar. The store hook
- * renders the unhydrated default on the server and during hydration, then the session's
- * saved habitat, so the markup never disagrees with the server's.
+ * and the two ways in sit on its calm side. The habitat is the shared scenario in the
+ * store, chosen from the scenario control in the top bar, so the scene always matches it.
+ * The store hook renders the unhydrated default on the server and during hydration, then
+ * the session's saved habitat, so the markup never disagrees with the server's.
  */
 function Hero() {
   const missionId = useMissionStore((state) => state.scenario.missionId);
   const selectMission = useMissionStore((state) => state.selectMission);
   const preview = HABITAT_PREVIEWS.find((habitat) => habitat.id === missionId) ?? HABITAT_PREVIEWS[0];
+  const habitatName = missionById(preview.id).name;
   const choose = (id: MissionId) => {
     if (id !== missionId) selectMission(id);
   };
@@ -209,31 +207,13 @@ function Hero() {
             <p className="mt-1 text-[12px] leading-4 text-muted-foreground">{preview.credit}</p>
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <div role="group" aria-label="Preview a habitat" className="flex rounded-md border border-border-subtle bg-background/85 p-0.5">
-              {HABITAT_PREVIEWS.map((habitat) => {
-                const active = habitat.id === preview.id;
-                return (
-                  <button
-                    key={habitat.id}
-                    type="button"
-                    aria-pressed={active}
-                    aria-controls="habitat-preview"
-                    onClick={() => choose(habitat.id)}
-                    className={cn(
-                      "min-h-11 rounded-sm px-3 text-left text-[13px] leading-4 transition-colors",
-                      active ? "bg-elev-3 text-foreground" : "text-muted-foreground hover:bg-elev-2 hover:text-foreground",
-                    )}
-                  >
-                    <span className="block">{habitat.name}</span>
-                    <span className="numeric block text-[12px] text-text-tertiary">{habitat.gravity}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <p className="text-[13px] leading-5 text-foreground/80">
+              {habitatName} <span aria-hidden="true">·</span> <span className="numeric">{preview.gravity}</span>
+            </p>
             <Link
               href={ROUTES.simulation}
               onClick={() => choose(preview.id)}
-              aria-label={`Open the ${preview.name} habitat in the simulation`}
+              aria-label={`Open ${habitatName} in the simulation`}
               className={cn(LINK, "min-h-10 gap-1.5 text-sm")}
             >
               Open habitat

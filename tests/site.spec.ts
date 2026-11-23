@@ -8,6 +8,15 @@ function monitor(page: Page): string[] {
 
 const noSidewaysScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
 
+/** The cabin conditions chip in the top bar. */
+const cabinChip = (page: Page) => page.getByRole("button", { name: /^Cabin conditions: / });
+
+/** Picks a habitat with the Moon / Mars / Gateway switcher in the top bar. */
+async function chooseHabitat(page: Page, name: string) {
+  await page.getByRole("radio", { name, exact: true }).click();
+  await expect(page.getByRole("radio", { name, exact: true })).toBeChecked();
+}
+
 test("four sections, and earlier addresses still resolve", async ({ page }) => {
   await page.goto("/");
   const sections = page.getByRole("navigation", { name: "Sections", exact: true }).first();
@@ -53,7 +62,7 @@ test("overview leads to the three research questions", async ({ page }) => {
   await expect(page).toHaveURL(/\/research\/data$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Modeling data");
   await page.goto("/");
-  await page.getByRole("group", { name: "Preview a habitat" }).getByRole("button", { name: /Mars/ }).click();
+  await chooseHabitat(page, "Mars, 0.38 g");
   await expect(page.locator("#habitat-preview")).toHaveAttribute("data-habitat", "mars-exterior");
   expect(errors).toEqual([]);
 });
@@ -90,17 +99,19 @@ test("overview opens on a sourced finding and a research question, and its habit
   expect(heading.y + heading.height).toBeLessThanOrEqual(render.y + render.height);
   await expect(page.locator("#habitat-preview img")).toHaveAttribute("src", /q=90/);
 
-  // A fresh session shows the same habitat in the top bar and the preview, and either one moves both.
-  const preview = page.getByRole("group", { name: "Preview a habitat" });
+  // A fresh session shows the same habitat in the top bar switcher and the hero, and the switcher moves both.
+  // The hero has no habitat switch of its own: it names the habitat and its gravity.
+  const hero = page.locator('section[aria-labelledby="overview-title"]');
+  await expect(hero.getByRole("button")).toHaveCount(0);
   await expect(page.getByRole("radio", { name: "Moon, 0.165 g", exact: true })).toBeChecked();
-  await expect(preview.getByRole("button", { name: /Moon/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(hero).toContainText("Moon habitat · 0.165 g");
   await expect(page.locator("#habitat-preview")).toHaveAttribute("data-habitat", "moon-exterior");
   await expect(page.getByText("Conceptual habitat after Foster + Partners / ESA", { exact: true })).toBeVisible();
-  await preview.getByRole("button", { name: /Gateway/ }).click();
-  await expect(page.getByRole("radio", { name: "Gateway, about 0 g", exact: true })).toBeChecked();
+  await chooseHabitat(page, "Gateway, about 0 g");
   await expect(page.getByText("Exterior after NASA Gateway; interiors are conceptual", { exact: true })).toBeVisible();
-  await page.getByRole("radio", { name: "Mars, 0.38 g", exact: true }).click();
+  await chooseHabitat(page, "Mars, 0.38 g");
   await expect(page.locator("#habitat-preview")).toHaveAttribute("data-habitat", "mars-exterior");
+  await expect(hero).toContainText("Mars habitat · 0.38 g");
   // The session's habitat survives a reload, without a hydration mismatch.
   await page.reload();
   await expect(page.getByRole("radio", { name: "Mars, 0.38 g", exact: true })).toBeChecked();
@@ -124,28 +135,39 @@ test("overview opens on a sourced finding and a research question, and its habit
     background: getComputedStyle(el).backgroundColor,
     color: getComputedStyle(el).color,
   }));
+  // Ask IGNIS is outlined: the filled accent belongs to the page's own primary action alone.
   const assistant = await page.getByRole("button", { name: "Ask IGNIS", exact: true }).evaluate(el => ({
     background: getComputedStyle(el).backgroundColor,
     color: getComputedStyle(el).color,
   }));
-  expect(assistant).toEqual(primary);
+  expect(assistant.background).not.toEqual(primary.background);
+  expect(assistant.color).not.toEqual(primary.color);
   expect(errors).toEqual([]);
   expect(hydration).toEqual([]);
 });
 
-test("mobile cabin readouts stay visible and habitat keyboard selection keeps focus", async ({ page }) => {
+test("mobile top bar keeps the habitat switcher and oxygen visible in two rows, and habitat keyboard selection keeps focus", async ({ page }) => {
   await page.goto("/");
-  const cabin = page.getByRole("button", { name: /Cabin.*O₂/ });
+  const chip = cabinChip(page);
+  const header = page.locator("header").filter({ has: chip });
+  const switcher = page.getByRole("radiogroup", { name: "Habitat" });
   for (const width of [320, 390]) {
     await page.setViewportSize({ width, height: 844 });
-    await expect(cabin).toBeVisible();
-    const readouts = cabin.locator(".numeric > span");
-    await expect(readouts).toHaveCount(4);
-    expect(await readouts.evaluateAll((values) => values.every((value) => {
+    await expect(chip).toBeVisible();
+    await expect(switcher).toBeVisible();
+    // Two rows, no taller than 116px: the mark, the cabin chip and an icon-only Ask IGNIS, then Moon / Mars / Gateway.
+    expect((await header.boundingBox())!.height, `Top bar height at ${width}px`).toBeLessThanOrEqual(116);
+    const ask = page.getByRole("button", { name: "Ask IGNIS", exact: true });
+    await expect(ask).toBeVisible();
+    expect((await ask.boundingBox())!.width, `Ask IGNIS is an icon button at ${width}px`).toBeLessThanOrEqual(48);
+    // The oxygen readout is shown in full inside the chip.
+    const oxygen = chip.locator('[data-slot="scenario-readout"]');
+    await expect(oxygen).toHaveText(/% O₂$/);
+    expect(await oxygen.evaluate((value) => {
       const box = value.getBoundingClientRect();
       const control = value.closest("button")!.getBoundingClientRect();
       return box.width > 0 && box.left >= control.left && box.right <= control.right && value.scrollWidth <= value.clientWidth;
-    })), `Cabin readouts fit at ${width}px`).toBe(true);
+    }), `Oxygen fits at ${width}px`).toBe(true);
     expect(await noSidewaysScroll(page)).toBe(true);
   }
 
@@ -173,6 +195,9 @@ test("investigations filter by crew environment and open a record", async ({ pag
   await page.getByRole("link", { name: /SAME-2/ }).first().click();
   await expect(page).toHaveURL(/\/research\/same-2$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("SAME-2");
+  const trail = page.getByRole("navigation", { name: "Breadcrumb", exact: true });
+  await expect(trail.getByRole("link", { name: "All investigations", exact: true })).toHaveAttribute("href", "/research");
+  await expect(trail.locator('[aria-current="page"]')).toHaveText("SAME-2");
   await expect(page.getByText("Kapton and Teflon smoke is very small")).toBeVisible();
   await expect(page.getByRole("link", { name: "PSI-101", exact: true })).toHaveAttribute("href", /psi\.nasa\.gov/);
 
@@ -236,7 +261,7 @@ test("controls and evidence gaps are built from the research index", async ({ pa
   const cabin = page.getByRole("table", { name: "Cabin conditions compared with tested conditions" });
   const bass = cabin.getByRole("row").filter({ hasText: "BASS-II" });
   await expect(bass).toContainText("Not tested");
-  await page.getByRole("radio", { name: "Gateway, about 0 g", exact: true }).click();
+  await chooseHabitat(page, "Gateway, about 0 g");
   await expect(bass).not.toContainText("Not tested");
   await expect(bass).toContainText("Above");
   expect(errors).toEqual([]);

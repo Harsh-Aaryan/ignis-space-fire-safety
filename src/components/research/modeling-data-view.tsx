@@ -18,7 +18,9 @@ import {
   type EvidenceClass,
 } from "@/components/design/kit";
 import { Cite, CitedValue } from "@/components/fire/cite";
+import { Term } from "@/components/design/term";
 import { fieldClass } from "@/components/research/index-filter-bar";
+import { TERM_DEFINITIONS } from "@/components/research/record-meta";
 import { CfastCrosscheck } from "@/components/research/cfast-crosscheck";
 import { PsiDatasets } from "@/components/research/psi-datasets";
 import { SaffireDetection } from "@/components/research/saffire-detection";
@@ -566,7 +568,7 @@ function ModelCheck() {
         flush
       >
         <Note className="mx-5 mt-4">
-          Cabin temperature accuracy is not established. The far-field rises are 0–5 K point readings against an assumed 20 °C start
+          Cabin temperature accuracy is not established. The <Term definition={TERM_DEFINITIONS.farField}>far-field</Term> rises are 0–5 K point readings against an assumed 20 °C start
           {cfastGap ? `, and NIST CFAST gives ${cfastGap.low.toFixed(0)}–${cfastGap.high.toFixed(0)} times the IGNIS cabin rise on identical heat release` : ""}.
         </Note>
         <div className="overflow-x-auto">

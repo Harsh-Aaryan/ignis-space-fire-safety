@@ -18,7 +18,7 @@ import { useFireSimStore } from "@/stores/fire-sim-store";
 import { useMissionStore } from "@/stores/mission-store";
 
 const REGIMES = [
-  { g: 0, name: "Orbit, 0 g" },
+  { g: 0, name: "Orbit, ~0 g" },
   { g: 0.165, name: "Moon, 0.165 g" },
   { g: 0.38, name: "Mars, 0.38 g" },
 ];
@@ -47,7 +47,15 @@ export function ScenarioForecast() {
 
   if (!input || !object || !room) {
     return (
-      <Panel title="Choose a setup" description="Pick where the fire starts. The same setup is then run at each gravity level.">
+      <Panel
+        title="Choose a setup"
+        description={
+          <>
+            Pick where the fire starts. The same setup is then run at each gravity level.
+            <span className="mt-1 block">Results appear below as soon as you choose a setup</span>
+          </>
+        }
+      >
         <ScenarioSetup />
       </Panel>
     );

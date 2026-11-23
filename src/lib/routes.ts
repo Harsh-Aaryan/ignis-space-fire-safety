@@ -36,7 +36,7 @@ export const SIMULATION_TABS = [
 
 /** One tab per question the challenge asks of the research, plus the gaps they leave. */
 export const RESEARCH_TABS = [
-  { href: ROUTES.research, label: "Investigations" },
+  { href: ROUTES.research, label: "All investigations" },
   { href: ROUTES.researchCompare, label: "Compare" },
   { href: ROUTES.modelingData, label: "Modeling data" },
   { href: ROUTES.controls, label: "Detection and suppression" },
@@ -62,4 +62,33 @@ export function isTabActive(pathname: string, href: string, tabs: ReadonlyArray<
 /** The research comparison for up to three investigation ids. */
 export function researchCompareHref(ids: string[]): string {
   return ids.length ? `${ROUTES.researchCompare}?ids=${ids.map(encodeURIComponent).join(",")}` : ROUTES.researchCompare;
+}
+
+export interface Crumb {
+  label: string;
+  /** Absent on the current page. */
+  href?: string;
+}
+
+/**
+ * The trail from the section to the current page, built from the nav and tab labels so a
+ * page is named the same way in the sidebar, its tabs and the top bar. A research record
+ * passes its title, which becomes the last crumb.
+ */
+export function breadcrumbsForPath(pathname: string, recordTitle?: string): Crumb[] {
+  const section = sectionForPath(pathname);
+  const nav = PRIMARY_NAV.find((item) => sectionForPath(item.href) === section) ?? PRIMARY_NAV[0];
+  const tabs: ReadonlyArray<{ href: string; label: string }> =
+    section === "simulation" ? SIMULATION_TABS : section === "research" ? RESEARCH_TABS : [];
+  const tab = tabs.find((item) => item.href === pathname);
+  if (tab) return [{ label: nav.label, href: nav.href }, { label: tab.label }];
+  if (section === "research" && pathname.startsWith(`${ROUTES.research}/`) && recordTitle) {
+    return [
+      { label: nav.label, href: nav.href },
+      { label: RESEARCH_TABS[0].label, href: RESEARCH_TABS[0].href },
+      { label: recordTitle },
+    ];
+  }
+  if (pathname === nav.href) return [{ label: nav.label }];
+  return [{ label: nav.label, href: nav.href }];
 }
